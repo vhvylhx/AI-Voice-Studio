@@ -1,0 +1,11 @@
+{
+    "theme": "light",
+    "language": "vi",
+    "workspace": "D:\\AI-Voice-Studio\\workspace",
+    "output": "D:\\AI-Voice-Studio\\output",
+    "voice": "",
+    "engine": "GPT-SoVITS",
+    "model": "",
+    "remember_last_voice": true,
+    "remember_last_project": true
+}

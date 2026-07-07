@@ -1,0 +1,6 @@
+PySide6
+python-docx
+mutagen
+pydub
+ffmpeg-python
+loguru

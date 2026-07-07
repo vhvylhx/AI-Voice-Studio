@@ -32,7 +32,6 @@ class ProjectPage(QWidget):
         self.detail = ProjectDetail()
 
         splitter.addWidget(self.list)
-
         splitter.addWidget(self.detail)
 
         splitter.setSizes([500, 300])
@@ -45,6 +44,10 @@ class ProjectPage(QWidget):
 
         self.toolbar.refresh_button.clicked.connect(
             self.refresh
+        )
+
+        self.list.project_selected.connect(
+            self.show_project
         )
 
         self.refresh()
@@ -85,3 +88,7 @@ class ProjectPage(QWidget):
         self.service.create(name)
 
         self.refresh()
+
+    def show_project(self, project):
+
+        self.detail.load(project)

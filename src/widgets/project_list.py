@@ -1,18 +1,18 @@
-from PySide6.QtWidgets import QWidget
-from PySide6.QtWidgets import QVBoxLayout
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QWidget, QVBoxLayout
 
 from widgets.project_card import ProjectCard
 
 
 class ProjectList(QWidget):
 
+    project_selected = Signal(object)
+
     def __init__(self):
 
         super().__init__()
 
         self.layout = QVBoxLayout(self)
-
-        self.layout.setContentsMargins(0, 0, 0, 0)
 
         self.layout.addStretch()
 
@@ -33,6 +33,10 @@ class ProjectList(QWidget):
         for project in projects:
 
             card = ProjectCard(project)
+
+            card.clicked.connect(
+                self.project_selected.emit
+            )
 
             self.layout.insertWidget(
                 self.layout.count() - 1,

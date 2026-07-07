@@ -5,3 +5,6 @@ from .workspace_service import WorkspaceService
 settings_service = SettingsService()
 project_service = ProjectService()
 workspace_service = WorkspaceService()
+from .dashboard_service import DashboardService
+
+dashboard_service = DashboardService()

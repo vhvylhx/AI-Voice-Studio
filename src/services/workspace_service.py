@@ -1,70 +1,35 @@
 from pathlib import Path
 
-from src.core import App
-from src.events import bus, Events
-
-from .base_service import BaseService
+from src.services.workspace_scanner import WorkspaceScanner
 
 
-class WorkspaceService(BaseService):
-
-    AUDIO_EXT = {".mp3", ".wav", ".flac", ".m4a", ".ogg"}
-
-    TEXT_EXT = {".docx", ".txt"}
+class WorkspaceService:
 
     def __init__(self):
-        super().__init__(App)
 
-        self.cache = {}
+        self.workspace = Path("workspace")
+
+        self.scanner = WorkspaceScanner()
+
+    def set_workspace(self, path):
+
+        self.workspace = Path(path)
+
+    def get_workspace(self):
+
+        return str(self.workspace)
+
+    def load(self):
+
+        return self.scanner.scan(self.workspace)
 
     def scan(self):
 
-        workspace = Path(
-            self.app.config.get("workspace")
-        )
+        model = self.load()
 
-        result = {
-            "voices": 0,
-            "audio": 0,
-            "docx": 0,
-            "txt": 0
+        return {
+            "voices": model.dataset_count,
+            "docx": model.total_docx,
+            "txt": model.total_txt,
+            "audio": model.total_mp3 + model.total_wav,
         }
-
-        if not workspace.exists():
-            self.cache = result
-            return result
-
-        for folder in workspace.iterdir():
-
-            if not folder.is_dir():
-                continue
-
-            result["voices"] += 1
-
-            for file in folder.rglob("*"):
-
-                if not file.is_file():
-                    continue
-
-                ext = file.suffix.lower()
-
-                if ext in self.AUDIO_EXT:
-                    result["audio"] += 1
-
-                elif ext == ".docx":
-                    result["docx"] += 1
-
-                elif ext == ".txt":
-                    result["txt"] += 1
-
-        self.cache = result
-
-        bus.emit(
-            Events.WORKSPACE_CHANGED,
-            result
-        )
-
-        return result
-
-    def get_cache(self):
-        return self.cache

@@ -1,7 +1,11 @@
-from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QLabel
+from PySide6.QtWidgets import QPushButton
+from PySide6.QtWidgets import QVBoxLayout
+from PySide6.QtWidgets import QHBoxLayout
 
-from config.app_config import WORKSPACE_DIR
-from services.dataset_service import DatasetService
+from src.widgets.stat_card import StatCard
+from src.services import dashboard_service
 
 
 class DashboardPage(QWidget):
@@ -9,48 +13,51 @@ class DashboardPage(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.service = DatasetService()
+        self.build_ui()
+        self.refresh()
 
-        self.setup_ui()
+    def build_ui(self):
 
-    def setup_ui(self):
+        root = QVBoxLayout(self)
 
-        layout = QVBoxLayout()
-
-        title = QLabel("Tổng quan")
+        title = QLabel("Dashboard")
         title.setStyleSheet("""
-            font-size:28px;
+            font-size:22px;
             font-weight:bold;
         """)
 
-        layout.addWidget(title)
+        root.addWidget(title)
 
-        layout.addWidget(QLabel(f"Workspace: {WORKSPACE_DIR}"))
+        cards = QHBoxLayout()
 
-        datasets = self.service.scan()
+        self.voice_card = StatCard("Dataset")
+        self.audio_card = StatCard("Audio")
+        self.docx_card = StatCard("DOCX")
+        self.text_card = StatCard("Text")
 
-        layout.addWidget(QLabel(f"Số Dataset: {len(datasets)}"))
+        cards.addWidget(self.voice_card)
+        cards.addWidget(self.audio_card)
+        cards.addWidget(self.docx_card)
+        cards.addWidget(self.text_card)
 
-        layout.addSpacing(15)
+        root.addLayout(cards)
 
-        if not datasets:
+        self.refresh_button = QPushButton("Làm mới")
 
-            layout.addWidget(QLabel("Chưa có Dataset."))
+        self.refresh_button.clicked.connect(self.refresh)
 
-        else:
+        root.addWidget(self.refresh_button)
 
-            for ds in datasets:
+        root.addStretch()
 
-                layout.addWidget(
-                    QLabel(
-                        f"""📁 {ds.name}
-MP3 : {ds.mp3_count}
-DOCX: {ds.docx_count}
-TXT : {ds.txt_count}
-"""
-                    )
-                )
+    def refresh(self):
 
-        layout.addStretch()
+        model = dashboard_service.load()
 
-        self.setLayout(layout)
+        self.voice_card.set_value(model.voice_count)
+
+        self.audio_card.set_value(model.audio_count)
+
+        self.docx_card.set_value(model.docx_count)
+
+        self.text_card.set_value(model.total_text)

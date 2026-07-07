@@ -1,5 +1,5 @@
-from src.models.dashboard_model import DashboardModel
-from src.services.workspace_service import WorkspaceService
+from models.dashboard_model import DashboardModel
+from services.workspace_service import WorkspaceService
 
 
 class DashboardService:

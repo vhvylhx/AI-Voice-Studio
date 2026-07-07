@@ -1,12 +1,32 @@
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
+
+from .engine_info import EngineInfo
 
 
 class BaseEngine(ABC):
 
     @abstractmethod
-    def load(self):
-        pass
+    def info(self) -> EngineInfo:
+        ...
 
     @abstractmethod
-    def generate(self, text: str, output_path: str):
-        pass
+    def initialize(self):
+        ...
+
+    @abstractmethod
+    def is_available(self) -> bool:
+        ...
+
+    @abstractmethod
+    def generate(
+        self,
+        text_file,
+        output_file,
+        voice=None,
+    ):
+        ...
+
+    @abstractmethod
+    def stop(self):
+        ...

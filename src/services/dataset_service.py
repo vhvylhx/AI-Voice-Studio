@@ -1,4 +1,4 @@
-from src.services.workspace_service import WorkspaceService
+from services.workspace_service import WorkspaceService
 
 
 class DatasetService:

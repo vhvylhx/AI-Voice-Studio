@@ -4,8 +4,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.services import settings_service
-from src.events import bus, Events
+from services import settings_service
+from events import bus, Events
 
 
 def on_change(key, value):

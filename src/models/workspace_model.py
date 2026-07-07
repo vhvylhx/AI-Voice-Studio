@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from src.models.file_pair import FilePair
+from models.file_pair import FilePair
 
 
 @dataclass

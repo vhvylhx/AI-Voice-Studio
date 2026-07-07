@@ -1,5 +1,5 @@
-from src.core import App
-from src.events import bus, Events
+from core import App
+from events import bus, Events
 
 from .base_service import BaseService
 

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.services.workspace_scanner import WorkspaceScanner
+from services.workspace_scanner import WorkspaceScanner
 
 
 class WorkspaceService:

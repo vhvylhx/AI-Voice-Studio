@@ -1,20 +1,87 @@
-from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout
+from PySide6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QSplitter,
+    QInputDialog,
+)
+
+from services.project_service import ProjectService
+from widgets.project_toolbar import ProjectToolbar
+from widgets.project_list import ProjectList
+from widgets.project_detail import ProjectDetail
 
 
 class ProjectPage(QWidget):
 
     def __init__(self):
+
         super().__init__()
 
-        layout = QVBoxLayout()
+        self.service = ProjectService()
 
-        title = QLabel("Dự án")
-        title.setStyleSheet("""
-            font-size:28px;
-            font-weight:bold;
-        """)
+        root = QVBoxLayout(self)
 
-        layout.addWidget(title)
-        layout.addStretch()
+        self.toolbar = ProjectToolbar()
 
-        self.setLayout(layout)
+        root.addWidget(self.toolbar)
+
+        splitter = QSplitter()
+
+        self.list = ProjectList()
+
+        self.detail = ProjectDetail()
+
+        splitter.addWidget(self.list)
+
+        splitter.addWidget(self.detail)
+
+        splitter.setSizes([500, 300])
+
+        root.addWidget(splitter)
+
+        self.toolbar.new_button.clicked.connect(
+            self.create_project
+        )
+
+        self.toolbar.refresh_button.clicked.connect(
+            self.refresh
+        )
+
+        self.refresh()
+
+    def refresh(self):
+
+        projects = []
+
+        for name in self.service.list():
+
+            projects.append(
+                self.service.load(name)
+            )
+
+        self.list.load(projects)
+
+        self.detail.clear()
+
+    def create_project(self):
+
+        name, ok = QInputDialog.getText(
+            self,
+            "Project",
+            "Tên Project"
+        )
+
+        if not ok:
+            return
+
+        name = name.strip()
+
+        if not name:
+            return
+
+        if self.service.exists(name):
+            return
+
+        self.service.create(name)
+
+        self.refresh()

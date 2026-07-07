@@ -4,8 +4,8 @@ from PySide6.QtWidgets import QPushButton
 from PySide6.QtWidgets import QVBoxLayout
 from PySide6.QtWidgets import QHBoxLayout
 
-from src.widgets.stat_card import StatCard
-from src.services import dashboard_service
+from widgets.stat_card import StatCard
+from services import dashboard_service
 
 
 class DashboardPage(QWidget):

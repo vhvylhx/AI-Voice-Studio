@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from src.models.file_pair import FilePair
-from src.models.workspace_model import WorkspaceModel
-from src.models.workspace_model import VoiceDataset
+from models.file_pair import FilePair
+from models.workspace_model import WorkspaceModel
+from models.workspace_model import VoiceDataset
 
 
 class WorkspaceScanner:

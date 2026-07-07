@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.services import workspace_service
+from services import workspace_service
 
 print(workspace_service.scan())
 

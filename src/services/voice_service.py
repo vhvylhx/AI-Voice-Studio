@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-from core.app_context import AppContext
 
 from models.voice_config import VoiceConfig
 from models.voice_model import VoiceModel
@@ -10,6 +9,8 @@ from models.voice_model import VoiceModel
 class VoiceService:
 
     def root(self):
+
+        from core.app_context import AppContext
 
         project = AppContext.current_project.get()
 

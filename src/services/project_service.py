@@ -27,6 +27,7 @@ class ProjectService:
 
         (project / "text").mkdir(exist_ok=True)
         (project / "audio").mkdir(exist_ok=True)
+        (project / "voices").mkdir(exist_ok=True)
         (project / "export").mkdir(exist_ok=True)
         (project / "cache").mkdir(exist_ok=True)
         (project / "logs").mkdir(exist_ok=True)
@@ -67,6 +68,7 @@ class ProjectService:
             path=project,
             input_dir=project / "text",
             output_dir=project / "audio",
+            voices_dir=project / "voices",
             cache_dir=project / "cache",
             log_dir=project / "logs",
             config=config
@@ -77,6 +79,7 @@ class ProjectService:
         projects = []
 
         if not self.root.exists():
+
             return projects
 
         for folder in self.root.iterdir():
@@ -110,6 +113,7 @@ class ProjectService:
     ):
 
         old = self.root / old_name
+
         new = self.root / new_name
 
         if old.exists():

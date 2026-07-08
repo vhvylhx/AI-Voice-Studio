@@ -5,7 +5,13 @@ class Events:
 
     SETTINGS_CHANGED = "settings_changed"
 
+    PROJECT_CHANGED = "project_changed"
+
     WORKSPACE_CHANGED = "workspace_changed"
+
+    VOICE_CHANGED = "voice_changed"
+
+    ENGINE_CHANGED = "engine_changed"
 
     QUEUE_CHANGED = "queue_changed"
 

@@ -2,7 +2,8 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QMainWindow,
     QStackedWidget,
-    QWidget
+    QVBoxLayout,
+    QWidget,
 )
 
 from config.app_config import APP_NAME
@@ -14,18 +15,24 @@ from pages.audio_page import AudioPage
 from pages.voice_page import VoicePage
 from pages.training_page import TrainingPage
 from pages.project_page import ProjectPage
+from pages.engine_page import EnginePage
 from pages.settings_page import SettingsPage
+
+from widgets.app_status_bar import AppStatusBar
 
 
 class MainWindow(QMainWindow):
 
     def __init__(self):
+
         super().__init__()
 
         self.setWindowTitle(APP_NAME)
+
         self.resize(1400, 850)
 
         self.setup_ui()
+
         self.bind_events()
 
     def setup_ui(self):
@@ -34,21 +41,59 @@ class MainWindow(QMainWindow):
 
         self.stack = QStackedWidget()
 
-        self.stack.addWidget(DashboardPage())
-        self.stack.addWidget(AudioPage())
-        self.stack.addWidget(VoicePage())
-        self.stack.addWidget(TrainingPage())
-        self.stack.addWidget(ProjectPage())
-        self.stack.addWidget(SettingsPage())
+        self.status_bar = AppStatusBar()
 
-        layout = QHBoxLayout()
+        self.stack.addWidget(
+            DashboardPage()
+        )
 
-        layout.addWidget(self.sidebar)
-        layout.addWidget(self.stack)
+        self.stack.addWidget(
+            AudioPage()
+        )
+
+        self.stack.addWidget(
+            VoicePage()
+        )
+
+        self.stack.addWidget(
+            TrainingPage()
+        )
+
+        self.stack.addWidget(
+            ProjectPage()
+        )
+
+        self.stack.addWidget(
+            EnginePage()
+        )
+
+        self.stack.addWidget(
+            SettingsPage()
+        )
+
+        content = QVBoxLayout()
+
+        content.addWidget(
+            self.stack
+        )
+
+        content.addWidget(
+            self.status_bar
+        )
+
+        body = QHBoxLayout()
+
+        body.addWidget(
+            self.sidebar
+        )
+
+        body.addLayout(
+            content
+        )
 
         root = QWidget()
 
-        root.setLayout(layout)
+        root.setLayout(body)
 
         self.setCentralWidget(root)
 

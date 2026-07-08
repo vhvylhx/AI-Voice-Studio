@@ -5,7 +5,9 @@ from PySide6.QtWidgets import (
     QInputDialog,
 )
 
-from services.project_service import ProjectService
+from core.app_context import AppContext
+from services.app_events import AppEvents
+
 from widgets.project_toolbar import ProjectToolbar
 from widgets.project_list import ProjectList
 from widgets.project_detail import ProjectDetail
@@ -17,7 +19,7 @@ class ProjectPage(QWidget):
 
         super().__init__()
 
-        self.service = ProjectService()
+        self.service = AppContext.project_service
 
         root = QVBoxLayout(self)
 
@@ -90,5 +92,9 @@ class ProjectPage(QWidget):
         self.refresh()
 
     def show_project(self, project):
+
+        AppContext.current_project.set(project)
+
+        AppEvents.project_changed(project)
 
         self.detail.load(project)

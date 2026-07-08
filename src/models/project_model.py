@@ -15,6 +15,8 @@ class ProjectModel:
 
     output_dir: Path
 
+    voices_dir: Path
+
     cache_dir: Path
 
     log_dir: Path

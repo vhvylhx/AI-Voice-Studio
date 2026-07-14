@@ -1,6 +1,6 @@
 {
-    "engine": "",
-    "voice": "",
+    "engine": "xtts",
+    "voice": "Thu Minh",
     "rule": "",
     "output_format": "mp3",
     "auto_skip_exists": true,

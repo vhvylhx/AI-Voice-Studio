@@ -14,9 +14,18 @@ class VoiceDetail(QWidget):
         layout = QFormLayout(self)
 
         self.name = QLabel("-")
+
         self.engine = QLabel("-")
+
         self.language = QLabel("-")
+
         self.status = QLabel("-")
+
+        self.model = QLabel("-")
+
+        self.dataset = QLabel("-")
+
+        self.preview = QLabel("-")
 
         layout.addRow(
             "Voice",
@@ -34,6 +43,21 @@ class VoiceDetail(QWidget):
         )
 
         layout.addRow(
+            "Model",
+            self.model
+        )
+
+        layout.addRow(
+            "Dataset",
+            self.dataset
+        )
+
+        layout.addRow(
+            "Preview",
+            self.preview
+        )
+
+        layout.addRow(
             "Status",
             self.status
         )
@@ -41,11 +65,23 @@ class VoiceDetail(QWidget):
     def clear(self):
 
         self.name.setText("-")
+
         self.engine.setText("-")
+
         self.language.setText("-")
+
+        self.model.setText("-")
+
+        self.dataset.setText("-")
+
+        self.preview.setText("-")
+
         self.status.setText("-")
 
-    def load(self, voice):
+    def load(
+        self,
+        voice,
+    ):
 
         self.name.setText(
             voice.name
@@ -59,6 +95,35 @@ class VoiceDetail(QWidget):
             voice.config.language
         )
 
+        self.model.setText(
+            voice.config.model or "-"
+        )
+
+        if hasattr(
+            voice,
+            "dataset_dir",
+        ):
+
+            self.dataset.setText(
+                voice.dataset_dir.name
+            )
+
+        else:
+
+            self.dataset.setText("-")
+
+        self.preview.setText(
+
+            "Có"
+
+            if voice.preview.exists()
+
+            else "Chưa có"
+
+        )
+
         self.status.setText(
-            voice.status
+
+            voice.config.training_status
+
         )

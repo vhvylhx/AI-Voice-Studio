@@ -1,7 +1,7 @@
 from abc import ABC
 from abc import abstractmethod
 
-from .engine_info import EngineInfo
+from models.engine_info import EngineInfo
 
 
 class BaseEngine(ABC):
@@ -25,6 +25,44 @@ class BaseEngine(ABC):
         output_file,
         voice=None,
     ):
+        ...
+
+    @abstractmethod
+    def train(
+        self,
+        voice,
+        dataset,
+    ):
+        """
+        Train model.
+
+        dataset:
+            DatasetService.prepare()
+            trả về.
+        """
+        ...
+
+    @abstractmethod
+    def validate_dataset(
+        self,
+        dataset,
+    ):
+        """
+        Kiểm tra dataset trước khi train.
+        """
+
+        ...
+
+    @abstractmethod
+    def create_preview(
+        self,
+        voice,
+        output_file,
+    ):
+        """
+        Sinh preview.wav
+        """
+
         ...
 
     @abstractmethod

@@ -1,0 +1,14 @@
+{
+    "schema_version": 1,
+    "default_engine": "gpt_sovits",
+    "engines": [
+        {
+            "id": "gpt_sovits",
+            "path": "",
+            "default": true,
+            "ready": false,
+            "missing": [],
+            "version": ""
+        }
+    ]
+}

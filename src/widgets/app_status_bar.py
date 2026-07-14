@@ -110,5 +110,5 @@ class AppStatusBar(QWidget):
     def on_engine_changed(self, engine):
 
         self.set_engine(
-            engine.name
+            engine
         )

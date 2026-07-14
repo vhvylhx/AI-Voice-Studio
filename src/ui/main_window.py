@@ -12,10 +12,7 @@ from ui.sidebar import Sidebar
 
 from pages.dashboard_page import DashboardPage
 from pages.audio_page import AudioPage
-from pages.voice_page import VoicePage
-from pages.training_page import TrainingPage
 from pages.project_page import ProjectPage
-from pages.engine_page import EnginePage
 from pages.settings_page import SettingsPage
 
 from widgets.app_status_bar import AppStatusBar
@@ -52,19 +49,7 @@ class MainWindow(QMainWindow):
         )
 
         self.stack.addWidget(
-            VoicePage()
-        )
-
-        self.stack.addWidget(
-            TrainingPage()
-        )
-
-        self.stack.addWidget(
             ProjectPage()
-        )
-
-        self.stack.addWidget(
-            EnginePage()
         )
 
         self.stack.addWidget(
@@ -93,11 +78,17 @@ class MainWindow(QMainWindow):
 
         root = QWidget()
 
-        root.setLayout(body)
+        root.setLayout(
+            body
+        )
 
-        self.setCentralWidget(root)
+        self.setCentralWidget(
+            root
+        )
 
-        self.sidebar.setCurrentRow(0)
+        self.sidebar.setCurrentRow(
+            0
+        )
 
     def bind_events(self):
 

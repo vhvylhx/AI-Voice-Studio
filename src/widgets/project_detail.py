@@ -14,39 +14,96 @@ class ProjectDetail(QWidget):
         layout = QFormLayout(self)
 
         self.name = QLabel("-")
-        self.engine = QLabel("-")
+
+        self.text = QLabel("-")
+
+        self.audio = QLabel("-")
+
+        self.export = QLabel("-")
+
         self.voice = QLabel("-")
-        self.rule = QLabel("-")
+
+        self.format = QLabel("-")
+
         self.status = QLabel("-")
 
-        layout.addRow("Project", self.name)
-        layout.addRow("Engine", self.engine)
-        layout.addRow("Voice", self.voice)
-        layout.addRow("Rule", self.rule)
-        layout.addRow("Status", self.status)
+        layout.addRow(
+            "Project",
+            self.name
+        )
+
+        layout.addRow(
+            "Text Folder",
+            self.text
+        )
+
+        layout.addRow(
+            "Audio Folder",
+            self.audio
+        )
+
+        layout.addRow(
+            "Export Folder",
+            self.export
+        )
+
+        layout.addRow(
+            "Default Voice",
+            self.voice
+        )
+
+        layout.addRow(
+            "Output Format",
+            self.format
+        )
+
+        layout.addRow(
+            "Status",
+            self.status
+        )
 
     def clear(self):
 
         self.name.setText("-")
-        self.engine.setText("-")
+
+        self.text.setText("-")
+
+        self.audio.setText("-")
+
+        self.export.setText("-")
+
         self.voice.setText("-")
-        self.rule.setText("-")
+
+        self.format.setText("-")
+
         self.status.setText("-")
 
     def load(self, project):
 
-        self.name.setText(project.name)
+        self.name.setText(
+            project.name
+        )
 
-        self.engine.setText(
-            project.config.engine or "-"
+        self.text.setText(
+            str(project.input_dir)
+        )
+
+        self.audio.setText(
+            str(project.output_dir)
+        )
+
+        self.export.setText(
+            str(project.path / "export")
         )
 
         self.voice.setText(
             project.config.voice or "-"
         )
 
-        self.rule.setText(
-            project.config.rule or "-"
+        self.format.setText(
+            project.config.output_format
         )
 
-        self.status.setText(project.status)
+        self.status.setText(
+            project.status
+        )

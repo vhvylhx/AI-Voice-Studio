@@ -17,6 +17,8 @@ from models.generate_job import GenerateJob
 from services.text_service import TextService
 from services.generate_service import GenerateService
 from services.queue_worker import QueueWorker
+from services.engine_service import EngineService
+from services.app_events import AppEvents
 
 from widgets.audio_toolbar import AudioToolbar
 from widgets.audio_detail import AudioDetail
@@ -33,6 +35,8 @@ class AudioPage(QWidget):
         self.text_service = TextService()
 
         self.generate_service = GenerateService()
+
+        self.engine_service = EngineService()
 
         self.thread = None
 
@@ -95,6 +99,14 @@ class AudioPage(QWidget):
             self.refresh
         )
 
+        self.toolbar.voice_combo.currentTextChanged.connect(
+            self.change_voice
+        )
+
+        self.toolbar.engine_combo.currentTextChanged.connect(
+            self.change_engine
+        )
+
         self.file_list.selection_changed.connect(
             self.update_summary
         )
@@ -131,10 +143,53 @@ class AudioPage(QWidget):
 
         project = AppContext.current_project.get()
 
+        self.toolbar.voice_combo.blockSignals(
+            True
+        )
+
+        self.toolbar.voice_combo.clear()
+
+        for name in AppContext.voice_service.list():
+
+            self.toolbar.voice_combo.addItem(
+                name
+            )
+
+        if project.config.voice:
+
+            self.toolbar.voice_combo.setCurrentText(
+                project.config.voice
+            )
+
+        self.toolbar.voice_combo.blockSignals(
+            False
+        )
+
+        self.toolbar.engine_combo.blockSignals(
+            True
+        )
+
+        self.toolbar.engine_combo.clear()
+
+        for engine in self.engine_service.all():
+
+            self.toolbar.engine_combo.addItem(
+                engine.info().id
+            )
+
+        if project.config.engine:
+
+            self.toolbar.engine_combo.setCurrentText(
+                project.config.engine
+            )
+
+        self.toolbar.engine_combo.blockSignals(
+            False
+        )
+
         self.detail.project.setText(
             project.name
         )
-
         if AppContext.current_voice.has_voice():
 
             voice = AppContext.current_voice.get()
@@ -208,7 +263,7 @@ class AudioPage(QWidget):
                     text_file=file.path,
                     output_file=project.output_dir / f"{file.name}.wav",
                     voice=voice,
-                    engine=voice.config.engine,
+                    engine=project.config.engine,
                 )
             )
 
@@ -283,6 +338,7 @@ class AudioPage(QWidget):
 
         self.thread.start()
 
+## ===== KẾT THÚC PART 2 =====
     def update_progress(self, job):
 
         queue = AppContext.queue_service
@@ -343,7 +399,6 @@ class AudioPage(QWidget):
 
         self.worker = None
 
-
     def stop_generate(self):
 
         if self.worker is None or self.thread is None:
@@ -366,7 +421,6 @@ class AudioPage(QWidget):
         self.detail.set_status(
             "Đã dừng"
         )
-
 
     def clear_queue(self):
 
@@ -392,10 +446,82 @@ class AudioPage(QWidget):
             "Đã xóa hàng đợi"
         )
 
-    def on_project_changed(self, project):
+    def change_voice(
+        self,
+        name
+    ):
+
+        if not name:
+            return
+
+        project = AppContext.current_project.get()
+
+        voice = AppContext.voice_service.load(
+            name
+        )
+
+        AppContext.current_voice.set(
+            voice
+        )
+
+        project.config.voice = name
+
+        AppContext.project_service.save(
+            project
+        )
+
+        self.detail.voice.setText(
+            voice.name
+        )
+
+        self.detail.engine.setText(
+            project.config.engine or "-"
+        )
+
+        AppEvents.voice_changed(
+            voice
+        )
+
+    def change_engine(
+        self,
+        engine_id
+    ):
+
+        if not engine_id:
+            return
+
+        project = AppContext.current_project.get()
+
+        project.config.engine = engine_id
+
+        AppContext.project_service.save(
+            project
+        )
+
+        self.engine_service.select(
+            engine_id
+        )
+
+        self.detail.engine.setText(
+            engine_id
+        )
+
+        AppEvents.engine_changed(
+            AppContext.engine_manager.current().info()
+        )
+
+    def on_project_changed(
+        self,
+        project
+    ):
 
         self.refresh()
 
-    def on_voice_changed(self, voice):
+    def on_voice_changed(
+        self,
+        voice
+    ):
 
         self.refresh()
+
+## ===== KẾT THÚC FILE =====

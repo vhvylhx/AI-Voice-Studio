@@ -11,6 +11,10 @@ output/
 
 voices/
 
+cache/
+
+config/engines.json
+
 temp/
 
 logs/

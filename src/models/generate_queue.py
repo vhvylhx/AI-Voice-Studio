@@ -10,6 +10,10 @@ class GenerateQueue:
         default_factory=list
     )
 
+    #
+    # CRUD
+    #
+
     def add(self, job):
 
         self.jobs.append(job)
@@ -24,38 +28,129 @@ class GenerateQueue:
 
             self.jobs.remove(job)
 
+    #
+    # Query
+    #
+
     def waiting(self):
 
-        return [
-            job
-            for job in self.jobs
-            if job.status == "waiting"
-        ]
+        return self.find(
+            "waiting"
+        )
+
+    def preparing(self):
+
+        return self.find(
+            "preparing"
+        )
+
+    def generating(self):
+
+        return self.find(
+            "generating"
+        )
 
     def running(self):
 
-        return [
-            job
-            for job in self.jobs
-            if job.status == "running"
-        ]
+        return self.find(
+            "running"
+        )
+
+    def paused(self):
+
+        return self.find(
+            "paused"
+        )
 
     def finished(self):
 
-        return [
-            job
-            for job in self.jobs
-            if job.status == "finished"
-        ]
+        return self.find(
+            "finished"
+        )
 
     def failed(self):
 
+        return self.find(
+            "failed"
+        )
+
+    def cancelled(self):
+
+        return self.find(
+            "cancelled"
+        )
+
+    #
+    # Generic
+    #
+
+    def find(
+        self,
+        status,
+    ):
+
         return [
+
             job
+
             for job in self.jobs
-            if job.status == "failed"
+
+            if job.status == status
+
         ]
+
+    #
+    # Next Job
+    #
+
+    def next(self):
+
+        for job in self.jobs:
+
+            if job.status == "waiting":
+
+                return job
+
+        return None
+
+    #
+    # Progress
+    #
+
+    def total(self):
+
+        return len(
+            self.jobs
+        )
+
+    def completed(self):
+
+        return len(
+            self.finished()
+        )
+
+    def progress(self):
+
+        if not self.jobs:
+
+            return 0
+
+        return int(
+
+            self.completed()
+
+            * 100
+
+            / len(self.jobs)
+
+        )
+
+    #
+    # Python
+    #
 
     def __len__(self):
 
-        return len(self.jobs)
+        return len(
+            self.jobs
+        )

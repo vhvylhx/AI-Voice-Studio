@@ -2,10 +2,30 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
+SRC = ROOT / "src"
+
+sys.path.insert(0, str(SRC))
 
 from services import workspace_service
 
-print(workspace_service.scan())
+summary = workspace_service.scan()
 
-print(workspace_service.get_cache())
+print(summary)
+
+assert "voices" in summary
+assert "docx" in summary
+assert "txt" in summary
+assert "audio" in summary
+
+workspace = Path(
+    workspace_service.get_workspace()
+)
+
+cache = Path(
+    workspace_service.get_cache()
+)
+
+print(cache)
+
+assert workspace.exists()
+assert cache.exists()

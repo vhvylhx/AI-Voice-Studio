@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QSplitter,
     QInputDialog,
     QMessageBox,
+    QFileDialog,
 )
 
 from core.app_context import AppContext
@@ -52,7 +53,10 @@ class VoicePage(QWidget):
             self.detail
         )
 
-        splitter.setSizes([500, 300])
+        splitter.setSizes([
+            500,
+            300,
+        ])
 
         root.addWidget(
             splitter
@@ -68,6 +72,14 @@ class VoicePage(QWidget):
 
         self.toolbar.delete_button.clicked.connect(
             self.delete_voice
+        )
+
+        self.toolbar.train_button.clicked.connect(
+            self.train_voice
+        )
+
+        self.toolbar.preview_button.clicked.connect(
+            self.preview_voice
         )
 
         self.toolbar.refresh_button.clicked.connect(
@@ -91,14 +103,6 @@ class VoicePage(QWidget):
 
         AppContext.current_voice.clear()
 
-        if not AppContext.current_project.has_project():
-
-            self.list.load([])
-
-            self.detail.clear()
-
-            return
-
         voices = []
 
         for name in self.service.list():
@@ -111,13 +115,29 @@ class VoicePage(QWidget):
             voices
         )
 
+        if not AppContext.current_project.has_project():
+
+            self.detail.clear()
+
+            return
+
+        project = AppContext.current_project.get()
+
+        if project.config.voice:
+
+            for voice in voices:
+
+                if voice.name == project.config.voice:
+
+                    self.select_voice(
+                        voice
+                    )
+
+                    return
+
         self.detail.clear()
 
     def create_voice(self):
-
-        if not AppContext.current_project.has_project():
-
-            return
 
         name, ok = QInputDialog.getText(
             self,
@@ -179,6 +199,54 @@ class VoicePage(QWidget):
 
         self.refresh()
 
+    def train_voice(self):
+
+        if self.current_voice is None:
+            return
+
+        folder = QFileDialog.getExistingDirectory(
+            self,
+            "Chọn Dataset"
+        )
+
+        if not folder:
+            return
+
+        AppContext.training_service.prepare_dataset(
+            folder,
+            self.current_voice,
+        )
+
+        self.detail.load(
+            self.current_voice
+        )
+
+        QMessageBox.information(
+            self,
+            "Hoàn thành",
+            "Dataset đã được chuẩn bị."
+        )
+
+    def preview_voice(self):
+
+        if self.current_voice is None:
+            return
+
+        AppContext.training_service.create_preview(
+            self.current_voice
+        )
+
+        self.detail.load(
+            self.current_voice
+        )
+
+        QMessageBox.information(
+            self,
+            "Preview",
+            "Đã tạo preview."
+        )
+
+## ===== KẾT THÚC PART 1 =====
     def delete_voice(self):
 
         if self.current_voice is None:
@@ -207,6 +275,16 @@ class VoicePage(QWidget):
             voice
         )
 
+        if AppContext.current_project.has_project():
+
+            project = AppContext.current_project.get()
+
+            project.config.voice = voice.name
+
+            AppContext.project_service.save(
+                project
+            )
+
         self.detail.load(
             voice
         )
@@ -215,6 +293,12 @@ class VoicePage(QWidget):
             voice
         )
 
-    def on_project_changed(self, project):
+    def on_project_changed(
+        self,
+        project
+    ):
 
         self.refresh()
+
+
+## ===== KẾT THÚC FILE =====

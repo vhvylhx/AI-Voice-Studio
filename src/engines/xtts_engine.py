@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from engines.base_engine import BaseEngine
-from engines.engine_info import EngineInfo
+from models.engine_info import EngineInfo
 
 
 class XTTSEngine(BaseEngine):
@@ -30,7 +30,13 @@ class XTTSEngine(BaseEngine):
     def initialize(self):
 
         """
-        Sprint sau sẽ load model XTTS tại đây.
+        TODO
+
+        Sprint sau sẽ:
+
+        - Load XTTS model
+        - Load CUDA
+        - Load tokenizer
         """
 
         self.initialized = True
@@ -47,7 +53,55 @@ class XTTSEngine(BaseEngine):
     ):
 
         raise NotImplementedError(
-            "XTTS chưa được cài đặt."
+            "XTTS Generate chưa được cài đặt."
+        )
+
+    def validate_dataset(
+        self,
+        dataset,
+    ):
+
+        if not dataset:
+
+            raise Exception(
+                "Dataset rỗng."
+            )
+
+        items = dataset.get(
+            "items",
+            [],
+        )
+
+        if len(items) < 5:
+
+            raise Exception(
+                "Dataset quá ít dữ liệu."
+            )
+
+        return True
+
+    def train(
+        self,
+        voice,
+        dataset,
+    ):
+
+        self.validate_dataset(
+            dataset
+        )
+
+        raise NotImplementedError(
+            "XTTS Train chưa được cài đặt."
+        )
+
+    def create_preview(
+        self,
+        voice,
+        output_file,
+    ):
+
+        raise NotImplementedError(
+            "Preview chưa được cài đặt."
         )
 
     def stop(self):

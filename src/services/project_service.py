@@ -25,27 +25,17 @@ class ProjectService:
             exist_ok=True
         )
 
-        (project / "text").mkdir(exist_ok=True)
-        (project / "audio").mkdir(exist_ok=True)
-        (project / "voices").mkdir(exist_ok=True)
-        (project / "export").mkdir(exist_ok=True)
-        (project / "cache").mkdir(exist_ok=True)
-        (project / "logs").mkdir(exist_ok=True)
-
         config = ProjectConfig()
 
-        with open(
-            project / "project.json",
-            "w",
-            encoding="utf-8"
-        ) as f:
+        self.ensure_folders(
+            project,
+            config,
+        )
 
-            json.dump(
-                config.__dict__,
-                f,
-                indent=4,
-                ensure_ascii=False
-            )
+        self.save_config(
+            project,
+            config,
+        )
 
         return self.load(name)
 
@@ -59,20 +49,62 @@ class ProjectService:
             encoding="utf-8"
         ) as f:
 
-            config = ProjectConfig(
-                **json.load(f)
+            config = ProjectConfig.from_dict(
+                json.load(f)
             )
+
+        self.ensure_folders(
+            project,
+            config,
+        )
 
         return ProjectModel(
             name=name,
             path=project,
-            input_dir=project / "text",
-            output_dir=project / "audio",
-            voices_dir=project / "voices",
+            input_dir=project / config.text_folder,
+            output_dir=project / config.audio_folder,
             cache_dir=project / "cache",
             log_dir=project / "logs",
             config=config
         )
+
+    def save(self, project):
+
+        self.save_config(
+            project.path,
+            project.config,
+        )
+
+    def save_config(
+        self,
+        project,
+        config,
+    ):
+
+        with open(
+            project / "project.json",
+            "w",
+            encoding="utf-8"
+        ) as f:
+
+            json.dump(
+                config.to_dict(),
+                f,
+                indent=4,
+                ensure_ascii=False
+            )
+
+    def ensure_folders(
+        self,
+        project,
+        config,
+    ):
+
+        (project / config.text_folder).mkdir(exist_ok=True)
+        (project / config.audio_folder).mkdir(exist_ok=True)
+        (project / config.export_folder).mkdir(exist_ok=True)
+        (project / "cache").mkdir(exist_ok=True)
+        (project / "logs").mkdir(exist_ok=True)
 
     def list(self):
 
@@ -94,7 +126,9 @@ class ProjectService:
 
     def exists(self, name: str):
 
-        return (self.root / name).exists()
+        return (
+            self.root / name
+        ).exists()
 
     def delete(self, name: str):
 

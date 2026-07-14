@@ -2,6 +2,8 @@ from PySide6.QtWidgets import (
     QWidget,
     QHBoxLayout,
     QPushButton,
+    QLabel,
+    QComboBox,
 )
 
 
@@ -13,8 +15,46 @@ class AudioToolbar(QWidget):
 
         layout = QHBoxLayout(self)
 
+        layout.addWidget(
+            QLabel("Project")
+        )
+
+        self.project_combo = QComboBox()
+
+        self.project_combo.addItem(
+            "Không chọn"
+        )
+
+        layout.addWidget(
+            self.project_combo
+        )
+
+        layout.addSpacing(
+            15
+        )
+
+        layout.addWidget(
+            QLabel("Voice")
+        )
+
+        self.voice_combo = QComboBox()
+
+        layout.addWidget(
+            self.voice_combo
+        )
+
+        layout.addStretch()
+
+        self.paste_button = QPushButton(
+            "📋 Paste"
+        )
+
+        self.open_button = QPushButton(
+            "📂 Open TXT"
+        )
+
         self.add_queue_button = QPushButton(
-            "➕ Thêm Queue"
+            "➕ Queue"
         )
 
         self.generate_button = QPushButton(
@@ -26,11 +66,19 @@ class AudioToolbar(QWidget):
         )
 
         self.clear_queue_button = QPushButton(
-            "🗑 Xóa Queue"
+            "🗑 Queue"
         )
 
         self.refresh_button = QPushButton(
-            "🔄 Làm mới"
+            "🔄"
+        )
+
+        layout.addWidget(
+            self.paste_button
+        )
+
+        layout.addWidget(
+            self.open_button
         )
 
         layout.addWidget(
@@ -48,8 +96,6 @@ class AudioToolbar(QWidget):
         layout.addWidget(
             self.clear_queue_button
         )
-
-        layout.addStretch()
 
         layout.addWidget(
             self.refresh_button

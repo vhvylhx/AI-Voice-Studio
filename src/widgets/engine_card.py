@@ -25,7 +25,9 @@ class EngineCard(QFrame):
 
         layout = QVBoxLayout(self)
 
-        title = QLabel(info.name)
+        title = QLabel(
+            info.name
+        )
 
         title.setStyleSheet("""
             font-size:18px;
@@ -46,10 +48,22 @@ class EngineCard(QFrame):
 
         current = QLabel()
 
+        button = QPushButton(
+            "Chọn Engine"
+        )
+
         if self.service.current_id() == info.id:
 
             current.setText(
                 "🟢 Đang sử dụng"
+            )
+
+            button.setEnabled(
+                False
+            )
+
+            button.setText(
+                "Đang sử dụng"
             )
 
         else:
@@ -58,18 +72,34 @@ class EngineCard(QFrame):
                 "⚪ Chưa chọn"
             )
 
-        button = QPushButton(
-            "Chọn Engine"
+            button.clicked.connect(
+                lambda: self.selected.emit(
+                    info.id
+                )
+            )
+
+        layout.addWidget(
+            title
         )
 
-        button.clicked.connect(
-            lambda: self.selected.emit(info.id)
+        layout.addWidget(
+            version
         )
 
-        layout.addWidget(title)
-        layout.addWidget(version)
-        layout.addWidget(author)
-        layout.addWidget(desc)
-        layout.addWidget(current)
+        layout.addWidget(
+            author
+        )
+
+        layout.addWidget(
+            desc
+        )
+
+        layout.addWidget(
+            current
+        )
+
         layout.addStretch()
-        layout.addWidget(button)
+
+        layout.addWidget(
+            button
+        )

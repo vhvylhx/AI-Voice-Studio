@@ -15,8 +15,6 @@ class ProjectModel:
 
     output_dir: Path
 
-    voices_dir: Path
-
     cache_dir: Path
 
     log_dir: Path
@@ -28,3 +26,18 @@ class ProjectModel:
     status: str = "idle"
 
     progress: int = 0
+
+    @property
+    def export_dir(self):
+
+        return self.path / self.config.export_folder
+
+    @property
+    def text_dir(self):
+
+        return self.input_dir
+
+    @property
+    def audio_dir(self):
+
+        return self.output_dir

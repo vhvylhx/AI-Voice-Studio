@@ -17,27 +17,61 @@ class ProjectCard(QFrame):
 
         self.project = project
 
-        self.setObjectName("ProjectCard")
+        self.setObjectName(
+            "ProjectCard"
+        )
 
         layout = QVBoxLayout(self)
 
-        self.title = QLabel(project.name)
+        self.title = QLabel(
+            f"📁 {project.name}"
+        )
 
-        self.engine = QLabel(
-            f"Engine : {project.config.engine or '-'}"
+        self.text = QLabel(
+            f"📄 {project.input_dir}"
+        )
+
+        self.audio = QLabel(
+            f"🎵 {project.output_dir}"
         )
 
         self.voice = QLabel(
-            f"Voice : {project.config.voice or '-'}"
+            f"🎤 {project.config.voice or '-'}"
         )
 
-        self.open_button = QPushButton("Mở Project")
+        self.format = QLabel(
+            f"💿 {project.config.output_format}"
+        )
 
-        layout.addWidget(self.title)
-        layout.addWidget(self.engine)
-        layout.addWidget(self.voice)
+        self.open_button = QPushButton(
+            "Mở Project"
+        )
+
+        layout.addWidget(
+            self.title
+        )
+
+        layout.addWidget(
+            self.text
+        )
+
+        layout.addWidget(
+            self.audio
+        )
+
+        layout.addWidget(
+            self.voice
+        )
+
+        layout.addWidget(
+            self.format
+        )
+
         layout.addStretch()
-        layout.addWidget(self.open_button)
+
+        layout.addWidget(
+            self.open_button
+        )
 
         self.open_button.clicked.connect(
             self.emit_clicked
@@ -45,4 +79,6 @@ class ProjectCard(QFrame):
 
     def emit_clicked(self):
 
-        self.clicked.emit(self.project)
+        self.clicked.emit(
+            self.project
+        )

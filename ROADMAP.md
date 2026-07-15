@@ -86,6 +86,11 @@ Có thể clone một giọng và tạo Audio bằng GPT-SoVITS.
 - [x] Audio Slice
 - [x] GPT-SoVITS Metadata
 - [x] Quality-First Alignment
+- [x] Text ↔ MP3 Matching Rules
+- [x] Dataset Health
+- [x] Dataset Workflow
+- [x] Dataset Repair
+- [x] Dataset Review
 
 ---
 
@@ -162,6 +167,30 @@ Có thể clone một giọng và tạo Audio bằng GPT-SoVITS.
 
 ---
 
+# Tài liệu duy trì ngữ cảnh
+
+- [x] AGENTS.md
+- [x] ROADMAP.md
+- [x] Architecture.md
+- [x] CURRENT_SPRINT.md
+- [x] DECISIONS.md
+- [x] CHANGELOG.md
+
+---
+
+# Ưu tiên tiếp theo
+
+- [x] Text ↔ MP3 Matching Rules
+- [x] Dataset Health
+- [x] Dataset Workflow
+- [x] Dataset Repair
+- [x] Dataset Review
+- [ ] Job Resume
+- [ ] Progress UI
+- [ ] AVS-014 GPT-SoVITS Training
+
+---
+
 # Tiến độ Sprint
 
 ## Hoàn thành
@@ -181,17 +210,23 @@ Có thể clone một giọng và tạo Audio bằng GPT-SoVITS.
 - [x] AVS-013 Audio Alignment Pipeline
 - [x] AVS-013.5 Faster-Whisper Runtime Validation
 - [x] AVS-013.6 Quality-First Dataset Alignment
+- [x] AVS-013.7 Text ↔ MP3 Matching Rules
+- [x] AVS-013.8 Dataset Health
+- [x] AVS-013.9 Dataset Workflow
+- [x] AVS-013.10 Dataset Repair
+- [x] AVS-013.11 Dataset Review
 
 ---
 
 ## Đang thực hiện
 
-- [ ] AVS-014 GPT-SoVITS Training
+- [ ] Chốt kết quả Dataset Review trước AVS-014
 
 ---
 
 ## Tiếp theo
 
+- [ ] AVS-014 GPT-SoVITS Training
 - [ ] AVS-015 Voice Preview
 - [ ] AVS-016 Batch Generate
 - [ ] AVS-017 API

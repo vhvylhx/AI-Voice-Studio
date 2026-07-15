@@ -167,6 +167,11 @@ class DatasetSegmentationService:
             "suspicious": suspicious,
             "missing_text": missing_text,
             "missing_audio": missing_audio,
+            "dataset": dataset,
+            "health": dataset.get(
+                "health",
+                {},
+            ),
             "manifest": manifest,
             "report": report,
         }
@@ -402,7 +407,15 @@ class DatasetSegmentationService:
                         [],
                     )
                 ),
+                "dataset_health": dataset.get(
+                    "health",
+                    {},
+                ),
             },
+            "dataset_health": dataset.get(
+                "health",
+                {},
+            ),
             "valid": self.strip_content(
                 valid
             ),

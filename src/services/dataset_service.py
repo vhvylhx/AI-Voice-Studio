@@ -1,10 +1,12 @@
 from pathlib import Path
 import hashlib
 import json
-import re
 import shutil
 import xml.etree.ElementTree as ET
 import zipfile
+import re
+
+from services.text_matching_service import TextMatchingService
 
 
 class DatasetService:
@@ -18,10 +20,6 @@ class DatasetService:
         ".docx",
     )
 
-    CHINESE_RE = re.compile(
-        r"[\u3400-\u9fff]"
-    )
-
     DEFAULT_OPTIONS = {
         "remove_ads": False,
         "remove_chapter_title": False,
@@ -32,6 +30,12 @@ class DatasetService:
     def __init__(self):
 
         self.workspace = None
+
+        self.matching = TextMatchingService()
+
+        self.last_total_text = 0
+
+        self.last_total_audio = 0
 
     def load(self):
 
@@ -71,10 +75,7 @@ class DatasetService:
                     "Dataset phải là Folder hoặc ZIP."
                 )
 
-            root = (
-                output_dir
-                / "_source"
-            )
+            root = output_dir / "_source"
 
             self.extract_zip(
                 source,
@@ -85,13 +86,43 @@ class DatasetService:
 
             root = source
 
-        result = self.scan(
+        return self.scan(
             root,
             output_dir=output_dir,
             options=options,
         )
 
-        return result
+    def repair(
+        self,
+        dataset_result,
+        output_dir,
+        config=None,
+    ):
+
+        from services.dataset_repair_service import DatasetRepairService
+
+        return DatasetRepairService().repair(
+            dataset_result,
+            output_dir,
+            config=config,
+        )
+
+    def review(
+        self,
+        dataset_result=None,
+        repair_report=None,
+        output_dir=None,
+        config=None,
+    ):
+
+        from services.dataset_review_service import DatasetReviewService
+
+        return DatasetReviewService().create_review(
+            dataset_result=dataset_result,
+            repair_report=repair_report,
+            output_dir=output_dir,
+            config=config,
+        )
 
     def extract_zip(
         self,
@@ -174,6 +205,14 @@ class DatasetService:
             self.AUDIO_EXTENSIONS,
         )
 
+        self.last_total_text = len(
+            text_files
+        )
+
+        self.last_total_audio = len(
+            audio_files
+        )
+
         errors = []
 
         items = []
@@ -194,17 +233,9 @@ class DatasetService:
                 record
             )
 
-            if record["errors"]:
-
-                errors.extend(
-                    record["errors"]
-                )
-
-        valid_text_records = [
-            record
-            for record in text_records
-            if not record["errors"]
-        ]
+            errors.extend(
+                record["errors"]
+            )
 
         audio_records = []
 
@@ -219,17 +250,29 @@ class DatasetService:
                 record
             )
 
-            if record["errors"]:
+            errors.extend(
+                record["errors"]
+            )
 
-                errors.extend(
-                    record["errors"]
-                )
+        valid_text_records = self.remove_duplicates(
+            [
+                record
+                for record in text_records
+                if not record["errors"]
+            ],
+            "text",
+            errors,
+        )
 
-        valid_audio_records = [
-            record
-            for record in audio_records
-            if not record["errors"]
-        ]
+        valid_audio_records = self.remove_duplicates(
+            [
+                record
+                for record in audio_records
+                if not record["errors"]
+            ],
+            "audio",
+            errors,
+        )
 
         for text_record in valid_text_records:
 
@@ -244,7 +287,8 @@ class DatasetService:
                     self.error(
                         text_record["file"],
                         "missing_audio",
-                        "File text thiếu audio."
+                        "Không tìm thấy audio cho text.",
+                        "Kiểm tra tên file hoặc bổ sung MP3 cùng số chương.",
                     )
                 )
 
@@ -274,7 +318,8 @@ class DatasetService:
                 self.error(
                     audio_record["file"],
                     "missing_text",
-                    "File audio thiếu text."
+                    "Không tìm thấy text cho audio.",
+                    "Kiểm tra tên file hoặc bổ sung TXT/DOCX cùng số chương.",
                 )
             )
 
@@ -339,15 +384,29 @@ class DatasetService:
 
         raw_content = ""
 
-        if self.has_chinese(
-            file.name
+        if self.is_test_file(
+            file
         ):
 
             errors.append(
                 self.error(
                     file,
-                    "chinese_filename",
-                    "Tên file text còn ký tự Trung."
+                    "test_version",
+                    "File text có dấu hiệu test, không ghép tự động.",
+                    "Đổi tên nếu đây là dữ liệu thật; nếu là test thì giữ ngoài dataset train.",
+                )
+            )
+
+        if self.match_info(
+            file
+        )["chapter"] is None:
+
+            errors.append(
+                self.error(
+                    file,
+                    "invalid_filename",
+                    "Không lấy được số chương từ tên file text.",
+                    "Đổi tên file để chứa số chương, ví dụ 171.txt hoặc Chương 171.txt.",
                 )
             )
 
@@ -359,20 +418,18 @@ class DatasetService:
                 self.error(
                     file,
                     "empty_file",
-                    "File text rỗng."
+                    "File text rỗng.",
+                    "Kiểm tra nội dung file text.",
                 )
             )
 
-            return {
-                "file": file,
-                "relative_path": self.relative_path(
-                    file,
-                    root,
-                ),
-                "content": content,
-                "raw_content": raw_content,
-                "errors": errors,
-            }
+            return self.text_record(
+                file,
+                root,
+                content,
+                raw_content,
+                errors,
+            )
 
         try:
 
@@ -386,20 +443,18 @@ class DatasetService:
                 self.error(
                     file,
                     "broken_file",
-                    f"Không đọc được file text: {e}"
+                    f"Không đọc được file text: {e}",
+                    "Kiểm tra file có hỏng hoặc sai định dạng không.",
                 )
             )
 
-            return {
-                "file": file,
-                "relative_path": self.relative_path(
-                    file,
-                    root,
-                ),
-                "content": content,
-                "raw_content": raw_content,
-                "errors": errors,
-            }
+            return self.text_record(
+                file,
+                root,
+                content,
+                raw_content,
+                errors,
+            )
 
         content = self.clean_text(
             raw_content,
@@ -412,21 +467,41 @@ class DatasetService:
                 self.error(
                     file,
                     "empty_content",
-                    "Nội dung text rỗng."
+                    "Nội dung text rỗng.",
+                    "Kiểm tra nội dung sau khi đọc TXT/DOCX.",
                 )
             )
 
-        if self.has_chinese(
-            content
+        if self.matching.filename_content_mismatch(
+            file,
+            content,
         ):
 
             errors.append(
                 self.error(
                     file,
-                    "chinese_content",
-                    "Nội dung text còn ký tự Trung."
+                    "filename_content_mismatch",
+                    "Số chương trong tên file không khớp nội dung text.",
+                    "Kiểm tra lại tên file và nội dung chương; không tự ghép sang chương khác.",
                 )
             )
+
+        return self.text_record(
+            file,
+            root,
+            content,
+            raw_content,
+            errors,
+        )
+
+    def text_record(
+        self,
+        file,
+        root,
+        content,
+        raw_content,
+        errors,
+    ):
 
         return {
             "file": file,
@@ -447,15 +522,29 @@ class DatasetService:
 
         errors = []
 
-        if self.has_chinese(
-            file.name
+        if self.is_test_file(
+            file
         ):
 
             errors.append(
                 self.error(
                     file,
-                    "chinese_filename",
-                    "Tên file audio còn ký tự Trung."
+                    "test_version",
+                    "File audio có dấu hiệu test, không ghép tự động.",
+                    "Đổi tên nếu đây là dữ liệu thật; nếu là test thì giữ ngoài dataset train.",
+                )
+            )
+
+        if self.match_info(
+            file
+        )["chapter"] is None:
+
+            errors.append(
+                self.error(
+                    file,
+                    "invalid_filename",
+                    "Không lấy được số chương từ tên file audio.",
+                    "Đổi tên file để chứa số chương, ví dụ 171.mp3.",
                 )
             )
 
@@ -467,7 +556,8 @@ class DatasetService:
                 self.error(
                     file,
                     "empty_file",
-                    "File audio rỗng."
+                    "File audio rỗng.",
+                    "Kiểm tra lại file MP3.",
                 )
             )
 
@@ -487,7 +577,8 @@ class DatasetService:
                 self.error(
                     file,
                     "broken_file",
-                    f"Không đọc được file audio: {e}"
+                    f"Không đọc được file audio: {e}",
+                    "Kiểm tra file có hỏng hoặc quyền đọc file.",
                 )
             )
 
@@ -653,47 +744,54 @@ class DatasetService:
             lines
         ).strip()
 
+    def remove_duplicates(
+        self,
+        records,
+        kind,
+        errors,
+    ):
+
+        result = []
+
+        seen = {}
+
+        for record in records:
+
+            key = self.matching.duplicate_key(
+                record["file"],
+                kind,
+            )
+
+            if key in seen:
+
+                errors.append(
+                    self.error(
+                        record["file"],
+                        "duplicate",
+                        f"File {kind} trùng khóa ghép với file khác.",
+                        "Giữ lại một file đúng, đổi tên hoặc đưa file trùng ra khỏi dataset.",
+                    )
+                )
+
+                continue
+
+            seen[key] = record
+
+            result.append(
+                record
+            )
+
+        return result
+
     def match_audio(
         self,
         text_file,
         audio_records,
     ):
 
-        text_key = self.match_key(
-            text_file
-        )
-
-        matched = []
-
-        for audio_record in audio_records:
-
-            audio_key = self.match_key(
-                audio_record["file"]
-            )
-
-            if audio_key == text_key:
-
-                matched.append(
-                    audio_record
-                )
-
-                continue
-
-            if audio_key.startswith(
-                f"{text_key}_"
-            ) or audio_key.startswith(
-                f"{text_key}-"
-            ) or audio_key.startswith(
-                f"{text_key} "
-            ):
-
-                matched.append(
-                    audio_record
-                )
-
-        return sorted(
-            matched,
-            key=lambda x: str(x["file"]).lower(),
+        return self.matching.match_audio(
+            text_file,
+            audio_records,
         )
 
     def match_key(
@@ -701,7 +799,27 @@ class DatasetService:
         file,
     ):
 
-        return Path(file).stem.strip().lower()
+        return self.matching.match_key(
+            file
+        )
+
+    def match_info(
+        self,
+        file,
+    ):
+
+        return self.matching.chapter_info(
+            file
+        )
+
+    def audio_match_sort_key(
+        self,
+        audio_record,
+    ):
+
+        return self.matching.audio_sort_key(
+            audio_record
+        )
 
     def create_item(
         self,
@@ -733,6 +851,18 @@ class DatasetService:
             "text_length": len(
                 content
             ),
+            "match_rule": audio_record.get(
+                "match_rule",
+                "",
+            ),
+            "match_key": audio_record.get(
+                "match_key",
+                "",
+            ),
+            "audio_part": audio_record.get(
+                "audio_part",
+                None,
+            ),
         }
 
     def create_result(
@@ -744,6 +874,11 @@ class DatasetService:
         errors,
     ):
 
+        health = self.create_health(
+            items,
+            errors,
+        )
+
         summary = {
             "valid_pairs": len(
                 items
@@ -751,23 +886,26 @@ class DatasetService:
             "error_count": len(
                 errors
             ),
+            "health": health,
         }
 
         manifest = {
-            "schema_version": 1,
+            "schema_version": 2,
             "source_root": str(
                 Path(root)
             ),
             "options": options,
             "summary": summary,
+            "health": health,
             "items": self.serialize_items(
                 items
             ),
         }
 
         report = {
-            "schema_version": 1,
+            "schema_version": 2,
             "summary": summary,
+            "health": health,
             "errors": errors,
             "manifest": "manifest.json",
             "metadata": "metadata.list",
@@ -783,9 +921,82 @@ class DatasetService:
             "items": items,
             "errors": errors,
             "summary": summary,
+            "health": health,
             "manifest": manifest,
             "report": report,
         }
+
+    def create_health(
+        self,
+        items,
+        errors,
+    ):
+
+        counts = {
+            "total_mp3": self.last_total_audio,
+            "total_text": self.last_total_text,
+            "matched": len(
+                items
+            ),
+            "unmatched": 0,
+            "filename_content_mismatch": 0,
+            "duplicate": 0,
+            "missing_audio": 0,
+            "missing_text": 0,
+            "invalid_filename": 0,
+            "test_version": 0,
+            "empty_file": 0,
+            "empty_content": 0,
+            "broken_file": 0,
+            "usable_percent": 0.0,
+            "blocking_errors": 0,
+        }
+
+        for error in errors:
+
+            code = error.get(
+                "code",
+                "",
+            )
+
+            if code in counts:
+
+                counts[code] += 1
+
+        counts["unmatched"] = (
+            counts["missing_audio"]
+            + counts["missing_text"]
+        )
+
+        counts["blocking_errors"] = sum(
+            1
+            for error in errors
+            if error.get(
+                "code"
+            )
+            in (
+                "missing_audio",
+                "missing_text",
+                "test_version",
+                "invalid_filename",
+                "filename_content_mismatch",
+                "duplicate",
+                "empty_file",
+                "empty_content",
+                "broken_file",
+            )
+        )
+
+        if counts["total_mp3"]:
+
+            counts["usable_percent"] = round(
+                counts["matched"]
+                / counts["total_mp3"]
+                * 100,
+                2,
+            )
+
+        return counts
 
     def serialize_items(
         self,
@@ -805,6 +1016,18 @@ class DatasetService:
                     "text_sha256": item["text_sha256"],
                     "content_sha256": item["content_sha256"],
                     "text_length": item["text_length"],
+                    "match_rule": item.get(
+                        "match_rule",
+                        "",
+                    ),
+                    "match_key": item.get(
+                        "match_key",
+                        "",
+                    ),
+                    "audio_part": item.get(
+                        "audio_part",
+                        None,
+                    ),
                 }
             )
 
@@ -836,22 +1059,18 @@ class DatasetService:
                 f"{item['audio_path']}|{item['content']}"
             )
 
-        (
-            output_dir
-            / "metadata.list"
-        ).write_text(
-            "\n".join(metadata),
+        (output_dir / "metadata.list").write_text(
+            "\n".join(
+                metadata
+            ),
             encoding="utf-8",
         )
 
         if result["errors"]:
 
-            (
-                output_dir
-                / "errors.log"
-            ).write_text(
+            (output_dir / "errors.log").write_text(
                 "\n".join(
-                    f"{error['file']} | {error['code']} | {error['message']}"
+                    f"{error['file']} | {error['code']} | {error['message']} | {error.get('suggestion', '')}"
                     for error in result["errors"]
                 ),
                 encoding="utf-8",
@@ -923,6 +1142,7 @@ class DatasetService:
         file,
         code,
         message,
+        suggestion="",
     ):
 
         return {
@@ -931,6 +1151,8 @@ class DatasetService:
             ),
             "code": code,
             "message": message,
+            "reason": message,
+            "suggestion": suggestion,
         }
 
     def relative_path(
@@ -999,15 +1221,13 @@ class DatasetService:
 
             return True
 
-    def has_chinese(
+    def is_test_file(
         self,
-        text,
+        file,
     ):
 
-        return bool(
-            self.CHINESE_RE.search(
-                text
-            )
+        return self.matching.is_test_file(
+            file
         )
 
     def is_chapter_title(

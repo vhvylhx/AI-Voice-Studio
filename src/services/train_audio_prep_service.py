@@ -9,6 +9,7 @@ from services.alignment_service import AlignmentSegment
 from services.alignment_service import AlignmentService
 from services.audio_service import AudioService
 from services.dataset_segmentation_service import DatasetSegmentationService
+from services.dataset_review_service import DatasetReviewService
 from services.runtime_service import RuntimeService
 
 
@@ -43,6 +44,7 @@ class TrainAudioPrepService:
         allow_fallback=False,
         quality_config=None,
         progress_callback=None,
+        review_report=None,
     ):
 
         config = self.create_quality_config(
@@ -94,6 +96,42 @@ class TrainAudioPrepService:
             dataset_dir,
             segmentation_dir,
         )
+
+        if self.dataset_health_has_errors(
+            segmentation,
+            review_report,
+        ):
+
+            report = self.create_dataset_health_blocked_report(
+                segmentation,
+                config,
+                review_report,
+            )
+
+            manifest = {
+                "schema_version": 2,
+                "summary": report["summary"],
+                "quality_config": report["quality_config"],
+                "valid_clips": [],
+                "suspicious_clips": [],
+            }
+
+            self.write_outputs(
+                output_dir,
+                manifest,
+                report,
+                [],
+                report["errors"],
+            )
+
+            return {
+                "valid": [],
+                "suspicious": [],
+                "errors": report["errors"],
+                "manifest": manifest,
+                "report": report,
+                "progress": self.progress_events,
+            }
 
         source_segments = segmentation.get(
             "valid",
@@ -243,6 +281,101 @@ class TrainAudioPrepService:
             "errors": errors,
             "manifest": manifest,
             "report": report,
+            "progress": self.progress_events,
+        }
+
+    def dataset_health_has_errors(
+        self,
+        segmentation,
+        review_report=None,
+    ):
+
+        health = segmentation.get(
+            "health",
+            {},
+        )
+
+        if (
+            health.get(
+                "blocking_errors",
+                0,
+            )
+            <= 0
+        ):
+
+            return False
+
+        if review_report is None:
+
+            return True
+
+        return not DatasetReviewService().can_train(
+            dataset_result=segmentation.get(
+                "dataset",
+                {},
+            ),
+            review_report=review_report,
+        )
+
+    def dataset_health_reviewed(
+        self,
+        segmentation,
+        review_report=None,
+    ):
+
+        return (
+            not self.dataset_health_has_errors(
+                segmentation,
+                review_report,
+            )
+        )
+
+    def create_dataset_health_blocked_report(
+        self,
+        segmentation,
+        config,
+        review_report=None,
+    ):
+
+        dataset = segmentation.get(
+            "dataset",
+            {},
+        )
+
+        errors = dataset.get(
+            "errors",
+            [],
+        )
+
+        health = segmentation.get(
+            "health",
+            {},
+        )
+
+        return {
+            "schema_version": 2,
+            "quality_config": config.to_dict(),
+            "summary": {
+                "valid_clips": 0,
+                "metadata_clips": 0,
+                "suspicious_clips": 0,
+                "errors": len(
+                    errors
+                ),
+                "valid_duration": 0,
+                "suspicious_duration": 0,
+                "sample_rate": config.sample_rate,
+                "source_segments": 0,
+                "dataset_health": health,
+                "dataset_review": review_report or {},
+                "blocked": True,
+                "block_reason": "dataset_health_failed",
+            },
+            "dataset_health": health,
+            "dataset_review": review_report or {},
+            "valid": [],
+            "suspicious": [],
+            "errors": errors,
             "progress": self.progress_events,
         }
 

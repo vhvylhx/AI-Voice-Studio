@@ -109,9 +109,9 @@ def make_source(
         parents=True,
     )
 
-    audio = source / "sample.mp3"
+    audio = source / "001.mp3"
 
-    text = source / "sample.txt"
+    text = source / "001.txt"
 
     text.write_text(
         text_content,

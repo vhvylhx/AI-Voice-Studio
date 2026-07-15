@@ -74,6 +74,8 @@ Hiện có:
 - WorkspaceService
 - VoiceService
 - DatasetService
+- DatasetRepairService
+- DatasetReviewService
 - DatasetSegmentationService
 - AlignmentService
 - TrainAudioPrepService
@@ -275,6 +277,18 @@ Manifest
 
 ↓
 
+Dataset Health
+
+↓
+
+Dataset Repair
+
+↓
+
+Dataset Review
+
+↓
+
 Segmentation
 
 ↓
@@ -296,6 +310,24 @@ Training
 Không sửa file gốc.
 
 Mọi dữ liệu sinh ra đều nằm trong cache.
+
+Dataset Repair:
+
+- Không sửa file gốc.
+- Chỉ repair lỗi an toàn trong cache/workspace output.
+- Duplicate được xử lý bằng cách giữ bản tốt nhất đã được DatasetService chọn và đưa bản trùng vào ignored.
+- Broken file, empty file, missing_audio, missing_text, filename_content_mismatch, test_version và invalid_filename mặc định bị skip/report để người dùng review.
+- Report sau repair gồm before, repaired, skipped, after và final_usable_percent.
+- Workflow chuẩn bị hai chế độ Auto Repair và Manual Review cho UI Sprint sau.
+
+Dataset Review:
+
+- Không sửa file gốc.
+- Sinh review_report.json trong cache/workspace output.
+- Review item gồm source_audio, source_text, reason, suggestion và status.
+- Status hợp lệ: pending, approved, rejected, ignored.
+- UI sau này có thể Approve All, Reject All, Ignore All và filter theo reason/code.
+- Dataset chỉ được đi tiếp khi blocking_errors = 0 hoặc toàn bộ blocking_errors đã được review.
 
 Audio Alignment dùng Faster-Whisper để lấy timestamp thật.
 
@@ -406,6 +438,39 @@ Generate Request gồm:
 - Text
 
 Không tạo API riêng cho từng Voice.
+
+---
+
+# Project Memory
+
+Project Memory là bộ tài liệu giúp đóng/mở lại dự án, đổi máy hoặc đổi phiên Codex mà vẫn giữ đúng ngữ cảnh.
+
+- AGENTS.md: quy tắc làm việc.
+- ROADMAP.md: tiến độ dài hạn.
+- CURRENT_SPRINT.md: trạng thái ngắn hạn và task tiếp theo.
+- docs/DECISIONS.md: quyết định kiến trúc dài hạn.
+- CHANGELOG.md: lịch sử thay đổi theo Sprint.
+- Git: checkpoint code.
+
+Quy trình khôi phục ngữ cảnh:
+
+Codex mới
+
+↓
+
+Đọc tài liệu dự án
+
+↓
+
+Đọc file liên quan task
+
+↓
+
+Kiểm tra Git status
+
+↓
+
+Tiếp tục Sprint
 
 ---
 

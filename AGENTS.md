@@ -147,3 +147,8 @@ Luôn báo:
 ## Ghi chú
 
 ...
+Nếu phát hiện lỗi kiến trúc hoặc vấn đề nghiêm trọng ngoài phạm vi task:
+
+- Không tự sửa.
+- Báo trước.
+- Chờ người dùng quyết định.

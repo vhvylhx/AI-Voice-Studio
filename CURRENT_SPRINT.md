@@ -577,3 +577,18 @@
 - Resume/retry production execution van UNAVAILABLE khi khong co handler/provider that; test-only provider chi dung trong tests.
 - Full audio validation bang ffprobe/codec policy va production MP3 output van thuoc sprint sau.
 - Worktree van dirty do du lieu that trong projects/workspace va cac thay doi sprint truoc; khong clean/restore/commit/push.
+
+---
+
+## Cap nhat AVS-014.16A Foundation Cleanup & Consistency
+
+- AVS-014.16A la sprint on dinh hoa foundation, khong phai sprint tinh nang moi.
+- Pham vi: cleanup source/docs/tests, dong bo capability truth status va giu Generate production execution UNAVAILABLE.
+- Khong Train that.
+- Khong Generate that.
+- Khong tich hop GPT-SoVITS runtime trong sprint nay.
+- `docs/PROJECT_STATUS.md` duoc khoi tao de phan anh trang thai source hien tai va Capability Table trung thuc.
+
+## Task tiep theo sau AVS-014.16A
+
+- Chi bat dau AVS-014.17 GPT-SoVITS Runtime Integration sau khi compileall, targeted pytest, full pytest, bootstrap, UI smoke, API smoke va git diff --check dat.

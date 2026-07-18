@@ -523,3 +523,13 @@ Có thể clone một giọng và tạo Audio bằng GPT-SoVITS.
 - [ ] Generate inference that van thuoc sprint sau, chi chay khi Voice/model/runtime hop le va nguoi dung xac nhan.
 
 ---
+
+# Cap nhat AVS-014.16A Foundation Cleanup & Consistency
+
+- [x] Khong them tinh nang moi; chi cleanup/stabilize foundation.
+- [x] Dong bo `docs/PROJECT_STATUS.md` voi source hien tai va readiness that.
+- [x] Kiem tra duplicate/dead code/placeholder/hardcode/data safety o muc static audit.
+- [x] Giu Generate execution, Preview Audio, WAV output va MP3 output o trang thai UNAVAILABLE khi chua co production handler.
+- [ ] AVS-014.17 GPT-SoVITS Runtime Integration chi bat dau sau khi AVS-014.16A nghiem thu xong.
+
+---

@@ -969,6 +969,19 @@ def test_local_api_generate_foundation_endpoints():
 
     assert recovery["body"]["engine_loaded"] is False
 
+    rebuild = api.route(
+        "POST",
+        f"/api/v1/generate/sessions/{session_id}/manifest/rebuild",
+        {},
+    )
+
+    assert rebuild["body"]["ok"]
+    assert rebuild["body"]["manifest"]["units_total"] >= 1
+    assert "original_path" not in json.dumps(
+        rebuild,
+        ensure_ascii=False,
+    )
+
 
 def test_text_splitter_does_not_cut_between_words():
 
@@ -984,9 +997,3 @@ def test_text_splitter_does_not_cut_between_words():
         for item in parts
     )
     assert "một hai ba" in parts[0]
-
-
-test_model_roundtrip_and_state_machine()
-test_text_splitter_does_not_cut_between_words()
-
-print("GENERATE_PIPELINE_FOUNDATION_IMPORT_TEST_OK")

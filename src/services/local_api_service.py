@@ -884,12 +884,24 @@ class LocalApiService:
             and method == "POST"
         ):
 
-            return self.response(
-                self.safe_generate_session_result(
-                    self.resolve_generate_session().rebuild_manifest(
-                        parts[4]
-                    )
+            result = self.resolve_generate_session().rebuild_manifest(
+                parts[4]
+            )
+
+            if result.get(
+                "manifest"
+            ):
+
+                result[
+                    "manifest"
+                ] = self.safe_generate_manifest(
+                    result[
+                        "manifest"
+                    ]
                 )
+
+            return self.response(
+                result
             )
 
         if (

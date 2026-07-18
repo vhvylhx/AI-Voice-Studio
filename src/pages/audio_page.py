@@ -387,14 +387,6 @@ class AudioPage(QWidget):
 
             return
 
-        if queue.count() == 0:
-
-            self.detail.set_status(
-                "Hàng đợi đang trống"
-            )
-
-            return
-
         self.thread = QThread()
 
         self.worker = QueueWorker(
@@ -438,7 +430,6 @@ class AudioPage(QWidget):
 
         self.thread.start()
 
-## ===== KẾT THÚC PART 2 =====
     def generate_current(self):
 
         if not AppContext.current_voice.has_voice():
@@ -841,7 +832,6 @@ class AudioPage(QWidget):
     ):
 
         self.refresh()
-
     def on_engine_changed(
         self,
         engine
@@ -855,5 +845,3 @@ class AudioPage(QWidget):
     ):
 
         self.refresh()
-
-## ===== KẾT THÚC FILE =====

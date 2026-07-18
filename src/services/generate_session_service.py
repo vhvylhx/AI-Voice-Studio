@@ -1,6 +1,5 @@
 import hashlib
 import json
-import os
 import secrets
 import shutil
 import unicodedata
@@ -650,21 +649,23 @@ class GenerateSessionService:
             )
         )
 
+        saved_plan = self.repository.load_plan(
+            session.session_id
+        )
+
+        saved_manifest = self.repository.load_manifest(
+            session.session_id
+        ) if validation.ok else None
+
         return {
             "session": session.to_dict(),
             "request": request.to_dict(),
             "validation": validation.to_dict(),
-            "plan": self.repository.load_plan(
-                session.session_id
-            ).to_dict()
-            if self.repository.load_plan(
-                session.session_id
-            )
+            "plan": saved_plan.to_dict()
+            if saved_plan
             else None,
-            "manifest": self.repository.load_manifest(
-                session.session_id
-            ).to_dict()
-            if validation.ok
+            "manifest": saved_manifest.to_dict()
+            if saved_manifest
             else None,
         }
 
@@ -1762,22 +1763,22 @@ class GenerateSessionService:
 
             return None
 
+        request = self.repository.load_request(
+            session_id
+        )
+
+        manifest = self.repository.load_manifest(
+            session_id
+        )
+
         return {
             "session": session.to_dict(),
-            "request": (
-                self.repository.load_request(
-                    session_id
-                ).to_dict()
-            ),
-            "manifest": (
-                self.repository.load_manifest(
-                    session_id
-                ).to_dict()
-                if self.repository.load_manifest(
-                    session_id
-                )
-                else None
-            ),
+            "request": request.to_dict()
+            if request
+            else None,
+            "manifest": manifest.to_dict()
+            if manifest
+            else None,
         }
 
     def get_plan(

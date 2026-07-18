@@ -1,5 +1,32 @@
 # Changelog
 
+## AVS-014.16A: Foundation Cleanup & Consistency
+
+### Changed
+
+- Khoi tao `docs/PROJECT_STATUS.md` de phan anh dung capability hien tai thay vi de trong.
+- Cleanup Generate foundation nhe: bo import khong dung, giam duplicated repository load khi tao/lay session.
+- Cleanup API manifest rebuild de sanitize manifest dung contract thay vi dua qua session-result sanitizer.
+- Cleanup AudioPage: bo marker PART/END FILE con sot va doan kiem tra hang doi rong khong the chay.
+- Cleanup test Generate foundation: bo top-level self-call/print khi import test module.
+
+### Validation
+
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m compileall src tests`: dat.
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m pytest tests\test_event.py tests\test_global_events.py tests\test_generate_pipeline_foundation.py tests\test_local_api.py -q`: 26 passed.
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m pytest -q`: 168 passed.
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe src\bootstrap.py`: target main_application, can_start_main_app true, limited_mode true dung theo capability blocked.
+- UI smoke offscreen: MainWindow/Sidebar/9 pages va resize 1100x700, 1366x768, 1600x900, 1920x1080 dat.
+- API smoke Generate foundation: readiness planning_ready_execution_unavailable, create session, manifest, resume inspect va manifest rebuild dat.
+- `git diff --check`: dat; chi con warning LF/CRLF Windows.
+
+### Notes
+
+- Khong Train that.
+- Khong Generate that.
+- Khong tich hop GPT-SoVITS runtime.
+- Khong sua du lieu that trong projects/workspace/voices.
+
 ## AVS-014.16: Generate Pipeline Foundation
 
 ### Added

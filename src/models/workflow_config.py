@@ -6,7 +6,13 @@ from pathlib import Path
 @dataclass
 class WorkflowConfig:
 
+    source_mode: str = "same_folder"
+
     input_folder: str = ""
+
+    audio_folder: str = ""
+
+    text_folder: str = ""
 
     output_folder: str = ""
 
@@ -16,11 +22,26 @@ class WorkflowConfig:
 
     review_mode: str = "auto"
 
+    selected_voice_id: str = ""
+
+    runtime_profile_id: str = ""
+
     def resolved_output_folder(
         self,
     ):
 
         if self.use_input_folder_as_output:
+
+            if self.input_folder:
+
+                return self.input_folder
+
+            if (
+                self.audio_folder
+                and self.audio_folder == self.text_folder
+            ):
+
+                return self.audio_folder
 
             return self.input_folder
 
@@ -32,10 +53,32 @@ class WorkflowConfig:
 
         errors = []
 
-        if not self.input_folder:
+        if (
+            not self.input_folder
+            and not self.audio_folder
+            and not self.text_folder
+        ):
 
             errors.append(
                 "input_folder_required"
+            )
+
+        if (
+            self.audio_folder
+            and not self.text_folder
+        ):
+
+            errors.append(
+                "text_folder_required"
+            )
+
+        if (
+            self.text_folder
+            and not self.audio_folder
+        ):
+
+            errors.append(
+                "audio_folder_required"
             )
 
         if (
@@ -73,10 +116,49 @@ class WorkflowConfig:
         data = data or {}
 
         return cls(
+            source_mode=str(
+                data.get(
+                    "source_mode",
+                    "same_folder"
+                    if (
+                        data.get(
+                            "input_folder",
+                            "",
+                        )
+                        or data.get(
+                            "audio_folder",
+                            "",
+                        )
+                        == data.get(
+                            "text_folder",
+                            "",
+                        )
+                    )
+                    else "separate_folders",
+                )
+            ),
             input_folder=str(
                 data.get(
                     "input_folder",
                     "",
+                )
+            ),
+            audio_folder=str(
+                data.get(
+                    "audio_folder",
+                    data.get(
+                        "input_folder",
+                        "",
+                    ),
+                )
+            ),
+            text_folder=str(
+                data.get(
+                    "text_folder",
+                    data.get(
+                        "input_folder",
+                        "",
+                    ),
                 )
             ),
             output_folder=str(
@@ -103,25 +185,57 @@ class WorkflowConfig:
                     "auto",
                 )
             ),
+            selected_voice_id=str(
+                data.get(
+                    "selected_voice_id",
+                    "",
+                )
+            ),
+            runtime_profile_id=str(
+                data.get(
+                    "runtime_profile_id",
+                    "",
+                )
+            ),
         )
 
     @classmethod
     def from_paths(
         cls,
         input_folder,
+        source_mode="same_folder",
+        audio_folder="",
+        text_folder="",
         output_folder="",
         use_input_folder_as_output=True,
         auto_repair=True,
         review_mode="auto",
+        selected_voice_id="",
+        runtime_profile_id="",
     ):
 
         return cls(
+            source_mode=source_mode,
             input_folder=str(
                 Path(
                     input_folder
                 )
             )
             if input_folder
+            else "",
+            audio_folder=str(
+                Path(
+                    audio_folder
+                )
+            )
+            if audio_folder
+            else "",
+            text_folder=str(
+                Path(
+                    text_folder
+                )
+            )
+            if text_folder
             else "",
             output_folder=str(
                 Path(
@@ -133,4 +247,6 @@ class WorkflowConfig:
             use_input_folder_as_output=use_input_folder_as_output,
             auto_repair=auto_repair,
             review_mode=review_mode,
+            selected_voice_id=selected_voice_id,
+            runtime_profile_id=runtime_profile_id,
         )

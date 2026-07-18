@@ -11,6 +11,7 @@ from services.audio_service import AudioService
 from services.dataset_segmentation_service import DatasetSegmentationService
 from services.dataset_review_service import DatasetReviewService
 from services.runtime_service import RuntimeService
+from services.app_events import AppEvents
 
 
 class TrainAudioPrepService:
@@ -45,6 +46,9 @@ class TrainAudioPrepService:
         quality_config=None,
         progress_callback=None,
         review_report=None,
+        resume=True,
+        text_source=None,
+        max_new_sources=None,
     ):
 
         config = self.create_quality_config(
@@ -91,11 +95,22 @@ class TrainAudioPrepService:
             progress_callback,
         )
 
-        segmentation = self.segmentation.prepare(
-            source,
-            dataset_dir,
-            segmentation_dir,
-        )
+        if text_source is None:
+
+            segmentation = self.segmentation.prepare(
+                source,
+                dataset_dir,
+                segmentation_dir,
+            )
+
+        else:
+
+            segmentation = self.segmentation.prepare_from_folders(
+                audio_folder=source,
+                text_folder=text_source,
+                dataset_dir=dataset_dir,
+                output_dir=segmentation_dir,
+            )
 
         if self.dataset_health_has_errors(
             segmentation,
@@ -165,22 +180,68 @@ class TrainAudioPrepService:
             check_load=True,
         )
 
-        valid = []
+        resume_state = (
+            self.load_resume_state(
+                output_dir
+            )
+            if resume
+            else {}
+        )
 
-        suspicious = []
+        valid = resume_state.get(
+            "valid",
+            [],
+        )
 
-        errors = []
+        suspicious = resume_state.get(
+            "suspicious",
+            [],
+        )
 
-        source_reports = []
+        errors = resume_state.get(
+            "errors",
+            [],
+        )
+
+        source_reports = resume_state.get(
+            "source_reports",
+            [],
+        )
+
+        completed_sources = set(
+            resume_state.get(
+                "completed_sources",
+                [],
+            )
+        )
 
         total = len(
             source_segments
         )
 
+        processed_new_sources = 0
+
         for item_index, source_segment in enumerate(
             source_segments,
             start=1,
         ):
+
+            source_key = self.source_key(
+                source_segment
+            )
+
+            if source_key in completed_sources:
+
+                continue
+
+            if (
+                max_new_sources is not None
+                and processed_new_sources >= int(
+                    max_new_sources
+                )
+            ):
+
+                break
 
             self.emit_progress(
                 "alignment",
@@ -214,6 +275,21 @@ class TrainAudioPrepService:
                     source_report
                 )
 
+                completed_sources.add(
+                    source_key
+                )
+
+                self.save_resume_state(
+                    output_dir,
+                    valid,
+                    suspicious,
+                    errors,
+                    source_reports,
+                    completed_sources,
+                )
+
+                processed_new_sources += 1
+
             except Exception as e:
 
                 errors.append(
@@ -232,6 +308,21 @@ class TrainAudioPrepService:
                         ),
                     }
                 )
+
+                completed_sources.add(
+                    source_key
+                )
+
+                self.save_resume_state(
+                    output_dir,
+                    valid,
+                    suspicious,
+                    errors,
+                    source_reports,
+                    completed_sources,
+                )
+
+                processed_new_sources += 1
 
         self.finalize_weak_sources(
             valid,
@@ -283,6 +374,25 @@ class TrainAudioPrepService:
             "report": report,
             "progress": self.progress_events,
         }
+
+    def prepare_from_folders(
+        self,
+        audio_folder,
+        text_folder,
+        dataset_dir,
+        segmentation_dir,
+        output_dir,
+        **kwargs,
+    ):
+
+        return self.prepare(
+            audio_folder,
+            dataset_dir,
+            segmentation_dir,
+            output_dir,
+            text_source=text_folder,
+            **kwargs,
+        )
 
     def dataset_health_has_errors(
         self,
@@ -1670,7 +1780,21 @@ class TrainAudioPrepService:
 
         weak_sources = set()
 
+        skipped_sources = set()
+
         for report in source_reports:
+
+            if report.get(
+                "skipped_entire_file",
+                False,
+            ):
+
+                skipped_sources.add(
+                    report.get(
+                        "source_audio",
+                        "",
+                    )
+                )
 
             if (
                 report.get(
@@ -1699,6 +1823,18 @@ class TrainAudioPrepService:
             return
 
         for clip in valid:
+
+            if clip.get(
+                "source_audio"
+            ) in skipped_sources:
+
+                clip["metadata_enabled"] = False
+
+                clip["metadata_skip_reason"] = (
+                    "source_error_rate_exceeded"
+                )
+
+                continue
 
             if clip.get(
                 "source_audio"
@@ -1762,6 +1898,9 @@ class TrainAudioPrepService:
         message,
         level,
         progress_callback=None,
+        valid=0,
+        suspicious=0,
+        errors=0,
     ):
 
         elapsed = max(
@@ -1796,6 +1935,7 @@ class TrainAudioPrepService:
         )
 
         payload = {
+            "job": "alignment",
             "stage": stage,
             "current_file": current_file,
             "current_item": current_item,
@@ -1803,6 +1943,15 @@ class TrainAudioPrepService:
             "percent": percent,
             "elapsed_seconds": elapsed,
             "estimated_remaining_seconds": estimated,
+            "valid": int(
+                valid or 0
+            ),
+            "suspicious": int(
+                suspicious or 0
+            ),
+            "errors": int(
+                errors or 0
+            ),
             "message": message,
             "level": level,
         }
@@ -1816,6 +1965,10 @@ class TrainAudioPrepService:
             progress_callback(
                 payload
             )
+
+        AppEvents.job_progress(
+            payload
+        )
 
         return payload
 
@@ -1900,11 +2053,6 @@ class TrainAudioPrepService:
         source_reports,
     ):
 
-        valid_duration = sum(
-            item["duration"]
-            for item in valid
-        )
-
         suspicious_duration = sum(
             item.get(
                 "duration",
@@ -1920,6 +2068,45 @@ class TrainAudioPrepService:
                 "metadata_enabled",
                 True,
             )
+        ]
+
+        valid_duration = sum(
+            item["duration"]
+            for item in metadata_clips
+        )
+
+        similarities = [
+            float(
+                item.get(
+                    "match_score",
+                    item.get(
+                        "similarity",
+                        0,
+                    ),
+                )
+                or 0
+            )
+            for item in metadata_clips
+        ]
+
+        skipped_sources = [
+            report
+            for report in source_reports
+            if report.get(
+                "skipped_entire_file",
+                False,
+            )
+        ]
+
+        valid_durations = [
+            float(
+                item.get(
+                    "duration",
+                    0,
+                )
+                or 0
+            )
+            for item in metadata_clips
         ]
 
         return {
@@ -1947,6 +2134,59 @@ class TrainAudioPrepService:
                         [],
                     )
                 ),
+                "total_valid_sources": len(
+                    segmentation.get(
+                        "valid",
+                        [],
+                    )
+                ),
+                "processed_sources": len(
+                    source_reports
+                ),
+                "skipped_sources": len(
+                    skipped_sources
+                ),
+                "total_valid_clips": len(
+                    metadata_clips
+                ),
+                "total_suspicious_clips": len(
+                    suspicious
+                ),
+                "total_errors": len(
+                    errors
+                ),
+                "total_valid_duration": valid_duration,
+                "average_clip_duration": (
+                    valid_duration / len(
+                        metadata_clips
+                    )
+                    if metadata_clips
+                    else 0
+                ),
+                "similarity_min": min(
+                    similarities
+                )
+                if similarities
+                else 0,
+                "similarity_avg": (
+                    sum(
+                        similarities
+                    )
+                    / len(
+                        similarities
+                    )
+                    if similarities
+                    else 0
+                ),
+                "similarity_max": max(
+                    similarities
+                )
+                if similarities
+                else 0,
+                "duration_distribution": self.duration_distribution(
+                    valid_durations
+                ),
+                "skipped_source_details": skipped_sources,
             },
             "preprocessing_tools": preprocessing_tools,
             "alignment_runtime": alignment_runtime,
@@ -2017,7 +2257,184 @@ class TrainAudioPrepService:
             report,
         )
 
+        metadata_file = output_dir / "metadata.list"
+
+        self.write_metadata_atomic(
+            metadata_file,
+            valid,
+        )
+
+        report["summary"]["metadata_path"] = str(
+            metadata_file
+        )
+
+        report["metadata_validation"] = self.validate_metadata_file(
+            metadata_file
+        )
+
+        self.write_json(
+            output_dir / "alignment_manifest.json",
+            manifest,
+        )
+
+        self.write_json(
+            output_dir / "alignment_report.json",
+            report,
+        )
+
+        (output_dir / "errors.log").write_text(
+            "\n".join(
+                f"{error.get('audio', '')} | {error.get('code', '')} | {error.get('message', '')}"
+                for error in errors
+            ),
+            encoding="utf-8",
+        )
+
+    def source_key(
+        self,
+        source_segment,
+    ):
+
+        return "|".join(
+            [
+                str(
+                    source_segment.get(
+                        "audio",
+                        "",
+                    )
+                ),
+                str(
+                    source_segment.get(
+                        "text",
+                        "",
+                    )
+                ),
+            ]
+        )
+
+    def load_resume_state(
+        self,
+        output_dir,
+    ):
+
+        state_file = Path(
+            output_dir
+        ) / "alignment_state.json"
+
+        if state_file.exists():
+
+            return json.loads(
+                state_file.read_text(
+                    encoding="utf-8"
+                )
+            )
+
+        report_file = Path(
+            output_dir
+        ) / "alignment_report.json"
+
+        if not report_file.exists():
+
+            return {}
+
+        report = json.loads(
+            report_file.read_text(
+                encoding="utf-8"
+            )
+        )
+
+        completed = [
+            self.source_key(
+                {
+                    "audio": item.get(
+                        "source_audio",
+                        "",
+                    ),
+                    "text": item.get(
+                        "source_text",
+                        "",
+                    ),
+                }
+            )
+            for item in report.get(
+                "source_reports",
+                [],
+            )
+        ]
+
+        return {
+            "valid": report.get(
+                "valid",
+                [],
+            ),
+            "suspicious": report.get(
+                "suspicious",
+                [],
+            ),
+            "errors": report.get(
+                "errors",
+                [],
+            ),
+            "source_reports": report.get(
+                "source_reports",
+                [],
+            ),
+            "completed_sources": completed,
+        }
+
+    def save_resume_state(
+        self,
+        output_dir,
+        valid,
+        suspicious,
+        errors,
+        source_reports,
+        completed_sources,
+    ):
+
+        self.write_json(
+            Path(
+                output_dir
+            )
+            / "alignment_state.json",
+            {
+                "schema_version": 1,
+                "valid": valid,
+                "suspicious": suspicious,
+                "errors": errors,
+                "source_reports": source_reports,
+                "completed_sources": sorted(
+                    completed_sources
+                ),
+            },
+        )
+
+        self.write_metadata_atomic(
+            Path(
+                output_dir
+            )
+            / "metadata.list",
+            valid,
+        )
+
+    def write_metadata_atomic(
+        self,
+        metadata_file,
+        valid,
+    ):
+
+        metadata_file = Path(
+            metadata_file
+        )
+
+        metadata_file.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
         metadata = []
+
+        seen_audio = set()
 
         for clip in valid:
 
@@ -2028,24 +2445,213 @@ class TrainAudioPrepService:
 
                 continue
 
-            metadata.append(
-                f"{clip['audio']}|{clip['speaker']}|{clip['language']}|{clip['content']}"
+            audio = clip[
+                "audio"
+            ]
+
+            if audio in seen_audio:
+
+                continue
+
+            seen_audio.add(
+                audio
             )
 
-        (output_dir / "metadata.list").write_text(
+            metadata.append(
+                f"{audio}|{clip['speaker']}|{clip['language']}|{clip['content']}"
+            )
+
+        temp_file = metadata_file.with_suffix(
+            metadata_file.suffix + ".tmp"
+        )
+
+        temp_file.write_text(
             "\n".join(
                 metadata
             ),
             encoding="utf-8",
         )
 
-        (output_dir / "errors.log").write_text(
-            "\n".join(
-                f"{error.get('audio', '')} | {error.get('code', '')} | {error.get('message', '')}"
-                for error in errors
-            ),
-            encoding="utf-8",
+        temp_file.replace(
+            metadata_file
         )
+
+    def duration_distribution(
+        self,
+        durations,
+    ):
+
+        buckets = {
+            "2-4": 0,
+            "4-6": 0,
+            "6-8": 0,
+            "8-10": 0,
+            "other": 0,
+        }
+
+        for duration in durations:
+
+            if 2 <= duration < 4:
+
+                buckets["2-4"] += 1
+
+            elif 4 <= duration < 6:
+
+                buckets["4-6"] += 1
+
+            elif 6 <= duration < 8:
+
+                buckets["6-8"] += 1
+
+            elif 8 <= duration <= 10:
+
+                buckets["8-10"] += 1
+
+            else:
+
+                buckets["other"] += 1
+
+        return buckets
+
+    def validate_metadata_file(
+        self,
+        metadata_file,
+    ):
+
+        result = {
+            "ok": True,
+            "duplicates": [],
+            "errors": [],
+            "clip_count": 0,
+        }
+
+        seen = set()
+
+        if not Path(
+            metadata_file
+        ).exists():
+
+            result["ok"] = False
+
+            result["errors"].append(
+                {
+                    "code": "metadata_missing",
+                    "file": str(
+                        metadata_file
+                    ),
+                }
+            )
+
+            return result
+
+        for line_number, line in enumerate(
+            Path(
+                metadata_file
+            ).read_text(
+                encoding="utf-8"
+            ).splitlines(),
+            start=1,
+        ):
+
+            if not line.strip():
+
+                continue
+
+            parts = line.split(
+                "|",
+                3,
+            )
+
+            if len(parts) != 4:
+
+                result["errors"].append(
+                    {
+                        "code": "metadata_invalid_format",
+                        "line": line_number,
+                    }
+                )
+
+                continue
+
+            audio, speaker, language, text = parts
+
+            if audio in seen:
+
+                result["duplicates"].append(
+                    audio
+                )
+
+                continue
+
+            seen.add(
+                audio
+            )
+
+            if not text.strip():
+
+                result["errors"].append(
+                    {
+                        "code": "transcript_empty",
+                        "line": line_number,
+                    }
+                )
+
+                continue
+
+            try:
+
+                info = self.audio.probe(
+                    Path(
+                        audio
+                    )
+                )
+
+            except Exception as e:
+
+                result["errors"].append(
+                    {
+                        "code": "audio_probe_failed",
+                        "audio": audio,
+                        "message": str(
+                            e
+                        ),
+                    }
+                )
+
+                continue
+
+            if (
+                info.get(
+                    "channels"
+                )
+                != 1
+                or info.get(
+                    "codec"
+                )
+                != "pcm_s16le"
+                or info.get(
+                    "sample_rate"
+                )
+                != 32000
+            ):
+
+                result["errors"].append(
+                    {
+                        "code": "audio_invalid_format",
+                        "audio": audio,
+                    }
+                )
+
+                continue
+
+            result["clip_count"] += 1
+
+        result["ok"] = (
+            not result["duplicates"]
+            and not result["errors"]
+        )
+
+        return result
 
     def write_json(
         self,

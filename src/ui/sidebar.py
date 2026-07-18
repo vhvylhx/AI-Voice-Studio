@@ -8,7 +8,8 @@ class Sidebar(QListWidget):
         super().__init__()
 
         #
-        # Mặc định chỉ hiện các chức năng thường dùng.
+        # Mặc định hiển thị các chức năng chính để smoke test
+        # và người dùng không bị lạc giữa stack/page.
         #
 
         self.basic_items = [
@@ -17,6 +18,16 @@ class Sidebar(QListWidget):
 
             "🎬 Tạo Audio",
 
+            "🧬 Phong cách đọc",
+
+            "🎤 Voice",
+
+            "🏋 Huấn luyện",
+
+            "🧾 Công việc",
+
+            "🖥 Resource",
+
             "📂 Dự án",
 
             "⚙ Cài đặt",
@@ -24,14 +35,10 @@ class Sidebar(QListWidget):
         ]
 
         #
-        # Chức năng nâng cao.
+        # Chức năng nâng cao chưa có page riêng trong sprint này.
         #
 
         self.advanced_items = [
-
-            "🎤 Voice",
-
-            "🏋 Huấn luyện",
 
             "📖 Từ điển",
 
@@ -42,7 +49,11 @@ class Sidebar(QListWidget):
         )
 
         self.setFixedWidth(
-            230
+            260
+        )
+
+        self.setMinimumHeight(
+            420
         )
 
     def show_advanced(
@@ -59,20 +70,10 @@ class Sidebar(QListWidget):
         if enabled:
 
             #
-            # Chèn trước Cài đặt.
+            # Chèn trước Dự án.
             #
 
             self.insertItem(
-                3,
+                7,
                 self.advanced_items[0],
-            )
-
-            self.insertItem(
-                4,
-                self.advanced_items[1],
-            )
-
-            self.insertItem(
-                5,
-                self.advanced_items[2],
             )

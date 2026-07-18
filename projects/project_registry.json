@@ -1,0 +1,31 @@
+{
+    "schema_version": 1,
+    "current_project_id": "",
+    "recent_project_ids": [],
+    "entries": [
+        {
+            "project_id": "b36f881673834cbb897299947f811eb2",
+            "display_name": "ĐPTK",
+            "root_path": "projects\\ĐPTK",
+            "status": "active",
+            "archive_state": "active",
+            "last_opened_at": "",
+            "favorite": false,
+            "health_state": "unknown",
+            "missing": false,
+            "schema_version": 1
+        },
+        {
+            "project_id": "08be0b002c7d4f5d95e04136d4ee6822",
+            "display_name": "ĐPTK HT2",
+            "root_path": "projects\\ĐPTK HT2",
+            "status": "active",
+            "archive_state": "active",
+            "last_opened_at": "",
+            "favorite": false,
+            "health_state": "unknown",
+            "missing": false,
+            "schema_version": 1
+        }
+    ]
+}

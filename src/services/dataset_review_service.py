@@ -39,6 +39,17 @@ class DatasetReviewService:
         "ignored",
     )
 
+    DEFAULT_AUTO_DECISIONS = {
+        "test_version": "ignored",
+        "broken_file": "rejected",
+        "empty_file": "rejected",
+        "empty_content": "rejected",
+        "missing_audio": "ignored",
+        "missing_text": "ignored",
+        "invalid_filename": "ignored",
+        "filename_content_mismatch": "rejected",
+    }
+
     def create_review(
         self,
         dataset_result=None,
@@ -383,6 +394,98 @@ class DatasetReviewService:
             review_report,
             "ignored",
         )
+
+    def apply_decisions(
+        self,
+        review_report,
+        decisions,
+    ):
+
+        result = dict(
+            review_report
+        )
+
+        items = []
+
+        for item in review_report.get(
+            "items",
+            [],
+        ):
+
+            item = dict(
+                item
+            )
+
+            status = decisions.get(
+                item.get(
+                    "code",
+                    "",
+                )
+            )
+
+            if status is not None:
+
+                item["status"] = self.normalize_status(
+                    status
+                )
+
+            items.append(
+                item
+            )
+
+        result["items"] = items
+        result["summary"] = self.create_summary(
+            items
+        )
+        result["filters"] = self.available_filters(
+            items
+        )
+
+        return result
+
+    def auto_review(
+        self,
+        review_report,
+        decisions=None,
+    ):
+
+        decisions = decisions or self.DEFAULT_AUTO_DECISIONS
+
+        result = self.apply_decisions(
+            review_report,
+            decisions,
+        )
+
+        result["mode"] = "auto"
+        result["auto_review"] = True
+        result["auto_decisions"] = dict(
+            decisions
+        )
+
+        return result
+
+    def write_report(
+        self,
+        review_report,
+        output_dir,
+        report_file="review_report.json",
+    ):
+
+        output_dir = Path(
+            output_dir
+        )
+
+        output_dir.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        self.write_json(
+            output_dir / report_file,
+            review_report,
+        )
+
+        return output_dir / report_file
 
     def set_status(
         self,

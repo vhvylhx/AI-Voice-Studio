@@ -11,6 +11,7 @@ class AppPaths:
     OUTPUT = ROOT / "output"
     PROJECTS = ROOT / "projects"
     SETTINGS = ROOT / "settings"
+    STYLE_PROFILES = ROOT / "style_profiles"
     TESTS = ROOT / "tests"
     VOICES = ROOT / "voices"
     WORKSPACE = ROOT / "workspace"
@@ -25,6 +26,7 @@ class AppPaths:
             cls.OUTPUT,
             cls.PROJECTS,
             cls.SETTINGS,
+            cls.STYLE_PROFILES,
             cls.TESTS,
             cls.VOICES,
             cls.WORKSPACE,

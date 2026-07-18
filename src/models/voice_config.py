@@ -2,10 +2,13 @@ from dataclasses import dataclass
 from dataclasses import field
 from dataclasses import fields
 
+from models.training_reference_config import TrainingReferenceConfig
+
 
 def default_variants():
 
     variants = [
+        ("default", "Giọng mặc định"),
         ("original", "Giọng gốc"),
         ("original_plus", "Giọng gốc+"),
         ("soft", "Nhẹ nhàng"),
@@ -58,9 +61,84 @@ def default_variants():
             "enabled": True,
             "trained": False,
             "model_path": "",
+            "style_profile_id": "",
+            "style_mode": "inherit_voice_default",
+            "style_strength": 1.0,
         }
         for variant_id, name in variants
     ]
+
+
+def default_reading_style():
+
+    return {
+        "default_style_profile_id": "",
+        "allow_variant_override": True,
+        "fallback_mode": "degraded",
+    }
+
+
+def default_speaker_reference():
+
+    return {
+        "source_mode": "voice_default",
+        "audio_asset_id": "",
+        "text_asset_id": "",
+        "selected_segment_id": "",
+        "audio_path": "",
+        "text": "",
+        "folder": "",
+        "source_origin": "legacy_voice_config",
+        "checksum_snapshot": {},
+        "legacy_path": "",
+        "state": "pending",
+        "messages": [],
+        "metadata": {},
+    }
+
+
+def normalize_variant_style(
+    variant,
+):
+
+    variant = dict(
+        variant or {}
+    )
+
+    variant.setdefault(
+        "style_profile_id",
+        "",
+    )
+
+    variant.setdefault(
+        "style_mode",
+        "inherit_voice_default",
+    )
+
+    if variant[
+        "style_mode"
+    ] not in {
+        "inherit_voice_default",
+        "explicit",
+        "disabled",
+    }:
+
+        variant["style_mode"] = "inherit_voice_default"
+
+    try:
+
+        variant["style_strength"] = float(
+            variant.get(
+                "style_strength",
+                1.0,
+            )
+        )
+
+    except Exception:
+
+        variant["style_strength"] = 1.0
+
+    return variant
 
 
 @dataclass
@@ -198,8 +276,24 @@ class VoiceConfig:
     # Variant Schema
     #
 
+    default_variant_id: str = "default"
+
+    default_style_id: str = ""
+
     variants: list[dict] = field(
         default_factory=default_variants
+    )
+
+    reading_style: dict = field(
+        default_factory=default_reading_style
+    )
+
+    speaker_reference: dict = field(
+        default_factory=default_speaker_reference
+    )
+
+    training_reference: dict = field(
+        default_factory=lambda: TrainingReferenceConfig().to_dict()
     )
 
     #
@@ -246,6 +340,113 @@ class VoiceConfig:
         ):
 
             migrated["variants"] = default_variants()
+
+        migrated["variants"] = [
+            normalize_variant_style(
+                variant
+            )
+            for variant in migrated.get(
+                "variants",
+                []
+            )
+        ]
+
+        variant_ids = {
+            variant.get(
+                "id",
+                "",
+            )
+            for variant in migrated.get(
+                "variants",
+                []
+            )
+        }
+
+        if "default" not in variant_ids:
+
+            migrated["variants"] = (
+                [
+                    {
+                        "id": "default",
+                        "name": "Giọng mặc định",
+                        "enabled": True,
+                        "trained": False,
+                        "model_path": "",
+                        "style_profile_id": "",
+                        "style_mode": "inherit_voice_default",
+                        "style_strength": 1.0,
+                    }
+                ]
+                + migrated.get(
+                    "variants",
+                    []
+                )
+            )
+
+        reading_style = dict(
+            migrated.get(
+                "reading_style",
+                {},
+            )
+            or {}
+        )
+
+        for key, value in default_reading_style().items():
+
+            reading_style.setdefault(
+                key,
+                value,
+            )
+
+        migrated["reading_style"] = reading_style
+
+        speaker_reference = dict(
+            migrated.get(
+                "speaker_reference",
+                {},
+            )
+            or {}
+        )
+
+        for key, value in default_speaker_reference().items():
+
+            speaker_reference.setdefault(
+                key,
+                value,
+            )
+
+        if not speaker_reference.get(
+            "audio_path"
+        ) and migrated.get(
+            "reference_audio",
+            "",
+        ):
+
+            speaker_reference["audio_path"] = migrated.get(
+                "reference_audio",
+                "",
+            )
+
+        if not speaker_reference.get(
+            "text"
+        ) and migrated.get(
+            "reference_text",
+            "",
+        ):
+
+            speaker_reference["text"] = migrated.get(
+                "reference_text",
+                "",
+            )
+
+        migrated["speaker_reference"] = speaker_reference
+
+        migrated["training_reference"] = TrainingReferenceConfig.from_dict(
+            migrated.get(
+                "training_reference",
+                {},
+            )
+        ).to_dict()
 
         return cls(
             **migrated

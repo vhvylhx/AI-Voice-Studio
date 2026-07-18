@@ -3,9 +3,18 @@
     "language": "vi",
     "workspace": "D:\\AI-Voice-Studio\\workspace",
     "output": "D:\\AI-Voice-Studio\\output",
+    "style_profiles": "F:\\AI-Voice-Studio\\style_profiles",
     "voice": "",
     "engine": "GPT-SoVITS",
     "model": "",
     "remember_last_voice": true,
-    "remember_last_project": true
+    "remember_last_project": true,
+    "local_api_enabled": false,
+    "local_api_host": "127.0.0.1",
+    "local_api_port": 8765,
+    "local_api_token": "",
+    "local_api_auto_start": false,
+    "allowed_origins": [],
+    "output_access_policy": "managed_output_only",
+    "local_api_concurrency": 1
 }

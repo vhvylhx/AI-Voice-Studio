@@ -17,11 +17,20 @@ class Config:
             "language": "vi",
             "workspace": str(AppPaths.WORKSPACE),
             "output": str(AppPaths.OUTPUT),
+            "style_profiles": str(AppPaths.STYLE_PROFILES),
             "voice": "",
             "engine": "GPT-SoVITS",
             "model": "",
             "remember_last_voice": True,
-            "remember_last_project": True
+            "remember_last_project": True,
+            "local_api_enabled": False,
+            "local_api_host": "127.0.0.1",
+            "local_api_port": 8765,
+            "local_api_token": "",
+            "local_api_auto_start": False,
+            "allowed_origins": [],
+            "output_access_policy": "managed_output_only",
+            "local_api_concurrency": 1,
         }
 
         self.load()

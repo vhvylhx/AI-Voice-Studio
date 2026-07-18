@@ -21,5 +21,10 @@ logs/
 
 *.log
 
+workspace/api_jobs/
+settings/settings.json
+style_profiles/
+*.avstyle
+
 .DS_Store
 Thumbs.db

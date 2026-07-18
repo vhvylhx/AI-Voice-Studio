@@ -37,3 +37,61 @@ class AppEvents:
             Events.ENGINE_CHANGED,
             engine
         )
+
+    @staticmethod
+    def job_progress(payload):
+
+        bus.emit(
+            Events.JOB_PROGRESS,
+            payload
+        )
+
+    @staticmethod
+    def job_added(payload):
+
+        bus.emit(
+            Events.JOB_ADDED,
+            payload
+        )
+
+        bus.emit(
+            Events.QUEUE_CHANGED,
+            payload
+        )
+
+    @staticmethod
+    def job_updated(payload):
+
+        bus.emit(
+            Events.JOB_UPDATED,
+            payload
+        )
+
+        bus.emit(
+            Events.QUEUE_CHANGED,
+            payload
+        )
+
+    @staticmethod
+    def job_log(payload):
+
+        bus.emit(
+            Events.JOB_LOG,
+            payload
+        )
+
+    @staticmethod
+    def active_job_changed(payload):
+
+        bus.emit(
+            Events.ACTIVE_JOB_CHANGED,
+            payload
+        )
+
+    @staticmethod
+    def log_message(payload):
+
+        bus.emit(
+            Events.LOG_MESSAGE,
+            payload
+        )

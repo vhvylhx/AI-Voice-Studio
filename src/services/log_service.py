@@ -56,6 +56,23 @@ class LogService:
                 f"[{now}] [{level}] {message}\n"
             )
 
+        try:
+
+            from services.app_events import AppEvents
+
+            AppEvents.log_message(
+                {
+                    "time": now,
+                    "category": category,
+                    "message": message,
+                    "level": level.lower(),
+                }
+            )
+
+        except Exception:
+
+            pass
+
     def info(
         self,
         category,

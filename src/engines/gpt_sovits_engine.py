@@ -212,6 +212,16 @@ class GPTSoVITSEngine(BaseEngine):
         config,
     ):
 
+        default_variant_id = getattr(
+            config,
+            "default_variant_id",
+            "",
+        )
+
+        if default_variant_id:
+
+            return default_variant_id
+
         variants = getattr(
             config,
             "variants",

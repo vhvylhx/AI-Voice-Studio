@@ -20,7 +20,7 @@ soundfile
 librosa
 ffmpeg-python
 pyloudnorm
-webrtcvad
+webrtcvad-wheels
 
 # =========================
 # Speech

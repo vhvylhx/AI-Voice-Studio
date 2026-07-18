@@ -59,7 +59,7 @@ class AppStatusBar(QWidget):
 
         if AppContext.current_project.has_project():
 
-            project = AppContext.current_project.get().name
+            project = AppContext.current_project.get().display_name
 
         else:
 
@@ -98,7 +98,7 @@ class AppStatusBar(QWidget):
     def on_project_changed(self, project):
 
         self.set_project(
-            project.name
+            project.display_name
         )
 
     def on_voice_changed(self, voice):

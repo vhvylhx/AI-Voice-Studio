@@ -15,10 +15,20 @@ class Events:
 
     QUEUE_CHANGED = "queue_changed"
 
+    JOB_ADDED = "job_added"
+
+    JOB_UPDATED = "job_updated"
+
+    JOB_LOG = "job_log"
+
+    ACTIVE_JOB_CHANGED = "active_job_changed"
+
     JOB_STARTED = "job_started"
 
     JOB_FINISHED = "job_finished"
 
     JOB_FAILED = "job_failed"
+
+    JOB_PROGRESS = "job_progress"
 
     LOG_MESSAGE = "log_message"

@@ -33,6 +33,27 @@ class DatasetSegmentationService:
             output_dir,
         )
 
+    def prepare_from_folders(
+        self,
+        audio_folder,
+        text_folder,
+        dataset_dir,
+        output_dir,
+        options=None,
+    ):
+
+        dataset = self.dataset.scan_folders(
+            audio_folder=audio_folder,
+            text_folder=text_folder,
+            output_dir=dataset_dir,
+            options=options,
+        )
+
+        return self.segment(
+            dataset,
+            output_dir,
+        )
+
     def segment(
         self,
         dataset,

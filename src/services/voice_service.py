@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import unicodedata
 
 from models.voice_config import VoiceConfig
 from models.voice_model import VoiceModel
@@ -26,6 +27,22 @@ class VoiceService:
         self,
         name,
     ):
+
+        name = self.normalize_display_name(
+            name
+        )
+
+        errors = self.validate_display_name(
+            name
+        )
+
+        if errors:
+
+            raise ValueError(
+                ",".join(
+                    errors
+                )
+            )
 
         voice = self.root() / name
 
@@ -213,6 +230,28 @@ class VoiceService:
         new_name,
     ):
 
+        new_name = self.normalize_display_name(
+            new_name
+        )
+
+        errors = self.validate_display_name(
+            new_name
+        )
+
+        if errors:
+
+            raise ValueError(
+                ",".join(
+                    errors
+                )
+            )
+
+        if old_name == new_name:
+
+            return self.load(
+                old_name
+            )
+
         old = (
             self.root() / old_name
         )
@@ -223,9 +262,17 @@ class VoiceService:
 
         if old.exists():
 
+            if new.exists():
+
+                raise ValueError(
+                    "voice_name_duplicate"
+                )
+
             voice = self.load(
                 old_name
             )
+
+            voice_id = voice.id
 
             old.rename(
                 new
@@ -246,6 +293,88 @@ class VoiceService:
             self.save(
                 voice
             )
+
+            reloaded = self.load(
+                new_name
+            )
+
+            if reloaded.id != voice_id:
+
+                raise RuntimeError(
+                    "voice_id_changed_after_rename"
+                )
+
+            return reloaded
+
+        raise FileNotFoundError(
+            old
+        )
+
+    def normalize_display_name(
+        self,
+        name,
+    ):
+
+        return unicodedata.normalize(
+            "NFC",
+            str(
+                name or ""
+            ).strip(),
+        )
+
+    def validate_display_name(
+        self,
+        name,
+    ):
+
+        errors = []
+
+        if not name:
+
+            errors.append(
+                "voice_name_required"
+            )
+
+        if len(
+            name
+        ) > 120:
+
+            errors.append(
+                "voice_name_too_long"
+            )
+
+        if any(
+            ord(
+                char
+            )
+            < 32
+            for char in name
+        ):
+
+            errors.append(
+                "voice_name_control_character"
+            )
+
+        if any(
+            char in name
+            for char in (
+                "\\",
+                "/",
+                ":",
+                "*",
+                "?",
+                '"',
+                "<",
+                ">",
+                "|",
+            )
+        ):
+
+            errors.append(
+                "voice_name_unsafe_character"
+            )
+
+        return errors
 
     def ensure_folders(
         self,

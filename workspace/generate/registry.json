@@ -1,0 +1,27 @@
+{
+  "updated_at": "2026-07-18T13:16:36.335547",
+  "items": [
+    {
+      "session_id": "gses_6245294b355b",
+      "request_id": "greq_15a20ccb563c",
+      "project_id": "",
+      "voice_id": "",
+      "status": "blocked",
+      "created_at": "2026-07-18T13:12:49.839856",
+      "updated_at": "2026-07-18T13:12:49.839856",
+      "manifest_path": "workspace\\generate\\sessions\\gses_6245294b355b\\manifest.json",
+      "output_path": "C:\\Users\\mrleh\\AppData\\Local\\Temp\\avs_ui_foundation\\output.wav"
+    },
+    {
+      "session_id": "gses_1d56bcbc3e5a",
+      "request_id": "greq_fdab4dea1f3b",
+      "project_id": "",
+      "voice_id": "",
+      "status": "blocked",
+      "created_at": "2026-07-18T13:16:36.335547",
+      "updated_at": "2026-07-18T13:16:36.335547",
+      "manifest_path": "workspace\\generate\\sessions\\gses_1d56bcbc3e5a\\manifest.json",
+      "output_path": "C:\\Users\\mrleh\\AppData\\Local\\Temp\\avs_ui_foundation\\output.wav"
+    }
+  ]
+}

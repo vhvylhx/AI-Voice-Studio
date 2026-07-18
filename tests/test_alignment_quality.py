@@ -446,10 +446,127 @@ def test_progress_payload_has_required_fields():
     )
 
 
+def test_alignment_resume_skips_completed_source():
+
+    root = ROOT / "cache" / "test_alignment_quality_resume"
+
+    source = make_source(
+        root,
+        "Doan hop le.",
+        duration=5,
+    )
+
+    calls = {
+        "count": 0,
+    }
+
+    match = AlignmentSegment(
+        text="Doan hop le.",
+        start=0,
+        end=3,
+        score=95,
+        asr_text="Doan hop le.",
+        language="vi",
+    )
+
+    service = make_service(
+        [
+            match
+        ]
+    )
+
+    def align_once(*args, **kwargs):
+
+        calls["count"] += 1
+
+        return [
+            match
+        ]
+
+    service.alignment.align = align_once
+
+    service.prepare(
+        source,
+        root / "dataset",
+        root / "segmentation",
+        root / "alignment",
+        quality_config=quality_config(
+            min_valid_segments_per_source=1
+        ),
+    )
+
+    service.prepare(
+        source,
+        root / "dataset",
+        root / "segmentation",
+        root / "alignment",
+        quality_config=quality_config(
+            min_valid_segments_per_source=1
+        ),
+    )
+
+    assert calls["count"] == 1
+
+    metadata = (
+        root
+        / "alignment"
+        / "metadata.list"
+    ).read_text(
+        encoding="utf-8"
+    )
+
+    assert metadata.count(
+        "|vi|"
+    ) == 1
+
+
+def test_metadata_validation_reports_duplicates():
+
+    root = ROOT / "cache" / "test_alignment_quality_metadata_validate"
+
+    if root.exists():
+
+        shutil.rmtree(
+            root
+        )
+
+    root.mkdir(
+        parents=True,
+    )
+
+    wav = root / "clip.wav"
+
+    make_audio(
+        wav,
+        duration=3,
+    )
+
+    metadata = root / "metadata.list"
+
+    metadata.write_text(
+        f"{wav}|speaker|vi|Một dòng.\n"
+        f"{wav}|speaker|vi|Một dòng.\n",
+        encoding="utf-8",
+    )
+
+    result = TrainAudioPrepService().validate_metadata_file(
+        metadata
+    )
+
+    assert result["ok"] is False
+    assert result["duplicates"] == [
+        str(
+            wav
+        )
+    ]
+
+
 test_long_clip_split_by_word_timestamp_and_metadata_valid_only()
 test_bad_segment_is_skipped_and_processing_continues()
 test_source_is_skipped_when_error_rate_exceeded()
 test_weak_source_is_reported_and_not_written_to_metadata()
 test_progress_payload_has_required_fields()
+test_alignment_resume_skips_completed_source()
+test_metadata_validation_reports_duplicates()
 
 print("ALIGNMENT_QUALITY_TEST_OK")

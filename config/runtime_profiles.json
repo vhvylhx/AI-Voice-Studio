@@ -1,0 +1,19 @@
+{
+    "schema_version": 1,
+    "profiles": [
+        {
+            "profile_id": "gpt_sovits_v2pro_default",
+            "display_name": "GPT-SoVITS v2Pro - VRAM thấp",
+            "engine_version": "v2Pro",
+            "runtime_path": "F:\\AI\\GPT-SoVITS-v2pro-20250604",
+            "python_path": "F:\\AI\\GPT-SoVITS-v2pro-20250604\\runtime\\python.exe",
+            "hardware_profile": "low_vram",
+            "minimum_vram": "4GB",
+            "recommended_vram": "6GB+",
+            "status": "ready",
+            "is_default": true,
+            "pretrained_model_path": "F:\\AI\\GPT-SoVITS-v2pro-20250604\\GPT_SoVITS\\pretrained_models",
+            "compatibility_notes": "Runtime ngoài app được lưu absolute path; Voice model cũ giữ nguyên."
+        }
+    ]
+}

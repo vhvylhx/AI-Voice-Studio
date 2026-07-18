@@ -2,6 +2,10 @@ from PySide6.QtCore import QThread
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
     QSplitter,
 )
 
@@ -24,6 +28,7 @@ from widgets.audio_toolbar import AudioToolbar
 from widgets.audio_detail import AudioDetail
 from widgets.text_file_list import TextFileList
 from widgets.queue_list import QueueList
+from widgets.generate_options_panel import GenerateOptionsPanel
 
 
 class AudioPage(QWidget):
@@ -49,6 +54,92 @@ class AudioPage(QWidget):
         root.addWidget(
             self.toolbar
         )
+
+        self.generate_options = GenerateOptionsPanel()
+
+        root.addWidget(
+            self.generate_options
+        )
+
+        foundation_box = QGroupBox(
+            "Generate Foundation"
+        )
+
+        foundation_layout = QVBoxLayout(
+            foundation_box
+        )
+
+        action_row = QHBoxLayout()
+
+        self.foundation_validate_button = QPushButton(
+            "Kiểm tra Request"
+        )
+
+        self.foundation_plan_button = QPushButton(
+            "Tạo Plan"
+        )
+
+        self.foundation_resume_button = QPushButton(
+            "Resume Inspect"
+        )
+
+        self.foundation_retry_button = QPushButton(
+            "Retry Inspect"
+        )
+
+        self.foundation_execute_button = QPushButton(
+            "Generate thật chưa sẵn sàng"
+        )
+
+        self.foundation_execute_button.setEnabled(
+            False
+        )
+
+        for button in [
+            self.foundation_validate_button,
+            self.foundation_plan_button,
+            self.foundation_resume_button,
+            self.foundation_retry_button,
+            self.foundation_execute_button,
+        ]:
+
+            action_row.addWidget(
+                button
+            )
+
+        foundation_layout.addLayout(
+            action_row
+        )
+
+        self.foundation_status = QLabel(
+            "Foundation: chưa kiểm tra"
+        )
+
+        self.foundation_session = QLabel(
+            "Session: -"
+        )
+
+        self.foundation_plan = QLabel(
+            "Plan/Units/Artifacts: -"
+        )
+
+        foundation_layout.addWidget(
+            self.foundation_status
+        )
+
+        foundation_layout.addWidget(
+            self.foundation_session
+        )
+
+        foundation_layout.addWidget(
+            self.foundation_plan
+        )
+
+        root.addWidget(
+            foundation_box
+        )
+
+        self.foundation_session_id = ""
 
         splitter = QSplitter()
 
@@ -99,12 +190,24 @@ class AudioPage(QWidget):
             self.refresh
         )
 
-        self.toolbar.voice_combo.currentTextChanged.connect(
-            self.change_voice
+        self.foundation_validate_button.clicked.connect(
+            self.validate_foundation_request
         )
 
-        self.toolbar.engine_combo.currentTextChanged.connect(
-            self.change_engine
+        self.foundation_plan_button.clicked.connect(
+            self.plan_foundation_request
+        )
+
+        self.foundation_resume_button.clicked.connect(
+            self.inspect_foundation_resume
+        )
+
+        self.foundation_retry_button.clicked.connect(
+            self.inspect_foundation_retry
+        )
+
+        self.toolbar.voice_combo.currentTextChanged.connect(
+            self.change_voice
         )
 
         self.file_list.selection_changed.connect(
@@ -119,6 +222,11 @@ class AudioPage(QWidget):
         bus.subscribe(
             Events.VOICE_CHANGED,
             self.on_voice_changed
+        )
+
+        bus.subscribe(
+            Events.ENGINE_CHANGED,
+            self.on_engine_changed
         )
 
         self.refresh()
@@ -165,34 +273,16 @@ class AudioPage(QWidget):
             False
         )
 
-        self.toolbar.engine_combo.blockSignals(
-            True
-        )
-
-        self.toolbar.engine_combo.clear()
-
-        for engine in self.engine_service.all():
-
-            self.toolbar.engine_combo.addItem(
-                engine.info().id
-            )
-
-        if project.config.engine:
-
-            self.toolbar.engine_combo.setCurrentText(
-                project.config.engine
-            )
-
-        self.toolbar.engine_combo.blockSignals(
-            False
-        )
-
         self.detail.project.setText(
-            project.name
+            project.display_name
         )
         if AppContext.current_voice.has_voice():
 
             voice = AppContext.current_voice.get()
+
+            self.generate_options.load_voice(
+                voice
+            )
 
             self.detail.voice.setText(
                 voice.name
@@ -207,6 +297,10 @@ class AudioPage(QWidget):
             self.detail.voice.setText("-")
 
             self.detail.engine.setText("-")
+
+            self.generate_options.load_voice(
+                None
+            )
 
         self.update_summary()
 
@@ -289,6 +383,12 @@ class AudioPage(QWidget):
 
         if queue.count() == 0:
 
+            self.generate_current()
+
+            return
+
+        if queue.count() == 0:
+
             self.detail.set_status(
                 "Hàng đợi đang trống"
             )
@@ -339,6 +439,231 @@ class AudioPage(QWidget):
         self.thread.start()
 
 ## ===== KẾT THÚC PART 2 =====
+    def generate_current(self):
+
+        if not AppContext.current_voice.has_voice():
+
+            self.detail.set_status(
+                "Chưa chọn Voice"
+            )
+
+            return
+
+        project = AppContext.current_project.get()
+
+        voice = AppContext.current_voice.get()
+
+        request = self.generate_options.build_request(
+            project_id=project.id,
+            voice_id=voice.id,
+        )
+
+        result = self.generate_service.generate_request(
+            request=request,
+            voice=voice,
+            project=project,
+        )
+
+        AppContext.project_service.save_generate_selection(
+            project,
+            request.selection,
+        )
+
+        if result.ok:
+
+            self.detail.set_status(
+                "Hoàn thành tạo Audio"
+            )
+
+            self.detail.set_progress(
+                100
+            )
+
+            return
+
+        self.detail.set_status(
+            "Generate lỗi: "
+            + ", ".join(
+                result.errors
+            )
+        )
+
+    def foundation_payload(self):
+
+        project_id = ""
+
+        voice_id = ""
+
+        if AppContext.current_project.has_project():
+
+            project_id = AppContext.current_project.get().id
+
+        if AppContext.current_voice.has_voice():
+
+            voice_id = AppContext.current_voice.get().id
+
+        request = self.generate_options.build_request(
+            project_id=project_id,
+            voice_id=voice_id,
+        )
+
+        return {
+            "project_id": request.project_id,
+            "voice_id": request.selection.voice_id,
+            "variant_id": request.selection.selected_variant_id,
+            "style_id": request.selection.reference_style_id,
+            "text": request.text,
+            "text_file": request.text_file,
+            "output_folder": request.selection.output_folder,
+            "output_name": request.selection.output_name,
+            "output_format": request.selection.output_format,
+            "mp3_bitrate_kbps": request.selection.mp3_bitrate_kbps,
+            "language": "vi",
+        }
+
+    def validate_foundation_request(self):
+
+        report = AppContext.generate_session_service.validate_request(
+            self.foundation_payload()
+        )
+
+        self.foundation_status.setText(
+            "Foundation validation: "
+            + (
+                "OK"
+                if report.ok
+                else ", ".join(
+                    issue.code
+                    for issue in report.issues
+                )
+            )
+        )
+
+    def plan_foundation_request(self):
+
+        result = AppContext.generate_session_service.create_session(
+            self.foundation_payload()
+        )
+
+        self.foundation_session_id = result[
+            "session"
+        ][
+            "session_id"
+        ]
+
+        self.foundation_session.setText(
+            "Session: "
+            + self.foundation_session_id
+        )
+
+        manifest = result.get(
+            "manifest"
+        ) or {}
+
+        self.foundation_plan.setText(
+            "Plan/Units/Artifacts: "
+            + str(
+                manifest.get(
+                    "units_total",
+                    0,
+                )
+            )
+            + " units | "
+            + str(
+                len(
+                    manifest.get(
+                        "artifact_records",
+                        [],
+                    )
+                )
+            )
+            + " artifacts"
+        )
+
+        self.foundation_status.setText(
+            "Foundation plan: "
+            + result[
+                "session"
+            ][
+                "status"
+            ]
+        )
+
+    def inspect_foundation_resume(self):
+
+        if not self.foundation_session_id:
+
+            self.foundation_status.setText(
+                "Chưa có Session để resume inspect."
+            )
+
+            return
+
+        result = AppContext.generate_session_service.inspect_resume(
+            self.foundation_session_id
+        )
+
+        self.foundation_status.setText(
+            "Resume inspect: "
+            + str(
+                len(
+                    result.get(
+                        "pending_units",
+                        [],
+                    )
+                )
+            )
+            + " pending"
+        )
+
+    def inspect_foundation_retry(self):
+
+        if not self.foundation_session_id:
+
+            self.foundation_status.setText(
+                "Chưa có Session để retry inspect."
+            )
+
+            return
+
+        plan = AppContext.generate_session_service.get_plan(
+            self.foundation_session_id
+        )
+
+        units = plan.get(
+            "units",
+            [],
+        ) if plan else []
+
+        if not units:
+
+            self.foundation_status.setText(
+                "Không có Unit để retry inspect."
+            )
+
+            return
+
+        result = AppContext.generate_session_service.inspect_retry(
+            self.foundation_session_id,
+            units[
+                0
+            ][
+                "unit_id"
+            ],
+        )
+
+        self.foundation_status.setText(
+            "Retry inspect: "
+            + (
+                "có thể"
+                if result.get(
+                    "can_retry",
+                    False,
+                )
+                else "chưa thể"
+            )
+        )
+
     def update_progress(self, job):
 
         queue = AppContext.queue_service
@@ -513,6 +838,13 @@ class AudioPage(QWidget):
     def on_project_changed(
         self,
         project
+    ):
+
+        self.refresh()
+
+    def on_engine_changed(
+        self,
+        engine
     ):
 
         self.refresh()

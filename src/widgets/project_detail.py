@@ -1,109 +1,176 @@
 from PySide6.QtWidgets import (
-    QWidget,
-    QLabel,
     QFormLayout,
+    QLabel,
+    QWidget,
 )
 
 
 class ProjectDetail(QWidget):
 
-    def __init__(self):
+    def __init__(
+        self,
+    ):
 
         super().__init__()
 
-        layout = QFormLayout(self)
+        layout = QFormLayout(
+            self
+        )
 
         self.name = QLabel("-")
-
+        self.project_id = QLabel("-")
+        self.location = QLabel("-")
         self.text = QLabel("-")
-
         self.audio = QLabel("-")
-
         self.export = QLabel("-")
-
         self.voice = QLabel("-")
-
         self.format = QLabel("-")
-
         self.status = QLabel("-")
+        self.health = QLabel("-")
+        self.reference_assets = QLabel("-")
+        self.managed_assets = QLabel("-")
+        self.external_assets = QLabel("-")
+        self.missing_assets = QLabel("-")
+        self.corrupt_assets = QLabel("-")
 
-        layout.addRow(
-            "Project",
-            self.name
-        )
+        for label, widget in [
+            ("Project", self.name),
+            ("Project ID", self.project_id),
+            ("Location", self.location),
+            ("Text Folder", self.text),
+            ("Audio Folder", self.audio),
+            ("Export Folder", self.export),
+            ("Default Voice", self.voice),
+            ("Output Format", self.format),
+            ("Status", self.status),
+            ("Health", self.health),
+            ("Reference Assets", self.reference_assets),
+            ("Managed Assets", self.managed_assets),
+            ("External-only", self.external_assets),
+            ("Missing Assets", self.missing_assets),
+            ("Corrupt Assets", self.corrupt_assets),
+        ]:
 
-        layout.addRow(
-            "Text Folder",
-            self.text
-        )
+            widget.setWordWrap(
+                True
+            )
 
-        layout.addRow(
-            "Audio Folder",
-            self.audio
-        )
+            layout.addRow(
+                label,
+                widget,
+            )
 
-        layout.addRow(
-            "Export Folder",
-            self.export
-        )
+    def clear(
+        self,
+    ):
 
-        layout.addRow(
-            "Default Voice",
-            self.voice
-        )
+        for widget in [
+            self.name,
+            self.project_id,
+            self.location,
+            self.text,
+            self.audio,
+            self.export,
+            self.voice,
+            self.format,
+            self.status,
+            self.health,
+            self.reference_assets,
+            self.managed_assets,
+            self.external_assets,
+            self.missing_assets,
+            self.corrupt_assets,
+        ]:
 
-        layout.addRow(
-            "Output Format",
-            self.format
-        )
+            widget.setText(
+                "-"
+            )
 
-        layout.addRow(
-            "Status",
-            self.status
-        )
-
-    def clear(self):
-
-        self.name.setText("-")
-
-        self.text.setText("-")
-
-        self.audio.setText("-")
-
-        self.export.setText("-")
-
-        self.voice.setText("-")
-
-        self.format.setText("-")
-
-        self.status.setText("-")
-
-    def load(self, project):
+    def load(
+        self,
+        project,
+    ):
 
         self.name.setText(
-            project.name
+            project.display_name
         )
-
+        self.project_id.setText(
+            project.id
+        )
+        self.location.setText(
+            str(
+                project.path
+            )
+        )
         self.text.setText(
-            str(project.input_dir)
+            str(
+                project.input_dir
+            )
         )
-
         self.audio.setText(
-            str(project.output_dir)
+            str(
+                project.output_dir
+            )
         )
-
         self.export.setText(
-            str(project.path / "export")
+            str(
+                project.export_dir
+            )
         )
-
         self.voice.setText(
             project.config.voice or "-"
         )
-
         self.format.setText(
             project.config.output_format
         )
-
         self.status.setText(
-            project.status
+            project.config.status
+        )
+        self.health.setText(
+            project.config.health_state
+        )
+
+        summary = dict(
+            project.config.reference_summary or {}
+        )
+
+        self.reference_assets.setText(
+            str(
+                summary.get(
+                    "total",
+                    0,
+                )
+            )
+        )
+        self.managed_assets.setText(
+            str(
+                summary.get(
+                    "managed",
+                    0,
+                )
+            )
+        )
+        self.external_assets.setText(
+            str(
+                summary.get(
+                    "external_only",
+                    0,
+                )
+            )
+        )
+        self.missing_assets.setText(
+            str(
+                summary.get(
+                    "missing",
+                    0,
+                )
+            )
+        )
+        self.corrupt_assets.setText(
+            str(
+                summary.get(
+                    "corrupt",
+                    0,
+                )
+            )
         )

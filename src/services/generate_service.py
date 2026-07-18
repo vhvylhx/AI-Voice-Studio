@@ -16,6 +16,10 @@ from services.history_service import (
     HistoryService,
 )
 
+from services.generate_pipeline_service import (
+    GeneratePipelineService,
+)
+
 
 class GenerateService:
 
@@ -33,6 +37,12 @@ class GenerateService:
 
         self.history = (
             HistoryService()
+        )
+
+        self.pipeline_generate = (
+            GeneratePipelineService(
+                engine_manager=AppContext.engine_manager,
+            )
         )
 
     def prepare_text(
@@ -130,4 +140,19 @@ class GenerateService:
 
             voice=job.voice,
 
+        )
+
+    def generate_request(
+        self,
+        request,
+        voice,
+        project=None,
+        adapter=None,
+    ):
+
+        return self.pipeline_generate.run(
+            request=request,
+            voice=voice,
+            project=project,
+            adapter=adapter,
         )

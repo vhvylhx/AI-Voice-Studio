@@ -1,5 +1,181 @@
 # Changelog
 
+## AVS-014.16: Generate Pipeline Foundation
+
+### Added
+
+- Generate Pipeline foundation domain models cho Request, Session, Source Snapshot, Document, Chapter, Unit, Attempt, Plan, Manifest, Registry, Settings va StateMachine.
+- GenerateRepository ghi JSON atomic theo session va registry.
+- GenerateTextStructureService doc pasted text/TXT/DOCX, normalize, detect chapter va split unit ma khong sua file goc.
+- GenerateSessionService cho validation, create session, plan/manifest materialization, resume inspection va retry inspection.
+- Generate request checksum/materialized_at, frozen plan snapshots/checksum, planned artifact records va basic WAV validation.
+- No-loss reconstruction verifier cho Source Snapshot -> normalized text -> chapters/units -> reconstructed text.
+- Frozen Plan immutable guard, read-back checksum va plan integrity check.
+- Artifact lifecycle foundation: artifact registry, lineage, reservation, temp-to-final promotion, collision recheck va validation gate.
+- Resume/Retry execution orchestration foundation voi production UNAVAILABLE va test-only WAV provider trong tests.
+- Recovery foundation light scan, temp/orphan classification va manifest rebuild khong load engine/model.
+- Job Queue worker `generate_prepare` voi ResourceRequirement CPU-light, khong dung GPU va khong goi engine synthesize.
+- AppContext integration cho generate_repository, generate_text_structure_service va generate_session_service.
+- Local API Generate foundation endpoints cho readiness, request validation, sessions, plan, chapters, units, attempts, artifacts, manifest, resume/retry va recovery.
+- Feature readiness entries tach ro planning/reconstruction/frozen plan/artifact/recovery READY va production execution/output UNAVAILABLE.
+- AudioPage co Generate Foundation controls toi thieu cho Validate Request, Tao Plan, Resume Inspect va Retry Inspect.
+- Tests Generate Pipeline Foundation cho reconstruction, frozen plan, source deletion, output safety, artifact lifecycle, test-only provider, recovery, Job Queue, Local API va UI smoke.
+
+### Changed
+
+- Generate inference that van tach khoi foundation. Endpoint/worker moi khong tao WAV/MP3 gia va khong danh dau session completed khi chua co audio that.
+- Local API readiness doi thanh `planning_ready_execution_unavailable` de tranh overclaim production Generate.
+- Production Generate execution tiep tuc bi khoa neu khong co real handler; test-only provider khong anh huong readiness production.
+
+### Validation
+
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m compileall src tests`
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m pytest`
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m pytest tests\test_generate_architecture.py tests\test_generate_pipeline.py tests\test_local_api.py tests\test_job_system.py tests\test_resource_manager.py tests\test_generate_pipeline_foundation.py`
+- UI smoke offscreen trang Tao Audio: foundation Validate/Plan controls khong crash va production execution disabled.
+
+### Notes
+
+- Chua Train that.
+- Chua Generate that.
+- Chua co Generate Session/Plan UI rieng.
+- Chua co resume/retry execution, production artifact lifecycle va WAV/MP3 output that trong foundation endpoint.
+- Khong sua GPT-SoVITS runtime.
+- Khong sua du lieu that trong projects/workspace/voices.
+
+## AVS-014.14: Job & Queue System
+
+### Added
+
+- JobModel va JobQueueSettings cho job identity, state, scope, priority, dependency, retry, progress, ETA, log, heartbeat va recovery.
+- JobStateMachine voi transition validator.
+- JobRepository persistent JSON trong `workspace/jobs`, atomic write va corrupt quarantine.
+- JobQueueService cho enqueue/dequeue/list, idempotency, priority, dependency, pause/resume/cancel request.
+- BaseJobWorker, JobExecutionContext, JobHandlerRegistry va JobRunner.
+- Handler an toan: demo_progress, reference_verify, project_validate va project_backup adapter co guard.
+- Per-job JobLogService.
+- AppContext integration cho job_repository, job_queue_service, job_runner, job_handler_registry, job_log_service va job_recovery_service.
+- Queue UI page va Dashboard job summary.
+- Local API read-only endpoints `/api/v1/jobs`, `/api/v1/queue`, `/api/v1/jobs/{job_id}` va `/api/v1/jobs/{job_id}/logs`.
+- Feature readiness entries cho Job/Queue system.
+- Tai lieu Job system.
+
+### Changed
+
+- Queue Generate cu tren AudioPage duoc giu nguyen de tuong thich; Job system moi duoc them song song.
+- Global progress/log co the nhan progress tu JobWorker thong qua AppEvents.
+
+### Validation
+
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m compileall src tests`
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m pytest`: 143 passed.
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe src\bootstrap.py`: target main_application.
+- UI smoke offscreen: MainWindow, 8 pages, resize 1920x1080, 1600x900, 1366x768, 1100x700, 900x600, 800x600.
+- `git diff --check`: khong co whitespace error; chi co warning LF/CRLF Windows.
+
+### Notes
+
+- Chua Train that.
+- Chua Generate that.
+- Chua chay analyzer that.
+- Worktree van dirty do du lieu that trong projects/workspace; khong restore/clean/stage/commit/push.
+
+## AVS-014.13: Project & Workspace Manager
+
+### Added
+
+- ProjectConfig lifecycle fields: display_name, description, timestamps, status, archive_state, workspace/project root, source/import/duplicate metadata, favorite, health va active IDs.
+- ProjectRegistry model/service cho registry, recent projects, archive/missing metadata.
+- ProjectValidationService cho project.json, Project ID, required folders va registry mismatch.
+- ProjectBackupService cho backup metadata/config co safety backup truoc restore/repair.
+- ProjectPackageService cho export/import package nhe co manifest va path traversal guard.
+- ProjectService facade cho create, open, close, switch, recent, rename, duplicate, archive, restore archive, export/import, backup/restore, validation va repair.
+- Project Manager UI foundation trong ProjectPage.
+- Local API read-only endpoints cho projects/current/project health/workspace.
+- Tests Project lifecycle, registry/recent, archive, duplicate, export/import, backup/restore, validation/repair va API read-only.
+
+### Changed
+
+- Project moi uu tien folder ID-based dang `project_000001`.
+- Project legacy folder theo ten van load duoc bang migration mem.
+- Rename Project chi doi display_name, khong rename folder va khong doi Project ID.
+- ProjectPage khong expose delete vinh vien; thao tac xoa cu duoc thay bang Archive.
+- MainWindow title hien `AI Voice Studio — <Project Display Name>` hoac `Chua mo du an`.
+
+### Validation
+
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m compileall src tests`
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m pytest`: 121 passed.
+
+### Notes
+
+- Khong Train that.
+- Khong Generate that.
+- Khong sua GPT-SoVITS runtime.
+- Full export/copy asset lon can xac nhan rieng truoc khi mo rong.
+
+## AVS-014.11: Voice DNA Foundation + UI Layout Redesign
+
+### Added
+
+- StyleProfile model cho Reading Style Profile / Voice DNA voi ID rieng dang `style_000001`.
+- StyleProfileRepository voi atomic write, backup, migration-safe structure va placeholder analysis files.
+- StyleProfileService, StyleProfileIntegrityService, StyleProfileExtractionService va StyleProfileExportService.
+- `.avstyle` package export/import voi manifest, checksums va path traversal protection.
+- VoiceConfig `reading_style` va Variant style fields: `style_profile_id`, `style_mode`, `style_strength`.
+- FeatureReadinessService entries cho style profile management, extraction, import/export, voice link va generation usage.
+- Local API endpoints cho Style Profile va Voice style profile.
+- UI component foundation va trang `Phong cach doc / Voice DNA`.
+- Tai lieu `docs/VOICE_DNA_ARCHITECTURE.md`, `docs/STYLE_PROFILE_DATA_FORMAT.md`, `docs/STYLE_PROFILE_BACKUP_RESTORE.md`, `docs/UI_DESIGN_SYSTEM.md`.
+
+### Changed
+
+- Voice Catalog tra ve thong tin Style Profile an toan, khong leak path runtime/model/checkpoint/checksum.
+- GenerationJobService nhan style fields nhung bao loi ro neu engine hien tai chua ho tro Style Profile that.
+- Settings co section `Du lieu tham chieu giong doc`.
+
+### Validation
+
+- `python -m compileall src tests`
+- `python tests/test_style_profile_foundation.py`
+- `python tests/test_local_api.py`
+- `python tests/test_bootstrap_feature_readiness.py`
+- `python tests/test_generate_architecture.py`
+- `python tests/test_settings_local_api.py`
+
+### Notes
+
+- Chua co prosody analyzer that nen extraction khong duoc danh dau ready gia.
+- Chua Train that.
+- Chua Generate that bang Style Profile.
+
+## AVS-014.10: Bootstrap + Local API Foundation
+
+### Added
+
+- Bootstrap Launcher khong import PySide6 de may thieu dependency van mo duoc First-Run Setup guidance.
+- RuntimeEnvironmentManager cho Python app, dependency, FFmpeg/FFprobe, NVIDIA/GPU va GPT-SoVITS Runtime Profile.
+- FeatureReadinessService cho trang thai available/degraded/blocked dung chung UI/API.
+- Local API MVP `/api/v1` bang Python stdlib HTTP server.
+- API Settings group trong trang Cai dat.
+- Voice Catalog, Variant Catalog va Generation Job service cho tich hop app video.
+- Tai lieu `docs/BOOTSTRAP_FIRST_RUN.md`, `docs/LOCAL_API_V1.md` va `examples/video_app_client.py`.
+
+### Changed
+
+- Local API mac dinh bind `127.0.0.1`, yeu cau token cho moi endpoint tru health.
+- Generation job API chi tao job/state/log/temp/output, khong Generate that khi Voice chua co model/reference hop le.
+- Voice/Variant catalog chi tra ve thong tin an toan, khong leak path runtime/model/checkpoint/pretrained.
+
+### Validation
+
+- Compileall va script tests cho Bootstrap, Feature Readiness, Local API, Settings API group.
+
+### Notes
+
+- Chua them FastAPI/Uvicorn; OpenAPI tu dong chua co trong MVP.
+- Chua Train that va chua Generate that.
+
 ## AVS-001 đến AVS-012
 
 ### Added
@@ -250,3 +426,379 @@
 - Chưa Train.
 - Chưa Generate.
 - AVS-014 chỉ nên bắt đầu sau khi người dùng chốt approve/reject/ignore cho review_report.
+
+## AVS-014: GPT-SoVITS Training Validation
+
+### Added
+
+- TrainConfig tập trung cấu hình validation_only, smoke_test, metadata_path, runtime_profile_id và tham số train.
+- TrainJobState để lưu run_id, checkpoint, model_output, report_path và resume state.
+- TrainingService.prepare_train cho validation gate trước train.
+- Train report gồm voice, runtime profile, Python/torch/device/GPU, metadata, clip count, duration, parameters, run state, warnings và errors.
+- Progress payload cho training validation.
+- Test training pipeline cho review, metadata, WAV format, runtime, pretrained model, validation_only, smoke_test mock, report, progress, run_id, no overwrite và resume state.
+
+### Changed
+
+- Train thật chưa chạy nếu chưa có xác nhận và chưa chốt tham số.
+- Model output chuẩn bị theo voices/<voice_id>/model/<run_id>/.
+- Runtime lấy từ Runtime Profile hiện tại, không hard-code đường dẫn GPT-SoVITS/Python/pretrained model.
+
+### Validation
+
+- `python -m compileall src tests`
+- `tests/test_training_pipeline.py`
+- `tests/test_dataset_matching.py`
+- `tests/test_alignment_runtime.py`
+- `tests/test_alignment_quality.py`
+- `tests/test_runtime_profile.py`
+- `tests/test_core.py`
+- `tests/test_event.py`
+- `tests/test_settings.py`
+- `tests/test_workspace.py`
+- Validation-only trên workspace Thu Minh: 19 clip, khoảng 140.04 giây, chưa ready vì review_report còn pending và chưa có Runtime Profile mặc định.
+
+### Notes
+
+- Chưa Train thật.
+- Chưa Generate.
+- Cần người dùng chốt Dataset Review, Runtime Profile và tham số train trước smoke_test/train thật.
+
+## AVS-014.1: Runtime Profile và GPT-SoVITS Smoke Test
+
+### Added
+
+- DatasetReviewService có helper apply_decisions() và write_report() để chốt review report thực tế trước train.
+- RuntimeProfileService có create_gpt_sovits_profile() và detect_gpt_sovits_runtime() để tạo profile GPT-SoVITS v2Pro từ runtime root thật.
+- Runtime validation phát hiện thêm train scripts và pretrained models thật của GPT-SoVITS.
+- TrainingService smoke test tối thiểu gọi runtime Python thật, đọc metadata/WAV, kiểm tra CUDA và ghi stdout/stderr/report/checkpoint smoke.
+
+### Changed
+
+- Smoke command dùng absolute path cho script/output/log để chạy an toàn khi cwd là runtime root.
+- Relative audio path trong metadata được resolve theo app root khi smoke test, không sửa metadata.list gốc.
+- Train report bổ sung runtime_validation, script_paths, pretrained_paths và smoke_test.
+
+### Validation
+
+- `python -m compileall src tests`
+- `tests/test_training_pipeline.py`
+- Dataset Review Thu Minh: approved 0, rejected 20, ignored 22, pending 0, train_allowed = True.
+- Runtime validation READY: Python 3.9.13, torch 2.0.0+cu118, CUDA True, faster-whisper 1.1.1, GPU Quadro P1000.
+- Validation-only Thu Minh: 19 clip, khoảng 140.04 giây, không lỗi.
+- Smoke test run `avs0141_smoke_20260716_053444`: exit code 0, CUDA True, checkpoint smoke được tạo.
+- ffprobe clip valid đầu tiên: pcm_s16le, mono, 32000 Hz, duration 5.16s.
+
+### Notes
+
+- Chưa full train GPT-SoVITS.
+- Smoke test hiện tại là runtime/process smoke tối thiểu; chạy full `s1_train.py`/`s2_train.py` cần tham số train và dataset train format đầy đủ được chốt.
+
+## AVS-014.2: Full Dataset Preparation + Progress Validation
+
+### Added
+
+- Runner full alignment Thu Minh có progress log, alignment_state resume và runner_result.
+- Báo cáo kết quả full dataset preparation cho metadata train.
+
+### Changed
+
+- Không đưa suspicious vào metadata train.
+- Không chạy lại source đã hoàn thành.
+- Không xử lý hoặc commit dữ liệu project/workspace thật đang dirty.
+
+### Validation
+
+- Runner hoàn tất 68/68 source, stderr rỗng, errors = 0.
+- `metadata.list`: 13 valid clips, tổng 93.98 giây, trung bình 7.23 giây.
+- Suspicious: 76 clips.
+- Source skipped toàn file: 2 source với `source_error_rate_exceeded`.
+- ffprobe toàn bộ metadata: WAV tồn tại, đọc được, mono, pcm_s16le, 32000 Hz, transcript không rỗng, không trùng clip.
+- `python -m compileall src tests`
+- Script tests với `PYTHONPATH=src`: pass.
+- UI smoke: MainWindow chạy được.
+
+### Notes
+
+- Chưa Train thật.
+- Chưa Generate.
+- Dataset valid hiện còn nhỏ; nên review/sửa suspicious nếu mục tiêu là train chất lượng cao.
+
+## AVS-014.3: Suspicious Review & Recovery
+
+### Added
+
+- SuspiciousRecoveryService để xử lý lại suspicious trong cache riêng.
+- Recovery report gồm recovered_valid, still_suspicious, rejected, recovery_method, old_similarity, new_similarity, source_file và reason.
+- Test recovery cho gộp ASR segment, không reuse ASR segment, không tự approve dưới threshold và metadata valid-only.
+
+### Changed
+
+- Recovery không thay pipeline alignment chính.
+- Recovery không hạ similarity threshold toàn cục dưới 90.
+- Recovery không dùng ratio fallback cho valid.
+- Metadata recovery được ghi riêng, không ghi đè baseline AVS-014.2.
+
+### Validation
+
+- Preview 1 source no_alignment_match: recovered_valid = 0.
+- Preview 1 source similarity_too_low: recovered_valid = 0, best new_similarity mẫu đạt 79.21 nhưng vẫn dưới 90.
+- Preview 1 source source_error_rate_exceeded: recovered_valid = 0.
+- Metadata preview validate ffprobe đạt: 13 clips, không trùng, WAV đọc được, mono, pcm_s16le, 32000 Hz.
+- `python -m compileall src tests`
+- Script tests với `PYTHONPATH=src`: pass.
+- UI smoke: MainWindow chạy được.
+
+### Notes
+
+- Không chạy full suspicious recovery vì preview không tốt.
+- Dataset cuối vẫn 13 valid clips / 93.98 giây, dưới 10 phút.
+- Chưa Train thật.
+- Chưa Generate.
+
+## AVS-014.4: Full Dataset Expansion + Voice Architecture Foundation
+
+### Added
+
+- WorkflowConfig ho tro rieng audio_folder, text_folder, output_folder, use_input_folder_as_output, selected_voice_id va runtime_profile_id.
+- ProjectConfig luu lua chon dataset cuoi theo Project: audio/text/output folder, use_input_as_output, Voice va Runtime Profile.
+- DatasetService.scan_folders() cho nguon MP3 va Text/DOCX tach rieng.
+- DatasetSegmentationService va TrainAudioPrepService co entrypoint prepare_from_folders().
+- FullDatasetPreparationService gom workflow Scan -> Health -> Repair -> Review -> Alignment -> Metadata Validation.
+- Voice architecture contract cho Voice identity, Variant, Preset, Reference Style, Text Profile va Generate Request.
+
+### Changed
+
+- API cu scan(folder) va prepare(source, ...) duoc giu tuong thich.
+- Global progress payload alignment bo sung valid, suspicious va errors.
+- Dataset cu AVS-014.2/014.3 duoc giu lam cache lich su, khong ghi de.
+
+### Validation
+
+- Scan nguon workspace Thu Minh moi: total_mp3 198, total_text 202, matched 183, missing_audio 4, missing_text 15, test_version 1, broken_file 14, blocking_errors 34.
+- Alignment chua chay vi Review con 34 pending va train_allowed = false.
+
+### Notes
+
+- Chua Train that.
+- Chua Generate.
+- Can review/resolve 34 blocking items truoc khi chay Alignment toan bo nguon moi.
+
+## AVS-014.5: Workspace Compatibility + Automatic Review
+
+### Added
+
+- Workflow source_mode cho Same Folder Mode va Separate Folder Mode.
+- WorkflowService helper create_same_folder_config(), create_separate_folder_config() va detect_legacy_workspace().
+- DatasetReviewService.auto_review() voi rule an toan: ignored/rejected theo code, khong dung Approve All.
+- FullDatasetPreparationService tu dong auto review khi review_mode = auto.
+- TrainAudioPrepService ho tro max_new_sources de resume theo batch ma khong ghi trung metadata.
+
+### Changed
+
+- ProjectConfig luu them last_source_mode.
+- Same Folder Mode tuong thich workspace/<Voice Name>/ hien tai, audio_folder va text_folder cung tro vao mot thu muc.
+- AudioService doc stderr/stdout ffprobe/ffmpeg bang utf-8 errors=replace de tranh loi decode Windows.
+
+### Validation
+
+- Auto Review Thu Minh: total 34, pending 0, rejected 14, ignored 20, train_allowed true.
+- Alignment da chay resume mot phan: 12/183 source, 155 valid clips, 50 suspicious, 0 errors, 946.32 giay valid.
+- Metadata hien tai validate ffprobe dat: 155 clips, khong duplicate, WAV doc duoc, mono, pcm_s16le, 32000 Hz, transcript khong rong.
+
+### Notes
+
+- Full Alignment toan bo 183 source chua hoan tat vi thoi gian runtime du kien nhieu gio.
+- Co the tiep tuc chay resume tu alignment_state.json, khong xu ly lai source da hoan thanh va khong ghi trung metadata.
+- Chua Train that.
+- Chua Generate.
+
+## AVS-014.6: Generate Architecture Foundation
+
+### Added
+
+- GenerateSelectionConfig, GenerateRequest, GenerateResult, VariantDecision, VariantTimeline, StyleDecision, StyleTimeline, GenerateProgress, SpeedProfile va TempWorkspace.
+- GeneratePlanningService de validate Standard Mode, AI Style Mode, Variant scope, Style scope, speed va timeline boundary.
+- TempWorkspaceService de tao temp/generate|train|alignment/<job_id> va cleanup/keep theo trang thai job.
+- ProjectConfig/ProjectService luu lua chon Generate cuoi theo Project.
+- Test generate architecture cho Standard, AI Style, all/ticked scope, no selection, fallback scope, boundary, speed, temp workspace va project memory.
+
+### Changed
+
+- Chua thay doi GenerateService cu va chua goi engine generate that.
+- Moi Voice co default_variant_id va default_style_id de fallback khong hard-code theo logic engine.
+- Custom speed chi cho phep 0.80 den 1.20; preset speed van la che do dac biet.
+- Cleanup policy duoc chot: success xoa temp, pause/error giu temp, cancel hoi nguoi dung, resume dung temp cu.
+- Fallback Variant/Style chon candidate confidence cao nhat trong allowed scope neu default khong duoc phep.
+- Temp file khong duoc de trong output folder.
+
+### Validation
+
+- `python -m compileall src tests`
+- `tests/test_generate_architecture.py`
+
+### Notes
+
+- Chua Train that.
+- Chua Generate.
+- UI Generate multi-select chua hoan thien; Sprint tiep theo la AVS-014.7 Generate UI hoan chinh va Generate that.
+
+## AVS-014.7: Generate UI + Generate Pipeline
+
+### Added
+
+- GenerateOptionsPanel cho AudioPage: Standard Mode, AI Style Mode, Voice, Variant, All Variants, Style scope, All Styles, Speed, Output, WAV/MP3 va MP3 bitrate.
+- GenerateAudioProfile tap trung pause, crossfade, retry_count, output format va MP3 bitrate.
+- ContextAnalysisService de chia text thanh segment/context va tao candidate score cho AI Style Mode.
+- GeneratePlanningService.build_plan() de tao GeneratePlan/GenerateChunk tu VariantTimeline va StyleTimeline.
+- GeneratePipelineService de validate request, generate tung chunk, retry, merge, report va emit global progress.
+- AudioMergeService de merge chunk bang ffmpeg va export WAV/MP3.
+- Test generate pipeline cho model missing, Standard Mode, AI Style scope, MP3 output, resume chunk da xong, retry failure va khong tao final output gia.
+
+### Changed
+
+- GenerateService co entrypoint generate_request() moi, giu queue API cu.
+- ProjectConfig/ProjectService luu lua chon Generate cuoi theo Project: preset/reference/text profile, input/output, output format va bitrate.
+- GPTSoVITSEngine dung default_variant_id cua Voice config khi co.
+- Chunk loi sau retry_count = 1 se dung toan job, giu temp/state/log va ghi report ro chunk_id/text/error.
+- Temp generate nam trong temp/generate/<job_id>, output chi chua final artifact/report.
+
+### Validation
+
+- `python -m compileall src tests`
+- Toan bo `tests/test_*.py` voi `PYTHONPATH=src`: pass.
+- `git diff --check`: khong co whitespace error, chi co canh bao LF/CRLF cua Git tren Windows.
+- UI smoke ngoai sandbox: MainWindow dung duoc va mo `AudioPage`.
+
+### Notes
+
+- Chua Train that.
+- Chua Voice Morph.
+- Generate that can Voice co gpt_model, sovits_model, reference_audio va reference_text hop le.
+- Crossfade/pause da co config tap trung; natural silence detection va crossfade boundary safety can tiep tuc tinh chinh o buoc audio quality.
+
+## AVS-014.8: Full Alignment Completion + Real Training Preparation
+
+### Added
+
+- Dataset Quality Report cho full dataset Thu Minh.
+- Reference Audio candidates duoc chon tu clip valid similarity cao.
+- Metadata final duoc rebuild tu `alignment_state.json` sau khi resume hoan tat.
+
+### Changed
+
+- TrainAudioPrepService ghi metadata.list bang atomic write.
+- Resume state flush metadata.list dinh ky theo state hien tai de giam lech giua checkpoint va metadata.
+
+### Validation
+
+- Resume Full Alignment tu checkpoint `cache/avs0145_full_dataset_thu_minh/alignment/alignment_state.json`.
+- Alignment hoan tat 183/183 source.
+- Metadata final: 2329 clip, tong thoi luong 13232.40 giay, similarity min/avg/max = 90.00 / 95.62 / 100.00.
+- Metadata validation dat: khong duplicate, WAV ton tai/doc duoc, mono, pcm_s16le, 32000 Hz, transcript khong rong.
+- Train validation_only dat voi Runtime Profile `gpt_sovits_v2pro_default`: Python 3.9.13, torch 2.0.0+cu118, CUDA, Quadro P1000 4096 MiB.
+- `python -m compileall src tests` dat.
+- `git diff --check` khong co whitespace error; chi co canh bao LF/CRLF tren Windows.
+
+### Notes
+
+- Chua Train that.
+- Chua Generate.
+- `pytest` va `PySide6` dang thieu trong Python 3.12 hien tai nen chua chay duoc pytest/UI smoke bang interpreter nay.
+- Can nguoi dung chot Reference Audio va tham so Train that truoc khi goi `s1_train.py`/`s2_train.py`.
+
+## AVS-014.9: Runtime Training Profile + Pre-flight Train
+
+### Added
+
+- RuntimeTrainingProfile va HardwareInfo model.
+- RuntimeTrainingProfileService de detect hardware, chon Auto/Compatibility/Performance/Custom va tao app-managed runtime copy.
+- SettingsPage co khu Runtime & Training voi Profile, Auto Detect Hardware, hardware/runtime/training fields va cac nut Detect Again, Validate Runtime, Reset to Recommended.
+- RuntimeTrainingHelpService gom noi dung huong dan tieng Viet, tooltip, canh bao de hieu va huong dan doi may.
+- Dialog "Huong dan Runtime & Training" trong Settings, co nut sao chep huong dan.
+- Settings Runtime & Training co handler that cho detect hardware, validate runtime, reset recommended, xem cau hinh thuc te va copy report.
+- ProjectConfig/ProjectService luu cau hinh Runtime Training Profile theo Project.
+- Test cho Auto detect Quadro P1000, Performance mock, Custom roundtrip, Project memory va app-managed runtime copy.
+- Test cho noi dung tieng Viet, giai thich profile, tham so, canh bao va hardware summary khong hard-code GPU.
+- Test source-level cho Runtime & Training button wiring de tranh nut placeholder khi chua co PySide6.
+
+### Changed
+
+- Runtime goc GPT-SoVITS khong bi sua.
+- Neu SoVITS runtime hard-code `num_workers=5`, app-managed copy chi doi ban copy sang `num_workers=0`.
+- Kien truc Voice/Variant tiep tuc giu mot model chinh cho Voice 0001, khong train model rieng cho Variant.
+- Cac nut/nhan trong Runtime & Training duoc Viet hoa de nguoi dung pho thong de hieu hon.
+
+### Validation
+
+- `python -m compileall src tests` dat.
+- `python tests/test_runtime_training_help.py` dat.
+- `python tests/test_runtime_training_profile.py` dat.
+- `python tests/test_runtime_profile.py` dat.
+- `python tests/test_training_pipeline.py` dat.
+- Auto tren may hien tai chon Compatibility: batch_size 1, num_workers 0, compute cuda.
+- App-managed runtime copy: `voices/0001/model/avs0149_preflight_runtime_20260717_053711/runtime_copy`, compile copy dat.
+- Train validation_only: `avs0149_profile_validation_20260717_053737`, status `validation_ready`, 2329 clip, 13232.40 giay, CUDA/Quadro P1000.
+- Interpreter ung dung hien tai `C:\Program Files\Python312\python.exe` thieu `PySide6` va `pytest`; UI smoke/pytest chua chay duoc bang interpreter nay.
+- Pre-flight moi tao run directory `voices/0001/model/avs0149_thu_minh_train_20260717_061215`, validation_only dat `validation_ready`, app-managed runtime copy compile dat.
+- GPT command preview duoc ghi tai `voices/0001/model/avs0149_thu_minh_train_20260717_061215/reports/gpt_command_preview.json`, nhung `ready_to_run=false` vi config copy thieu key bat buoc cho `s1_train.py`.
+
+### Notes
+
+- Chua Train that.
+- Chua Generate.
+- `python -m pytest` va UI smoke bang Python 3.12 hien tai van bi chan vi thieu `pytest`/`PySide6`.
+- Truoc khi goi GPT stage can tao/ghep du config train semantic/phoneme/output/half weights cho `s1_train.py`.
+
+## AVS-014.12: Training Workflow Clarification + Reference Data Architecture
+
+### Added
+
+- `TrainingReferenceConfig` va `SpeakerReference` model.
+- `TrainingReferenceService`, `TrainingReferenceResolver`, `ReferenceAudioValidationService` va `AudioTextPairService`.
+- TrainingPage moi co scroll foundation va ba reference mode loai tru nhau.
+- Voice rename validation giu nguyen Voice ID.
+- Style Profile rename validation giu nguyen Style Profile ID.
+- Feature readiness cho training reference, speaker reference, rename va scroll/responsive.
+- Test moi cho config/reference resolver/audio-text/audio validation/rename/scroll.
+- Tai lieu ve data ownership, speaker reference, naming/identity va scroll/responsive.
+
+### Changed
+
+- VoiceConfig them `speaker_reference` va `training_reference` theo huong migration-safe, khong xoa `reference_audio`/`reference_text`.
+- TrainingPage khong goi train that truc tiep; train that bi khoa trong sprint nay.
+- Style Profile creation tu TrainingPage chi tao draft/pending va goi extraction state blocked, khong tao Voice DNA gia.
+
+### Validation
+
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m compileall src tests` dat.
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m pytest` dat: 118 passed.
+
+### Notes
+
+- Chua Train that.
+- Chua Generate that.
+- Chua chay Voice DNA analyzer that.
+# AVS-014.13.1
+
+- Added Reference Vault foundation for managed reference audio/text/manifest assets.
+- Added ReferenceAsset, ReferenceRegistry and persistent audio-text manifest models.
+- Added ReferenceVaultService and ReferenceRegistryService with atomic import, checksum verification and deduplication.
+- Extended SpeakerReference, VoiceConfig, TrainingReferenceConfig and StyleProfile with migration-safe stable asset ID fields.
+- Extended TrainingReferenceResolver to prefer managed asset IDs while keeping legacy path fallback.
+- Extended Project backup/export/import/validation with optional reference vault support.
+- Added reference persistence tests.
+# AVS-014.15
+
+- Added Intelligent Resource Manager foundation.
+- Added resource models for hardware, snapshots, requirements, decisions, policies and leases.
+- Added safe hardware detection for CPU/RAM/Disk/FFmpeg/NVIDIA GPU/VRAM.
+- Added resource snapshot, policy, decision, lease and monitor services.
+- Integrated `waiting_resource` state and resource fields into JobModel.
+- Integrated Resource Manager into JobQueueService scheduling and JobRunner lease release.
+- Added Resource Monitor page, Dashboard resource card, JobsPage resource details and Settings resource policy summary.
+- Added read-only Local API resource endpoints.
+- Added resource readiness entries and Resource Manager tests.
+- No Train, Generate, analyzer or GPT-SoVITS runtime mutation was performed.
+
+---

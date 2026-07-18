@@ -215,3 +215,365 @@
 - Lý do: Người dùng phải chốt quyết định chất lượng dataset thay vì app tự đoán hoặc tự bỏ dữ liệu quan trọng.
 - Hệ quả: Workflow Dataset là Scan → Health → Repair → Review → Alignment → Train; nếu không có review_report thì Dataset Health blocker vẫn chặn như cũ.
 - Ngày cập nhật: 2026-07-16.
+
+## DEC-025: Train GPT-SoVITS phải qua validation gate và run_id riêng
+
+- Trạng thái: Chấp nhận.
+- Bối cảnh: Train thật tốn thời gian, phụ thuộc runtime/GPU và có thể ghi model mới.
+- Quyết định: Trước khi train phải chạy validation gate kiểm tra Dataset Review, metadata.list, WAV format, Voice, Runtime Profile, Python/torch, GPT-SoVITS scripts, pretrained model và output model path. Mỗi lần train dùng run_id riêng.
+- Lý do: Tránh train bằng dữ liệu lỗi, tránh ghi đè model cũ và tránh phụ thuộc đường dẫn máy cá nhân.
+- Hệ quả: Model output nằm trong voices/<voice_id>/model/<run_id>/; validation_only không train, smoke_test/train thật chỉ chạy sau khi người dùng chốt tham số và xác nhận.
+- Ngày cập nhật: 2026-07-16.
+
+## DEC-026: Smoke test GPT-SoVITS tối thiểu trước full train
+
+- Trạng thái: Chấp nhận.
+- Bối cảnh: Full train GPT-SoVITS cần tham số, dataset format đầy đủ và có rủi ro VRAM trên Quadro P1000 4 GB.
+- Quyết định: AVS-014.1 chạy smoke test runtime/process tối thiểu trước full train: gọi Python runtime thật, import GPT-SoVITS config, kiểm tra CUDA, đọc metadata/WAV và ghi checkpoint smoke riêng.
+- Lý do: Xác minh Runtime Profile, CUDA, metadata và output path thật mà không chạy full train hoặc ghi đè model.
+- Hệ quả: Full `s1_train.py`/`s2_train.py` chỉ chạy sau khi người dùng chốt tham số train và dataset train format đúng GPT-SoVITS.
+- Ngày cập nhật: 2026-07-16.
+
+## DEC-027: Suspicious Recovery khong ha nguong va khong ghi de baseline
+
+- Trang thai: Chap nhan.
+- Boi canh: AVS-014.2 tao duoc it valid clip, can thu cuu suspicious nhung khong duoc ha chat luong dataset.
+- Quyet dinh: Suspicious Recovery la pipeline rieng sau Full Dataset Preparation, doc baseline report/state va ghi output vao cache rieng.
+- Quyet dinh: Khong ha similarity threshold duoi 90, khong dung ratio fallback de dua clip vao valid, va chi chay full recovery neu preview nho co ket qua tot.
+- Ly do: Bao ve chat luong dataset va giu baseline AVS-014.2 co the rollback.
+- He qua: Clip duoi threshold van nam trong still_suspicious, chi di tiep bang manual review hoac bang text/audio nguon dung hon.
+- Ngay cap nhat: 2026-07-16.
+
+## DEC-028: Full Dataset moi uu tien nguon dung hon recovery dataset cu
+
+- Trang thai: Chap nhan.
+- Boi canh: AVS-014.3 preview recovery khong cuu them clip valid, trong khi nguoi dung co kho MP3 va Text/DOCX moi lon hon.
+- Quyet dinh: Khong tiep tuc full recovery dataset cu. Dataset cu giu lam cache lich su; Full Dataset Expansion quet lai nguon moi bang audio_folder va text_folder rieng.
+- Ly do: Du lieu nguon dung tot hon viec co cuu suspicious co similarity thap hoac text goc sai ngon ngu.
+- He qua: Alignment toan bo nguon moi chi chay sau Scan, Health, Repair va Review hop le.
+- Ngay cap nhat: 2026-07-16.
+
+## DEC-029: Voice la identity, Variant/Preset/Reference/Text Profile la contract rieng
+
+- Trang thai: Chap nhan.
+- Boi canh: Can tranh train nhieu model chi vi style, emotion, speed hoac bien the doc.
+- Quyet dinh: Voice chi la danh tinh nguoi noi va mot model chinh. Variant mo ta cach noi, Preset chua tham so Generate, Reference Style chua audio tham chieu, Text Profile chua luat xu ly van ban.
+- Quyet dinh: Generate Request duy nhat gom VoiceID, VariantID, PresetID, ReferenceStyleID, TextProfileID, Engine va Text.
+- Ly do: Giu Voice model on dinh, tranh no so luong model va de mo rong multi-engine.
+- He qua: Engine chi sinh audio; Engine Profile map tham so chung sang tham so rieng tung engine.
+- Ngay cap nhat: 2026-07-16.
+
+## DEC-030: Same Folder Mode la mac dinh cho workspace cu
+
+- Trang thai: Chap nhan.
+- Boi canh: Du lieu hien tai dang nam trong workspace/<Voice Name>/ voi MP3 va TXT/DOCX cung mot thu muc.
+- Quyet dinh: Workflow ho tro source_mode = same_folder va coi day la che do mac dinh cho Project/Voice cu.
+- Ly do: Giu tuong thich du lieu hien tai, khong bat nguoi dung tach thu muc va khong migration pha cau truc cu.
+- He qua: audio_folder va text_folder co the cung tro vao mot thu muc; Separate Folder Mode van duoc ho tro khi nguoi dung muon tach nguon.
+- Ngay cap nhat: 2026-07-16.
+
+## DEC-031: Auto Review chi ignored/rejected loi an toan
+
+- Trang thai: Chap nhan.
+- Boi canh: Dataset moi co missing_audio, missing_text, test_version va broken_file nhung cac cap matched hop le van co the alignment.
+- Quyet dinh: Auto Review khong approve file loi. test_version, missing_audio, missing_text, invalid_filename = ignored; broken_file, empty_file, empty_content, filename_content_mismatch = rejected.
+- Ly do: Loi khong duoc dua vao train, nhung khong chan toan batch khi cac cap matched hop le da duoc loc rieng.
+- He qua: pending = 0 va train_allowed = true chi co nghia la cac blocking item da duoc xu ly bang ignored/rejected, khong co nghia la file loi duoc train.
+- Ngay cap nhat: 2026-07-16.
+
+## DEC-032: Generate Standard va AI Style phai co scope ro rang
+
+- Trang thai: Chap nhan.
+- Boi canh: Generate sau nay can cho AI chon Variant/Style theo ngu canh nhung khong duoc vuot qua y dinh nguoi dung.
+- Quyet dinh: Standard Mode chi dung Voice va Variant nguoi dung chon. AI Style Mode chi duoc chon Variant va Style trong danh sach nguoi dung tick hoac all scope.
+- Quyet dinh: Neu khong co Variant/Style hop le trong scope thi chan generate, khong tu doan. Fallback chi duoc dung default neu default nam trong scope; neu khong thi chon best allowed trong scope.
+- Quyet dinh: Timeline chi duoc doi Variant/Style tai sentence, paragraph, dialogue, scene hoac pause boundary; khong doi giua tu hoac giua cau.
+- Quyet dinh: Temp workspace nam trong temp/<job_kind>/<job_id>; output folder chi chua final artifact/report.
+- Ly do: Giu kiem soat cua nguoi dung, tranh AI tu doi giong/doc sai vai va tranh output folder bi ban temp file.
+- He qua: Can chot default Variant, default Style va custom speed safe limits truoc khi noi vao generate that.
+- Ngay cap nhat: 2026-07-16.
+
+## DEC-033: Default Variant, Style va Speed cho Generate
+
+- Trang thai: Chap nhan.
+- Boi canh: AVS-014.6 can chot fallback Generate ma khong hard-code trong engine.
+- Quyet dinh: Moi Voice bat buoc co default_variant_id, mac dinh la `default`.
+- Quyet dinh: Moi Voice co default_style_id; khong hard-code ten Style trong logic engine.
+- Quyet dinh: AI chi fallback sang default Variant/Style neu default nam trong allowed scope hoac allow_all = true.
+- Quyet dinh: Neu default khong duoc phep, AI chon candidate co confidence cao nhat trong allowed scope. Neu khong co candidate hop le thi dung Generate.
+- Quyet dinh: Custom speed chi cho phep 0.80 den 1.20. Preset 0.5, 0.75, 1.0, 1.1, 1.2, 1.3, 1.5 la che do dac biet.
+- Ly do: Giu chat luong audio, tranh meo tieng va tranh AI tu mo rong pham vi nguoi dung cho phep.
+- He qua: UI AVS-014.7 phai cho nguoi dung chon scope va hien loi neu scope rong.
+- Ngay cap nhat: 2026-07-16.
+
+## DEC-034: Cleanup policy cho Generate temp workspace
+
+- Trang thai: Chap nhan.
+- Boi canh: Generate co chunk, timeline, merge va co the pause/cancel/error.
+- Quyet dinh: SUCCESS xoa toan bo temp.
+- Quyet dinh: PAUSE giu temp, state va progress.
+- Quyet dinh: CANCEL phai hoi nguoi dung giu hay xoa temp.
+- Quyet dinh: ERROR giu temp, log va state.
+- Quyet dinh: RESUME dung temp cu, khong tao job moi va khong generate lai chunk da hoan thanh.
+- Ly do: Bao ve kha nang resume/debug va giu output folder sach.
+- He qua: Temp workspace nam trong temp/<kind>/<job_id>; output chi chua final artifact/report.
+- Ngay cap nhat: 2026-07-16.
+
+## DEC-035: Ranh gioi Voice, Variant, Style va Engine
+
+- Trang thai: Chap nhan.
+- Boi canh: Can tranh tron lan Voice model, style doc va engine runtime.
+- Quyet dinh: Voice chi co Dataset, Model, Runtime, Preview va Metadata; khong luu Emotion, Style, Speed hoac Preset.
+- Quyet dinh: Variant khong phai model. Variant chi la Generate Profile, Prompt, Style, Speed, Emotion va Parameter; khong chua checkpoint, dataset hoac weight.
+- Quyet dinh: Style khong phai Voice. Style mo ta cam xuc, cach doc, pacing va expression, co the dung cho nhieu Voice.
+- Quyet dinh: Engine chi nhan GenerateRequest va tra GenerateAudio; khong quan ly Voice, Variant, Style, Project hoac Workflow.
+- Ly do: Giu kien truc mo rong, tranh no so luong model va de thay engine runtime sau nay.
+- He qua: AVS-014.7 chi noi cac contract da chot vao UI/Adapter, khong them kien truc moi.
+- Ngay cap nhat: 2026-07-16.
+
+## DEC-036: Generate output, pause, crossfade va chunk failure policy
+
+- Trang thai: Chap nhan.
+- Boi canh: AVS-014.7 can chot mac dinh cho output MP3, pause/crossfade va cach xu ly chunk loi.
+- Quyet dinh: MP3 bitrate mac dinh la 192 kbps; cac bitrate hop le la 128, 192, 256 va 320 kbps; app luu lua chon cuoi theo Project.
+- Quyet dinh: Pause mac dinh tap trung trong GenerateAudioProfile: comma 120ms, sentence/question/exclamation 300ms, dialogue 250ms, paragraph 500ms va scene 800ms.
+- Quyet dinh: Crossfade mac dinh 20ms va chi ap dung o boundary an toan; khong ap dung khi chunk da co silence/pause tu nhien phu hop.
+- Quyet dinh: retry_count mac dinh la 1. Neu chunk van loi sau retry thi dung toan job, khong xuat final audio gia thanh cong, giu temp/state/log va cho phep resume.
+- Ly do: Uu tien chat luong va kha nang debug/resume hon viec tao output thieu chunk.
+- He qua: Generate Pipeline phai report ro chunk_id, text, loi va retry count khi dung job.
+- Ngay cap nhat: 2026-07-16.
+
+## DEC-037: Metadata final phai rebuild tu alignment_state
+
+- Trang thai: Chap nhan.
+- Boi canh: Job alignment dai co the resume nhieu lan, metadata.list co the lech state neu process dung truoc khi flush final.
+- Quyet dinh: Sau khi Full Alignment hoan tat, `alignment_state.json` la source of truth. `metadata.list` final phai duoc rebuild tu toan bo valid clips trong state va ghi bang atomic write.
+- Quyet dinh: Neu metadata cu co so dong khac state, khong dung metadata cu lam dau vao train.
+- Ly do: Bao ve train pipeline khoi metadata thieu clip, duplicate hoac lech voi checkpoint moi nhat.
+- He qua: Train validation chi chay sau khi metadata final da validate bang ffprobe va clip count khop valid trainable trong state.
+- Ngay cap nhat: 2026-07-17.
+
+## DEC-038: Runtime Training Profile truoc Train that
+
+- Trang thai: Chap nhan.
+- Boi canh: May co the doi GPU/CPU/RAM hoac them runtime moi, cau hinh train khong nen hard-code cho mot may duy nhat.
+- Quyet dinh: App co Runtime Training Profile voi Auto, Compatibility, Performance va Custom. Auto Detect Hardware mac dinh bat va chon cau hinh dua tren VRAM, CUDA, CPU/RAM va runtime validation that.
+- Quyet dinh: Quadro P1000 4 GB voi GPT-SoVITS v2Pro duoc Auto chon cau hinh Compatibility: batch_size 1, num_workers 0, compute cuda neu validation dat.
+- Ly do: Giam OOM va giu train an toan khi doi may/nang cap phan cung.
+- He qua: Truoc train that phai chay detect hardware, runtime validation, dataset validation va hien cau hinh thuc te de nguoi dung xac nhan.
+- Ngay cap nhat: 2026-07-17.
+
+## DEC-039: Khong sua runtime goc, dung app-managed runtime copy
+
+- Trang thai: Chap nhan.
+- Boi canh: GPT-SoVITS runtime co the hard-code tham so nhu SoVITS `num_workers=5`, trong khi profile Compatibility can `num_workers=0`.
+- Quyet dinh: Khong sua truc tiep runtime GPT-SoVITS goc. Neu can thay tham so runtime khong expose qua config, app tao ban copy trong run directory va chi sua tham so can thiet.
+- Quyet dinh: Ban copy phai compile truoc khi dung va ghi checksum/diff summary.
+- Ly do: Giu runtime goc sach, co the rollback va khong pha cac Voice/model cu.
+- He qua: Command train that phai tro toi config/script app-managed copy khi profile yeu cau tham so da override.
+- Ngay cap nhat: 2026-07-17.
+
+## DEC-040: AVS-014.9 chi train mot model chinh cho Voice
+
+- Trang thai: Chap nhan.
+- Boi canh: Can giu kien truc Voice/Variant mo rong va tranh no so model theo cam xuc/phong cach.
+- Quyet dinh: Voice Thu Minh chi train mot model chinh gan voi Voice ID 0001. Khong train rieng model cho Variant, emotion, style, tuoi/gioi tinh gia lap.
+- Ly do: Variant la generate profile/prompt/style/speed/emotion/parameter, khong phai checkpoint hay dataset.
+- He qua: Model train lan nay phai luu vao Voice 0001 va van tuong thich voi khong gioi han Variant/Preset/Reference Style sau nay.
+- Ngay cap nhat: 2026-07-17.
+
+## DEC-041: Local API MVP dung Python stdlib HTTP server
+
+- Trang thai: Chap nhan.
+- Boi canh: FastAPI/Uvicorn chua nam trong dependency hien tai; Bootstrap/Main App khong duoc chet khi thieu dependency API.
+- Quyet dinh: MVP Local API dung Python stdlib `http.server` thong qua LocalApiService. Route chi la lop mong va phai goi application services nhu VoiceCatalogService, GenerationJobService va FeatureReadinessService.
+- Ly do: Khong them dependency moi khi Python chuan da dap ung MVP localhost API, va tranh lam First-Run Setup phuc tap hon.
+- He qua: OpenAPI tu dong chua co trong MVP. Neu sau nay chuyen sang FastAPI, contract service va docs/LOCAL_API_V1.md phai giu tuong thich.
+- Ngay cap nhat: 2026-07-17.
+
+## DEC-042: Bootstrap phai chay duoc khi thieu PySide6
+
+- Trang thai: Chap nhan.
+- Boi canh: May moi co the chua cai PySide6 nen `src/main.py` se crash neu duoc goi truc tiep.
+- Quyet dinh: Bootstrap entry point khong import PySide6. Bootstrap dung RuntimeEnvironmentManager va FeatureReadinessService de quyet dinh mo Main Application hay First-Run Setup.
+- Ly do: Nguoi dung pho thong can huong dan tieng Viet thay vi stack trace tho.
+- He qua: EXE production sau nay nen tro vao Bootstrap Launcher truoc, khong tro thang vao Main Application.
+- Ngay cap nhat: 2026-07-17.
+
+## DEC-043: Reading Style Profile tach khoi Voice model
+
+- Trang thai: Chap nhan.
+- Boi canh: Voice can mot model chinh on dinh, nhung phong cach doc/prosody can co the dung lai, backup va ap dung linh hoat.
+- Quyet dinh: Reading Style Profile co ID rieng dang `style_000001`, khong phai Voice, khong phai Variant va khong phai checkpoint.
+- Quyet dinh: Mot Style Profile co the dung cho nhieu Voice; Voice chi lien ket style profile mac dinh qua `reading_style`.
+- Ly do: Tranh train nhieu model chi vi cach doc va giu kien truc VoiceID -> mot model chinh -> nhieu Variant/Preset/Style.
+- He qua: Style Profile repository/service/export/import phai tach rieng khoi VoiceService va khong sua Voice ID.
+- Ngay cap nhat: 2026-07-17.
+
+## DEC-044: Style Profile extraction khong duoc ready gia
+
+- Trang thai: Chap nhan.
+- Boi canh: AVS-014.11 moi tao foundation, chua co prosody analyzer that.
+- Quyet dinh: Neu chua co analyzer that, Style Profile extraction phai o trang thai pending/source_ready/degraded/blocked, khong danh dau ready.
+- Ly do: Tranh UI/API va Generate tin nham rang prosody da duoc trich xuat that.
+- He qua: FeatureReadinessService phai bao `style_profile_extraction` blocked va `style_profile_generation_usage` degraded cho den khi co analyzer/engine support that.
+- Ngay cap nhat: 2026-07-17.
+
+## DEC-045: `.avstyle` export mac dinh chi chua du lieu phan tich
+
+- Trang thai: Chap nhan.
+- Boi canh: Style Profile can backup/import portable nhung khong duoc ro ri dataset/model/path ca nhan.
+- Quyet dinh: `.avstyle` la ZIP package co manifest, checksums, style_profile.json, prosody, indexes va references/manifest.json.
+- Quyet dinh: Export mac dinh khong gom MP3 goc, dataset goc, model, checkpoint, token hoac absolute path.
+- Ly do: Bao ve du lieu ca nhan va giu package nhe/portable.
+- He qua: Neu sau nay muon export selected reference clips, phai co tuy chon rieng va manifest ro rang.
+- Ngay cap nhat: 2026-07-17.
+
+## DEC-046: UI Style Profile dung service, khong doc repository truc tiep
+
+- Trang thai: Chap nhan.
+- Boi canh: UI redesign can giu ranh gioi kien truc de sau nay them API/automation.
+- Quyet dinh: Style Profile UI chi goi StyleProfileService/ExportService va hien readiness, khong tu doc/ghi repository.
+- Ly do: Giu UI mong, de test va tranh logic nghiep vu nam trong widget.
+- He qua: Repository chi doc/ghi, Service la contract chinh cho UI/API.
+- Ngay cap nhat: 2026-07-17.
+
+## DEC-047: Tach Training Dataset, Voice DNA va Speaker Reference
+
+- Trang thai: Chap nhan.
+- Boi canh: TrainingPage can lam ro ba loai du lieu de tranh nguoi dung nham dataset train voi phong cach doc hoac audio clone giong.
+- Quyet dinh: Training Dataset thuoc Training domain; Reading Style Profile / Voice DNA thuoc Style Profile domain; Speaker Reference thuoc Voice/Speaker Reference domain.
+- Quyet dinh: TrainingPage chi chon/khoi tao workflow tham chieu, khong tao repository Style Profile thu hai va khong tao Voice DNA gia.
+- Ly do: Giu single source of truth va tranh duplicate ownership giua TrainingPage, VoicePage, StyleProfilePage va GeneratePage.
+- He qua: VoiceConfig duoc mo rong migration-safe bang `speaker_reference` va `training_reference` nhung van giu `reference_audio`/`reference_text` legacy.
+- Ngay cap nhat: 2026-07-17.
+
+## DEC-048: Rename la display-name only, ID bat bien
+
+- Trang thai: Chap nhan.
+- Boi canh: Voice va Style Profile can doi ten hien thi nhung cac lien ket Project, Variant, Generate va backup phai on dinh.
+- Quyet dinh: Voice rename phai giu Voice ID, reference, Variant va model path; Style Profile rename chi doi display_name, giu style_profile_id va folder.
+- Ly do: ID moi la khoa on dinh; ten hien thi co the thay doi theo nguoi dung.
+- He qua: Rename phai co validation ten rong, ten qua dai, control character va duplicate khi co rui ro.
+- Ngay cap nhat: 2026-07-17.
+
+## DEC-049: Project ID bat bien, display name co the doi
+
+- Trang thai: Chap nhan.
+- Boi canh: Project can duoc doi ten hien thi ma khong pha Voice, Style Profile, Training, Generate, API va backup.
+- Quyet dinh: Project ID la khoa ky thuat bat bien. Project display_name la ten nguoi dung nhin thay va co the doi.
+- Quyet dinh: Project moi uu tien folder ID-based dang `project_000001`; Project legacy folder theo ten van load duoc bang resolver mem.
+- Ly do: Ten hien thi co the thay doi, folder legacy da ton tai, con lien ket lau dai can ID on dinh.
+- He qua: Rename Project chi doi display_name, khong rename folder, khong doi Project ID va khong doi Voice/Style/Variant ID.
+- Ngay cap nhat: 2026-07-17.
+
+## DEC-050: Archive Project khong phai Delete
+
+- Trang thai: Chap nhan.
+- Boi canh: Project chua du lieu that va co the rat lon, khong duoc mat du lieu vi thao tac UI.
+- Quyet dinh: Sprint Project Manager chi expose Archive/Restore Archive. Delete vinh vien bi khoa trong UI va service bao loi neu goi truc tiep.
+- Ly do: Bao ve du lieu nguoi dung va phu hop yeu cau khong xoa Project/workspace that.
+- He qua: Archived Project van nam trong registry va folder du lieu khong bi xoa.
+- Ngay cap nhat: 2026-07-17.
+
+## DEC-051: Export khac Backup
+
+- Trang thai: Chap nhan.
+- Boi canh: Export can portable/an toan; Backup dung de khoi phuc cung moi truong.
+- Quyet dinh: Export Project la package nhe co manifest va path traversal guard, mac dinh khong gom cache/temp/output/model lon. Backup luu metadata/config de restore an toan va co safety backup truoc restore/repair.
+- Ly do: Tranh leak path/secret va tranh copy file lon khi chua co xac nhan.
+- He qua: Full export asset lon can tuy chon rieng va canh bao dung luong o sprint sau.
+- Ngay cap nhat: 2026-07-17.
+## DEC-052: Reference asset ID is identity
+
+- Quyet dinh: Reference ben vung duoc lien ket bang `asset_id`, `pair_id`, `segment_id` va manifest ID.
+- Ly do: Filename, display name va absolute path co the doi khi nguoi dung rename/move/delete file goc.
+- He qua: Legacy path van load nhung chi la fallback/provenance.
+
+## DEC-053: Managed copy is durable reference
+
+- Quyet dinh: File goc ben ngoai app khong phai ban luu ben vung duy nhat; Reference Vault la ban app quan ly.
+- Ly do: Project/Voice/Style rename, archive, duplicate, backup/export/import khong duoc lam mat reference da chon.
+- He qua: Workflow ready/valid/official nen co managed copy hoac user xac nhan external-only.
+
+## DEC-054: Metadata backup differs from complete backup
+
+- Quyet dinh: Metadata backup chi gom config/registry/manifest; complete backup moi gom media managed reference.
+- Ly do: Tranh hieu nham backup nhe la package doc lap.
+- He qua: UI/report phai ghi ro package co doc lap hay khong.
+
+## DEC-055: Job ID la identity bat bien
+
+- Trang thai: Chap nhan.
+- Boi canh: Tac vu dai can persistence, log, dependency, API va recovery qua restart.
+- Quyet dinh: Moi Job co `job_id` bat bien dang `job_000001`. Display name chi la ten hien thi va co the doi.
+- Ly do: Khong dung title, index hoac filename lam identity vi chung co the doi.
+- He qua: JobRepository, logs, dependency va Local API dung `job_id`.
+- Ngay cap nhat: 2026-07-17.
+
+## DEC-056: Pause/Cancel Job phai cooperative
+
+- Trang thai: Chap nhan.
+- Boi canh: Kill thread cuong buc co the corrupt Project, Reference Vault, output hoac state.
+- Quyet dinh: Worker chi pause/cancel tai safe point, ghi checkpoint/log/state truoc khi dung.
+- Ly do: Bao ve du lieu va cho phep resume/retry an toan.
+- He qua: Job khong pausable/cancellable phai bao ro, UI disable/bao loi thay vi fake action.
+- Ngay cap nhat: 2026-07-17.
+
+## DEC-057: Queue persistent va khong auto-resume job nguy hiem
+
+- Trang thai: Chap nhan.
+- Boi canh: App co the crash/close khi job dai dang chay.
+- Quyet dinh: queued giu queued, paused giu paused, running cu thanh interrupted. Auto-resume interrupted mac dinh tat.
+- Ly do: Tranh chay lai train/generate/analyzer nguy hiem khi nguoi dung chua xac nhan.
+- He qua: Recovery state phai ghi ro previous state va policy manual_resume_required.
+- Ngay cap nhat: 2026-07-17.
+# DEC-058: Resource Manager dieu phoi Job truoc khi Worker chay
+
+- Trang thai: Chap nhan.
+- Boi canh: Train, Generate va analyzer sau nay co the can CPU/RAM/GPU/VRAM/Disk khac nhau; queue can biet job nao du tai nguyen truoc khi khoi dong.
+- Quyet dinh: Job phai co ResourceRequirement va duoc ResourceDecisionService danh gia truoc khi Worker chay. Neu chua du tai nguyen, job vao `waiting_resource`, khong bi fake failed va khong chan toan bo queue.
+- Quyet dinh: ResourceLeaseManager cap lease persistent khi job duoc chon chay va release khi job ket thuc, pause, cancel, fail, interrupted hoac app shutdown.
+- Ly do: Bao ve GPU/VRAM/Disk, tranh chay trung job nang va giu recovery ro rang.
+- He qua: Moi workflow nang sau nay phai khai bao ResourceRequirement ro rang thay vi tu chay thang.
+- Ngay cap nhat: 2026-07-18.
+
+---
+
+# DEC-059: Generate foundation phai tach khoi inference that
+
+- Trang thai: Chap nhan.
+- Boi canh: Generate that can engine/runtime/Voice model hop le, trong khi app can nen request/session/plan/manifest de UI/API/Job Queue dung chung truoc.
+- Quyet dinh: AVS-014.16 chi tao Generate foundation gom source snapshot, normalized text, document/chapter/unit, plan, manifest, registry, resume/retry inspection va prepare job.
+- Quyet dinh: Foundation khong duoc goi GPT-SoVITS/engine synthesize, khong tao WAV/MP3 gia va khong danh dau completed neu output audio chua ton tai that.
+- Ly do: Tranh fake success, bao ve output va cho phep sprint sau noi inference that tren contract on dinh.
+- He qua: GeneratePrepareJobWorker la CPU-light; real Generate worker sau nay phai khai bao ResourceRequirement rieng va validate Voice/runtime truoc khi chay.
+- Ngay cap nhat: 2026-07-18.
+
+---
+
+# DEC-060: Readiness AVS-014.16 phai bao dung truth status
+
+- Trang thai: Chap nhan.
+- Boi canh: Post-implementation verification phat hien mot so claim de gay hieu nham la Generate execution/output da san sang.
+- Quyet dinh: Local API readiness dung `planning_ready_execution_unavailable`; Feature readiness tach planning READY, inspection READY, execution/output UNAVAILABLE va full audio validation DEGRADED.
+- Quyet dinh: Generate Session/Plan UI, resume/retry execution, production artifact lifecycle va WAV/MP3 output that khong duoc danh dau completed trong AVS-014.16.
+- Ly do: Tranh overclaim, giu UI/API biet dung phan nao co the goi that va phan nao con bi chan.
+- He qua: Sprint sau noi inference that phai them worker/action rieng va nang readiness tung capability khi co test thuc.
+- Ngay cap nhat: 2026-07-18.
+
+---
+
+# DEC-061: Generate foundation success phai qua reconstruction, frozen plan va artifact validation
+
+- Trang thai: Chap nhan.
+- Boi canh: AVS-014.16 can chung minh foundation that, khong chi co model/schema.
+- Quyet dinh: Plan chi duoc frozen khi reconstruction verifier pass va immutable checksum duoc persist/read-back.
+- Quyet dinh: Artifact chi duoc xem la valid sau reservation, temp-to-final promotion va WAV validation co ban pass.
+- Quyet dinh: Attempt/Unit khong duoc success chi vi Job success, provider return hoac file ton tai; phai co valid Artifact dung lineage.
+- Quyet dinh: Test-only WAV provider chi duoc dung trong tests, production readiness van bao Generate execution/output UNAVAILABLE khi chua co handler that.
+- Ly do: Tranh fake success, giu kha nang resume/retry/recovery an toan va khong tao audio gia.
+- He qua: Sprint sau khi noi GPT-SoVITS real handler phai su dung cung Artifact lifecycle va validation gate nay.
+- Ngay cap nhat: 2026-07-18.
+
+---

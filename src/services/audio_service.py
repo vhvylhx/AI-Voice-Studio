@@ -55,6 +55,10 @@ class AudioService:
 
             text=True,
 
+            encoding="utf-8",
+
+            errors="replace",
+
         )
 
         if result.returncode != 0:
@@ -238,6 +242,8 @@ class AudioService:
             check=True,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
 
         return output

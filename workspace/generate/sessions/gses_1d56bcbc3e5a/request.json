@@ -1,0 +1,62 @@
+{
+  "request_id": "greq_fdab4dea1f3b",
+  "revision": 1,
+  "materialized_at": "",
+  "request_checksum_sha256": "663a4057ec1fe57ae3fcbe3a025855d5ca1b062ebf7291ec2d1231b0fbae6556",
+  "project_id": "",
+  "voice_id": "",
+  "source": {
+    "source_id": "source_b361358bb69d",
+    "source_type": "pasted_text",
+    "original_path": "",
+    "snapshot_path": "workspace\\generate\\sessions\\gses_1d56bcbc3e5a\\source\\source_snapshot.txt",
+    "checksum_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "character_count": 0,
+    "line_count": 0,
+    "language": "vi",
+    "created_at": "2026-07-18T13:16:36.325021"
+  },
+  "selection": {
+    "voice_id": "",
+    "variant_id": "default",
+    "style_id": "",
+    "mode": "standard",
+    "speed": 1.0,
+    "language": "vi",
+    "allowed_variant_ids": [],
+    "allowed_style_ids": [],
+    "allow_all_variants": false,
+    "allow_all_styles": false,
+    "extra": {}
+  },
+  "output": {
+    "output_folder": "C:\\Users\\mrleh\\AppData\\Local\\Temp\\avs_ui_foundation",
+    "output_name": "output",
+    "output_format": "wav",
+    "mp3_bitrate_kbps": 192,
+    "overwrite": false,
+    "final_output_path": "C:\\Users\\mrleh\\AppData\\Local\\Temp\\avs_ui_foundation\\output.wav",
+    "report_path": "C:\\Users\\mrleh\\AppData\\Local\\Temp\\avs_ui_foundation\\output.generate_report.json",
+    "temp_output_path": "workspace\\generate\\sessions\\gses_1d56bcbc3e5a\\temp\\output.wav",
+    "reserved": false,
+    "collision_policy": "fail_if_exists"
+  },
+  "validation": {
+    "ok": false,
+    "issues": [
+      {
+        "code": "generate_voice_missing",
+        "message_vi": "Thiếu Voice ID cho Generate Request.",
+        "field": "voice_id",
+        "severity": "error",
+        "suggestion": "Chọn Voice trước khi lập kế hoạch.",
+        "details": {}
+      }
+    ],
+    "warnings": [],
+    "checked_at": "2026-07-18T13:16:36.325021"
+  },
+  "status": "blocked",
+  "created_at": "2026-07-18T13:16:36.335547",
+  "schema_version": 1
+}

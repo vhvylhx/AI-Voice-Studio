@@ -1,17 +1,21 @@
 from PySide6.QtWidgets import (
-    QWidget,
     QHBoxLayout,
     QPushButton,
+    QWidget,
 )
 
 
 class ProjectToolbar(QWidget):
 
-    def __init__(self):
+    def __init__(
+        self,
+    ):
 
         super().__init__()
 
-        layout = QHBoxLayout(self)
+        layout = QHBoxLayout(
+            self
+        )
 
         self.new_button = QPushButton(
             "➕ Tạo"
@@ -22,7 +26,23 @@ class ProjectToolbar(QWidget):
         )
 
         self.delete_button = QPushButton(
-            "🗑 Xóa"
+            "📦 Archive"
+        )
+
+        self.duplicate_button = QPushButton(
+            "📋 Nhân bản"
+        )
+
+        self.backup_button = QPushButton(
+            "💾 Backup"
+        )
+
+        self.export_button = QPushButton(
+            "📤 Export"
+        )
+
+        self.validate_button = QPushButton(
+            "✅ Validate"
         )
 
         self.open_project_button = QPushButton(
@@ -38,44 +58,41 @@ class ProjectToolbar(QWidget):
         )
 
         self.open_export_button = QPushButton(
-            "📦 Export"
+            "📦 Export Folder"
         )
 
         self.refresh_button = QPushButton(
             "🔄 Làm mới"
         )
 
-        layout.addWidget(
-            self.new_button
-        )
+        for button in [
+            self.new_button,
+            self.rename_button,
+            self.delete_button,
+            self.duplicate_button,
+            self.backup_button,
+            self.export_button,
+            self.validate_button,
+        ]:
 
-        layout.addWidget(
-            self.rename_button
-        )
-
-        layout.addWidget(
-            self.delete_button
-        )
+            layout.addWidget(
+                button
+            )
 
         layout.addSpacing(
             20
         )
 
-        layout.addWidget(
-            self.open_project_button
-        )
+        for button in [
+            self.open_project_button,
+            self.open_text_button,
+            self.open_audio_button,
+            self.open_export_button,
+        ]:
 
-        layout.addWidget(
-            self.open_text_button
-        )
-
-        layout.addWidget(
-            self.open_audio_button
-        )
-
-        layout.addWidget(
-            self.open_export_button
-        )
+            layout.addWidget(
+                button
+            )
 
         layout.addStretch()
 

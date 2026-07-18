@@ -28,6 +28,32 @@ class ProjectModel:
     progress: int = 0
 
     @property
+    def id(self):
+
+        return self.config.project_id
+
+    @property
+    def display_name(self):
+
+        return (
+            self.config.display_name
+            or self.name
+        )
+
+    @property
+    def is_archived(self):
+
+        return (
+            self.config.archive_state == "archived"
+            or self.config.status == "archived"
+        )
+
+    @property
+    def health_state(self):
+
+        return self.config.health_state
+
+    @property
     def export_dir(self):
 
         return self.path / self.config.export_folder

@@ -1,0 +1,9 @@
+# Pronunciation
+# chỉ phục vụ đọc
+
+AI=ây ai
+API=ây pi ai
+GPT=gi pi tê
+CPU=xê pi iu
+GPU=gi pi iu
+USB=iu ét bê

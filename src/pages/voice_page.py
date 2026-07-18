@@ -148,9 +148,24 @@ class VoicePage(QWidget):
         if not ok:
             return
 
-        name = name.strip()
+        name = self.service.normalize_display_name(
+            name
+        )
 
-        if not name:
+        errors = self.service.validate_display_name(
+            name
+        )
+
+        if errors:
+
+            QMessageBox.warning(
+                self,
+                "Tên Voice không hợp lệ",
+                ", ".join(
+                    errors
+                )
+            )
+
             return
 
         if self.service.exists(name):
@@ -181,23 +196,74 @@ class VoicePage(QWidget):
         if not ok:
             return
 
-        name = name.strip()
+        name = self.service.normalize_display_name(
+            name
+        )
 
-        if not name:
+        errors = self.service.validate_display_name(
+            name
+        )
+
+        if errors:
+
+            QMessageBox.warning(
+                self,
+                "Tên Voice không hợp lệ",
+                ", ".join(
+                    errors
+                )
+            )
+
             return
 
         if name == self.current_voice.name:
             return
 
         if self.service.exists(name):
+
+            QMessageBox.warning(
+                self,
+                "Tên Voice đã tồn tại",
+                "Hãy chọn tên khác.",
+            )
+
             return
 
+        old_name = self.current_voice.name
+        old_id = self.current_voice.id
+
         self.service.rename(
-            self.current_voice.name,
+            old_name,
             name
         )
 
+        if AppContext.current_project.has_project():
+
+            project = AppContext.current_project.get()
+
+            if project.config.voice == old_name:
+
+                project.config.voice = name
+
+                AppContext.project_service.save(
+                    project
+                )
+
         self.refresh()
+
+        for voice_name in self.service.list():
+
+            voice = self.service.load(
+                voice_name
+            )
+
+            if voice.id == old_id:
+
+                self.select_voice(
+                    voice
+                )
+
+                break
 
     def train_voice(self):
 

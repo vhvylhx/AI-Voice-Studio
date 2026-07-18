@@ -158,6 +158,201 @@ class RuntimeProfileService:
             data
         )
 
+    def create_gpt_sovits_profile(
+        self,
+        runtime_root,
+        profile_id="gpt_sovits_v2pro_default",
+        display_name="GPT-SoVITS v2Pro - VRAM thấp",
+        is_default=True,
+    ):
+
+        detected = self.detect_gpt_sovits_runtime(
+            runtime_root
+        )
+
+        profile = RuntimeProfile(
+            profile_id=profile_id,
+            display_name=display_name,
+            engine_version=detected.get(
+                "engine_version",
+                "",
+            ),
+            runtime_path=str(
+                detected.get(
+                    "runtime_root",
+                    "",
+                )
+            ),
+            python_path=str(
+                detected.get(
+                    "python_path",
+                    "",
+                )
+            ),
+            hardware_profile="low_vram",
+            minimum_vram="4GB",
+            recommended_vram="6GB+",
+            status=(
+                "ready"
+                if detected.get(
+                    "ready",
+                    False,
+                )
+                else "not_ready"
+            ),
+            is_default=is_default,
+            pretrained_model_path=str(
+                detected.get(
+                    "pretrained_root",
+                    "",
+                )
+            ),
+            compatibility_notes=(
+                "Runtime ngoài app được lưu absolute path; Voice model cũ giữ nguyên."
+            ),
+        )
+
+        self.add_profile(
+            profile
+        )
+
+        if is_default:
+
+            self.set_default(
+                profile.profile_id
+            )
+
+        return {
+            "profile": profile,
+            "detected": detected,
+        }
+
+    def detect_gpt_sovits_runtime(
+        self,
+        runtime_root,
+    ):
+
+        root = Path(
+            runtime_root
+        )
+
+        python_path = root / "runtime" / "python.exe"
+
+        pretrained_root = root / "GPT_SoVITS" / "pretrained_models"
+
+        scripts = self.gpt_sovits_scripts(
+            root
+        )
+
+        pretrained = self.detect_pretrained_models(
+            root
+        )
+
+        required = [
+            root,
+            python_path,
+            pretrained_root,
+        ]
+
+        ready = all(
+            path.exists()
+            for path in required
+        ) and all(
+            item.get(
+                "exists",
+                False,
+            )
+            for item in scripts.values()
+        ) and all(
+            item.get(
+                "exists",
+                False,
+            )
+            for item in pretrained.values()
+        )
+
+        return {
+            "runtime_root": str(
+                root
+            ),
+            "engine_version": self.detect_engine_version(
+                root
+            ),
+            "python_path": str(
+                python_path
+            ),
+            "pretrained_root": str(
+                pretrained_root
+            ),
+            "scripts": scripts,
+            "pretrained": pretrained,
+            "ready": ready,
+        }
+
+    def detect_engine_version(
+        self,
+        runtime_root,
+    ):
+
+        root = Path(
+            runtime_root
+        )
+
+        if (
+            root
+            / "GPT_SoVITS"
+            / "configs"
+            / "s2v2Pro.json"
+        ).exists():
+
+            return "v2Pro"
+
+        return ""
+
+    def detect_pretrained_models(
+        self,
+        runtime_root,
+    ):
+
+        root = Path(
+            runtime_root
+        )
+
+        models = {
+            "sovits_g": root
+            / "GPT_SoVITS"
+            / "pretrained_models"
+            / "v2Pro"
+            / "s2Gv2Pro.pth",
+            "sovits_d": root
+            / "GPT_SoVITS"
+            / "pretrained_models"
+            / "v2Pro"
+            / "s2Dv2Pro.pth",
+            "gpt": root
+            / "GPT_SoVITS"
+            / "pretrained_models"
+            / "s1v3.ckpt",
+            "bert": root
+            / "GPT_SoVITS"
+            / "pretrained_models"
+            / "chinese-roberta-wwm-ext-large",
+            "hubert": root
+            / "GPT_SoVITS"
+            / "pretrained_models"
+            / "chinese-hubert-base",
+        }
+
+        return {
+            key: {
+                "path": str(
+                    path
+                ),
+                "exists": path.exists(),
+            }
+            for key, path in models.items()
+        }
+
     def serialize_profile(
         self,
         profile,
@@ -357,6 +552,12 @@ class RuntimeProfileService:
 
         result["checks"]["gpt_sovits_scripts"] = scripts
 
+        pretrained_models = self.detect_pretrained_models(
+            runtime_path
+        )
+
+        result["checks"]["pretrained_models"] = pretrained_models
+
         if profile.runtime_path and not all(
             item["exists"]
             for item in scripts.values()
@@ -366,6 +567,17 @@ class RuntimeProfileService:
                 result,
                 "gpt_sovits_scripts_missing",
                 "Thieu script GPT-SoVITS can thiet.",
+            )
+
+        if profile.pretrained_model_path and not all(
+            item["exists"]
+            for item in pretrained_models.values()
+        ):
+
+            self.add_issue(
+                result,
+                "pretrained_model_missing",
+                "Thieu pretrained model GPT-SoVITS v2Pro can thiet.",
             )
 
         if smoke_test and result["status"] == "ready":
@@ -411,6 +623,11 @@ class RuntimeProfileService:
             "inference_cli": runtime_path / "GPT_SoVITS" / "inference_webui.py",
             "slice_audio": runtime_path / "tools" / "slice_audio.py",
             "asr_fasterwhisper": runtime_path / "tools" / "asr" / "fasterwhisper_asr.py",
+            "prepare_text": runtime_path / "GPT_SoVITS" / "prepare_datasets" / "1-get-text.py",
+            "prepare_hubert": runtime_path / "GPT_SoVITS" / "prepare_datasets" / "2-get-hubert-wav32k.py",
+            "prepare_semantic": runtime_path / "GPT_SoVITS" / "prepare_datasets" / "3-get-semantic.py",
+            "train_gpt": runtime_path / "GPT_SoVITS" / "s1_train.py",
+            "train_sovits": runtime_path / "GPT_SoVITS" / "s2_train.py",
         }
 
         return {

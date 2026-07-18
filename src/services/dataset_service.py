@@ -333,6 +333,188 @@ class DatasetService:
 
         if output_dir is not None:
 
+            Path(
+                output_dir
+            ).mkdir(
+                parents=True,
+                exist_ok=True,
+            )
+
+            self.write_outputs(
+                output_dir,
+                result,
+            )
+
+        return result
+
+    def scan_folders(
+        self,
+        audio_folder,
+        text_folder,
+        output_dir=None,
+        options=None,
+    ):
+
+        audio_folder = Path(
+            audio_folder
+        )
+
+        text_folder = Path(
+            text_folder
+        )
+
+        options = self.normalize_options(
+            options
+        )
+
+        text_files = self.collect_files(
+            text_folder,
+            self.TEXT_EXTENSIONS,
+        )
+
+        audio_files = self.collect_files(
+            audio_folder,
+            self.AUDIO_EXTENSIONS,
+        )
+
+        self.last_total_text = len(
+            text_files
+        )
+
+        self.last_total_audio = len(
+            audio_files
+        )
+
+        errors = []
+
+        items = []
+
+        used_audio = set()
+
+        text_records = []
+
+        for text_file in text_files:
+
+            record = self.read_text_record(
+                text_file,
+                text_folder,
+                options,
+            )
+
+            text_records.append(
+                record
+            )
+
+            errors.extend(
+                record["errors"]
+            )
+
+        audio_records = []
+
+        for audio_file in audio_files:
+
+            record = self.read_audio_record(
+                audio_file,
+                audio_folder,
+            )
+
+            audio_records.append(
+                record
+            )
+
+            errors.extend(
+                record["errors"]
+            )
+
+        valid_text_records = self.remove_duplicates(
+            [
+                record
+                for record in text_records
+                if not record["errors"]
+            ],
+            "text",
+            errors,
+        )
+
+        valid_audio_records = self.remove_duplicates(
+            [
+                record
+                for record in audio_records
+                if not record["errors"]
+            ],
+            "audio",
+            errors,
+        )
+
+        for text_record in valid_text_records:
+
+            matched_audio = self.match_audio(
+                text_record["file"],
+                valid_audio_records,
+            )
+
+            if not matched_audio:
+
+                errors.append(
+                    self.error(
+                        text_record["file"],
+                        "missing_audio",
+                        "Khong tim thay audio cho text.",
+                        "Kiem tra ten file hoac bo sung MP3 cung so chuong.",
+                    )
+                )
+
+                continue
+
+            for audio_record in matched_audio:
+
+                used_audio.add(
+                    audio_record["file"]
+                )
+
+                items.append(
+                    self.create_item(
+                        len(items) + 1,
+                        text_record,
+                        audio_record,
+                    )
+                )
+
+        for audio_record in valid_audio_records:
+
+            if audio_record["file"] in used_audio:
+
+                continue
+
+            errors.append(
+                self.error(
+                    audio_record["file"],
+                    "missing_text",
+                    "Khong tim thay text cho audio.",
+                    "Kiem tra ten file hoac bo sung TXT/DOCX cung so chuong.",
+                )
+            )
+
+        result = self.create_result(
+            {
+                "audio_folder": audio_folder,
+                "text_folder": text_folder,
+            },
+            output_dir,
+            options,
+            items,
+            errors,
+        )
+
+        if output_dir is not None:
+
+            Path(
+                output_dir
+            ).mkdir(
+                parents=True,
+                exist_ok=True,
+            )
+
             self.write_outputs(
                 output_dir,
                 result,
@@ -891,9 +1073,6 @@ class DatasetService:
 
         manifest = {
             "schema_version": 2,
-            "source_root": str(
-                Path(root)
-            ),
             "options": options,
             "summary": summary,
             "health": health,
@@ -910,6 +1089,26 @@ class DatasetService:
             "manifest": "manifest.json",
             "metadata": "metadata.list",
         }
+
+        if isinstance(
+            root,
+            dict,
+        ):
+
+            manifest["source_roots"] = {
+                key: str(
+                    Path(
+                        value
+                    )
+                )
+                for key, value in root.items()
+            }
+
+        else:
+
+            manifest["source_root"] = str(
+                Path(root)
+            )
 
         if output_dir is not None:
 

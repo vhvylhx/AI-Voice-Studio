@@ -671,3 +671,16 @@
 - Ngay cap nhat: 2026-07-22.
 
 ---
+
+# DEC-069: Thread Budget Phase 8 enforcement integration phai scoped va adapter-gated
+
+- Trang thai: Chap nhan.
+- Boi canh: Sau Phase 7 can noi Thread Budget vao JobRunner/engine theo cach co rollback, nhung khong duoc bat enforcement mac dinh hoac mutate system-wide environment.
+- Quyet dinh: Phase 8 them `ThreadBudgetEngineCapability`, `ThreadBudgetApplyState`, capability registry, runtime adapter contract va `ScopedThreadBudgetExecutor`.
+- Quyet dinh: JobRunner chi kich hoat Thread Budget khi duoc inject service; `monitor_only` khong mutate, `enforce` can engine capability/adapter dang ky va apply truoc workload, restore sau workload.
+- Quyet dinh: Environment change la scoped dict trong `JobExecutionContext`, khong ghi `os.environ`; runtime thread setting chi qua adapter da dang ky; khong CPU affinity.
+- Ly do: Cho phep validate production integration boundary deterministic truoc khi Phase 9 dang ky adapter GPT-SoVITS that.
+- He qua: Rollback ve monitor_only hoac bo inject service se tra JobRunner ve behavior cu; Phase 9 van can engine-specific adapter va rollout rieng.
+- Ngay cap nhat: 2026-07-22.
+
+---

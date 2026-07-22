@@ -1,5 +1,27 @@
 # Changelog
 
+## Resource Safety Hardening Phase 8: Production Thread Enforcement Integration
+
+### Added
+
+- `ThreadBudgetEngineCapability` va `ThreadBudgetApplyState` cho contract apply/restore co audit.
+- `ThreadBudgetCapabilityRegistry` de dang ky engine capability va runtime adapter theo `engine_id`.
+- `ThreadBudgetRuntimeAdapter` contract va fake adapter deterministic cho tests.
+- `ScopedThreadBudgetExecutor` apply scoped environment copy, runtime adapter setting, rollback khi apply fail va restore sau workload.
+- Optional JobRunner hook qua `thread_budget_service`, apply truoc worker workload va restore trong lifecycle runner.
+- Tests Phase 8 cho monitor_only no-mutation, enforce scoped env/runtime, missing capability fail-safe, rollback, primary error preservation va JobRunner integration.
+
+### Changed
+
+- Production default van `thread_budget_mode=monitor_only`.
+- Khong ghi `os.environ`; environment contract la scoped dict trong `JobExecutionContext`.
+- Khong CPU affinity, khong kill process, khong doi queue ordering, retry, pause/cancel hoac final state mac dinh.
+
+### Notes
+
+- Phase 8 chua dang ky GPT-SoVITS/VieNeu adapter production va chua rollout enforcement mac dinh.
+- Canonical suite Phase 8: 275 passed, tang 7 tests so voi Phase 7 baseline 268.
+
 ## Resource Safety Hardening Phase 7: Thread Budget Enforcement Foundation
 
 ### Added

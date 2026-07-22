@@ -1,5 +1,13 @@
 # Current Sprint
 
+## Cap nhat Resource Safety Hardening Phase 8
+
+- Phase 8 Production Thread Enforcement Integration da hoan thanh o muc foundation/integration contract.
+- `thread_budget_mode` mac dinh van `monitor_only`.
+- Da co scoped environment contract, runtime adapter registry, apply-before-workload/restore-after-workload hook optional trong JobRunner, rollback va primary-error preservation.
+- Chua Phase 9: chua dang ky GPT-SoVITS/VieNeu production adapter va chua rollout enforcement mac dinh.
+- Validation canonical Phase 8: 275 passed.
+
 ## Trạng thái hiện tại
 
 - AVS-013 hoàn thành.

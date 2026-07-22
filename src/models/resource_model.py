@@ -614,6 +614,38 @@ THREAD_REASON_POLICY_MISMATCH = "thread_policy_mismatch"
 THREAD_REASON_PROCESS_THREAD_COUNT_UNKNOWN = (
     "thread_process_thread_count_unknown"
 )
+THREAD_REASON_ENFORCEMENT_APPLIED = "thread_enforcement_applied"
+THREAD_REASON_ENFORCEMENT_DEFERRED = "thread_enforcement_deferred"
+THREAD_REASON_ENFORCEMENT_UNAVAILABLE = "thread_enforcement_unavailable"
+THREAD_REASON_ENVIRONMENT_APPLIED = "thread_environment_applied"
+THREAD_REASON_ENVIRONMENT_APPLY_FAILED = (
+    "thread_environment_apply_failed"
+)
+THREAD_REASON_ENVIRONMENT_RESTORED = "thread_environment_restored"
+THREAD_REASON_ENVIRONMENT_RESTORE_FAILED = (
+    "thread_environment_restore_failed"
+)
+THREAD_REASON_RUNTIME_APPLIED = "thread_runtime_applied"
+THREAD_REASON_RUNTIME_APPLY_FAILED = "thread_runtime_apply_failed"
+THREAD_REASON_RUNTIME_RESTORED = "thread_runtime_restored"
+THREAD_REASON_RUNTIME_RESTORE_FAILED = "thread_runtime_restore_failed"
+THREAD_REASON_ADAPTER_UNAVAILABLE = "thread_adapter_unavailable"
+THREAD_REASON_ADAPTER_UNSUPPORTED = "thread_adapter_unsupported"
+THREAD_REASON_ENGINE_CAPABILITY_MISSING = (
+    "thread_engine_capability_missing"
+)
+THREAD_REASON_PARTIAL_APPLY = "thread_partial_apply"
+THREAD_REASON_ROLLBACK_REQUIRED = "thread_rollback_required"
+THREAD_REASON_ROLLBACK_COMPLETED = "thread_rollback_completed"
+THREAD_REASON_ROLLBACK_FAILED = "thread_rollback_failed"
+THREAD_REASON_OWNERSHIP_MISMATCH = "thread_ownership_mismatch"
+THREAD_REASON_POLICY_CHANGED_DURING_EXECUTION = (
+    "thread_policy_changed_during_execution"
+)
+THREAD_REASON_CLEANUP_ERROR = "thread_cleanup_error"
+THREAD_REASON_PRIMARY_ERROR_PRESERVED = (
+    "thread_primary_error_preserved"
+)
 
 THREAD_REASON_CODES = (
     THREAD_REASON_AVAILABLE,
@@ -645,6 +677,28 @@ THREAD_REASON_CODES = (
     THREAD_REASON_PRODUCTION_EXECUTOR_UNAVAILABLE,
     THREAD_REASON_POLICY_MISMATCH,
     THREAD_REASON_PROCESS_THREAD_COUNT_UNKNOWN,
+    THREAD_REASON_ENFORCEMENT_APPLIED,
+    THREAD_REASON_ENFORCEMENT_DEFERRED,
+    THREAD_REASON_ENFORCEMENT_UNAVAILABLE,
+    THREAD_REASON_ENVIRONMENT_APPLIED,
+    THREAD_REASON_ENVIRONMENT_APPLY_FAILED,
+    THREAD_REASON_ENVIRONMENT_RESTORED,
+    THREAD_REASON_ENVIRONMENT_RESTORE_FAILED,
+    THREAD_REASON_RUNTIME_APPLIED,
+    THREAD_REASON_RUNTIME_APPLY_FAILED,
+    THREAD_REASON_RUNTIME_RESTORED,
+    THREAD_REASON_RUNTIME_RESTORE_FAILED,
+    THREAD_REASON_ADAPTER_UNAVAILABLE,
+    THREAD_REASON_ADAPTER_UNSUPPORTED,
+    THREAD_REASON_ENGINE_CAPABILITY_MISSING,
+    THREAD_REASON_PARTIAL_APPLY,
+    THREAD_REASON_ROLLBACK_REQUIRED,
+    THREAD_REASON_ROLLBACK_COMPLETED,
+    THREAD_REASON_ROLLBACK_FAILED,
+    THREAD_REASON_OWNERSHIP_MISMATCH,
+    THREAD_REASON_POLICY_CHANGED_DURING_EXECUTION,
+    THREAD_REASON_CLEANUP_ERROR,
+    THREAD_REASON_PRIMARY_ERROR_PRESERVED,
 )
 
 
@@ -1702,6 +1756,154 @@ class ThreadBudgetObservation:
     )
 
     provenance: dict = field(
+        default_factory=dict
+    )
+
+    schema_version: int = 1
+
+    def to_dict(
+        self,
+    ):
+
+        return asdict(
+            self
+        )
+
+    @classmethod
+    def from_dict(
+        cls,
+        data,
+    ):
+
+        if isinstance(
+            data,
+            cls,
+        ):
+
+            return data
+
+        data = data or {}
+
+        return cls(
+            **{
+                key: value
+                for key, value in data.items()
+                if key in cls.__dataclass_fields__
+            }
+        )
+
+
+@dataclass
+class ThreadBudgetEngineCapability:
+
+    engine_id: str
+
+    adapter_id: str = ""
+
+    supports_environment_threads: bool = True
+
+    supports_runtime_threads: bool = False
+
+    supports_restore: bool = True
+
+    supports_intraop_threads: bool = False
+
+    supports_interop_threads: bool = False
+
+    max_safe_threads: int = 0
+
+    capability_version: str = "phase8"
+
+    metadata: dict = field(
+        default_factory=dict
+    )
+
+    def to_dict(
+        self,
+    ):
+
+        return asdict(
+            self
+        )
+
+    @classmethod
+    def from_dict(
+        cls,
+        data,
+    ):
+
+        if isinstance(
+            data,
+            cls,
+        ):
+
+            return data
+
+        data = data or {}
+
+        return cls(
+            **{
+                key: value
+                for key, value in data.items()
+                if key in cls.__dataclass_fields__
+            }
+        )
+
+
+@dataclass
+class ThreadBudgetApplyState:
+
+    state_id: str = ""
+
+    budget_id: str = ""
+
+    observation_id: str = ""
+
+    job_id: str = ""
+
+    lease_id: str = ""
+
+    process_id: str = ""
+
+    owner_id: str = ""
+
+    engine_id: str = ""
+
+    mode: str = FEATURE_MODE_MONITOR_ONLY
+
+    status: str = THREAD_BUDGET_STATE_DEFERRED
+
+    applied_at: str = ""
+
+    restored_at: str = ""
+
+    environment_before: dict = field(
+        default_factory=dict
+    )
+
+    environment_after: dict = field(
+        default_factory=dict
+    )
+
+    runtime_before: dict = field(
+        default_factory=dict
+    )
+
+    runtime_after: dict = field(
+        default_factory=dict
+    )
+
+    reason_codes: list = field(
+        default_factory=list
+    )
+
+    audit: list = field(
+        default_factory=list
+    )
+
+    policy_fingerprint: str = ""
+
+    metadata: dict = field(
         default_factory=dict
     )
 

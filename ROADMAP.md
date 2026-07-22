@@ -1,5 +1,10 @@
 # AI Voice Studio Roadmap
 
+## Cap nhat gan nhat
+
+- [x] Resource Safety Hardening Phase 8: Production Thread Enforcement Integration foundation.
+- [ ] Resource Safety Hardening Phase 9: dang ky adapter production cho engine cu the va rollout enforcement co gate.
+
 > Nguyên tắc:
 >
 > Luôn ưu tiên tạo ra phiên bản sử dụng được trước (MVP), sau đó mới mở rộng tính năng.

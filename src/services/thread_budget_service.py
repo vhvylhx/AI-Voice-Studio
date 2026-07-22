@@ -54,6 +54,8 @@ from models.resource_model import (
     THREAD_REASON_STALE,
     THREAD_REASON_TOTAL_ABOVE_POLICY_LIMIT,
     THREAD_REASON_UNKNOWN,
+    THREAD_REASON_ENFORCEMENT_DEFERRED,
+    ThreadBudgetApplyState,
     WORKLOAD_CLASS_CPU_HEAVY,
     WORKLOAD_CLASS_GPU_INFERENCE,
     WORKLOAD_CLASS_GPU_TRAINING,
@@ -63,7 +65,10 @@ from models.resource_model import (
     ThreadBudgetObservation,
 )
 from services.resource_policy_service import ResourcePolicyService
-from services.thread_budget_executor import SimulatedThreadBudgetExecutor
+from services.thread_budget_executor import (
+    ScopedThreadBudgetExecutor,
+    SimulatedThreadBudgetExecutor,
+)
 
 
 HEAVY_WORKLOADS = (
@@ -99,12 +104,19 @@ class ThreadBudgetService:
         self,
         policy_service=None,
         executor=None,
+        production_executor=None,
+        capability_registry=None,
         clock=None,
         supported_environment_variables=None,
     ):
 
         self.policy_service = policy_service or ResourcePolicyService()
         self.executor = executor or SimulatedThreadBudgetExecutor()
+        self.production_executor = (
+            production_executor
+            or ScopedThreadBudgetExecutor()
+        )
+        self.capability_registry = capability_registry
         self.clock = clock or datetime.now
         self.supported_environment_variables = tuple(
             supported_environment_variables
@@ -112,6 +124,170 @@ class ThreadBudgetService:
         )
         self.last_observation = None
         self.action_attempts = {}
+
+    def prepare_enforcement(
+        self,
+        engine_id,
+        environment=None,
+        workload_class=WORKLOAD_CLASS_LIGHT,
+        requested_threads=1,
+        total_logical_cpu_threads=1,
+        active_budgets=None,
+        active_job_count=0,
+        active_heavy_job_count=0,
+        job_id="",
+        lease_id="",
+        process_id="",
+        owner_id="",
+        outer_worker_threads=1,
+        process_thread_count=None,
+        lease_observation=None,
+        process_observation=None,
+        runtime_guard_observation=None,
+        runtime_settings=None,
+    ):
+
+        policy = self.resolve_policy()
+        mode = self.mode(
+            policy
+        )
+        capability = self.registry_capability(
+            engine_id
+        )
+        adapter = self.registry_adapter(
+            engine_id
+        )
+        runtime_settings = dict(
+            runtime_settings
+            or {}
+        )
+
+        if adapter is not None and not runtime_settings:
+
+            runtime_settings = adapter.capture_current_settings()
+
+        if capability is not None:
+
+            runtime_settings.setdefault(
+                "supports_set_num_threads",
+                capability.supports_intraop_threads,
+            )
+            runtime_settings.setdefault(
+                "supports_set_num_interop_threads",
+                capability.supports_interop_threads,
+            )
+
+        observation = self.evaluate(
+            total_logical_cpu_threads=total_logical_cpu_threads,
+            workload_class=workload_class,
+            requested_threads=requested_threads,
+            active_budgets=active_budgets,
+            active_job_count=active_job_count,
+            active_heavy_job_count=active_heavy_job_count,
+            job_id=job_id,
+            lease_id=lease_id,
+            process_id=process_id,
+            owner_id=owner_id,
+            environment=environment,
+            runtime_settings=runtime_settings,
+            outer_worker_threads=outer_worker_threads,
+            process_thread_count=process_thread_count,
+            lease_observation=lease_observation,
+            process_observation=process_observation,
+            runtime_guard_observation=runtime_guard_observation,
+        )
+
+        if mode != FEATURE_MODE_ENFORCE:
+
+            state = ThreadBudgetApplyState(
+                budget_id=observation.budget_id,
+                observation_id=observation.observation_id,
+                job_id=job_id,
+                lease_id=lease_id,
+                process_id=process_id,
+                owner_id=owner_id,
+                engine_id=engine_id,
+                mode=mode,
+                status=THREAD_BUDGET_STATE_DEFERRED,
+                environment_before=dict(
+                    environment
+                    or {}
+                ),
+                environment_after=dict(
+                    environment
+                    or {}
+                ),
+                reason_codes=sorted(
+                    set(
+                        observation.reason_codes
+                        + [
+                            THREAD_REASON_ENFORCEMENT_DEFERRED
+                        ]
+                    )
+                ),
+                policy_fingerprint=observation.policy_fingerprint,
+            )
+            return observation, state
+
+        state = self.production_executor.apply(
+            observation=observation,
+            policy=policy,
+            mode=mode,
+            engine_id=engine_id,
+            capability=capability,
+            runtime_adapter=adapter,
+            environment=environment,
+        )
+
+        return observation, state
+
+    def restore_enforcement(
+        self,
+        state,
+        engine_id="",
+        primary_error=None,
+    ):
+
+        adapter = self.registry_adapter(
+            engine_id
+            or getattr(
+                state,
+                "engine_id",
+                "",
+            )
+        )
+
+        return self.production_executor.restore(
+            state,
+            runtime_adapter=adapter,
+            primary_error=primary_error,
+        )
+
+    def registry_capability(
+        self,
+        engine_id,
+    ):
+
+        if self.capability_registry is None:
+
+            return None
+
+        return self.capability_registry.capability(
+            engine_id
+        )
+
+    def registry_adapter(
+        self,
+        engine_id,
+    ):
+
+        if self.capability_registry is None:
+
+            return None
+
+        return self.capability_registry.adapter(
+            engine_id
+        )
 
     def now(
         self,

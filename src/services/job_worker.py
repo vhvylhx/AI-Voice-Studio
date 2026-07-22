@@ -26,6 +26,12 @@ class JobExecutionContext:
 
     app_context: object | None = None
 
+    environment: dict | None = None
+
+    thread_budget_observation: object | None = None
+
+    thread_budget_state: object | None = None
+
 
 class BaseJobWorker:
 

@@ -1,7 +1,12 @@
 import threading
+from os import cpu_count
+from os import getpid
 from uuid import uuid4
 
 from models.job_model import now_iso
+from models.resource_model import FEATURE_MODE_ENFORCE
+from models.resource_model import ResourceRequirement
+from models.resource_model import THREAD_BUDGET_STATE_APPLIED
 from services.job_state_machine import JobStateMachine
 from services.job_worker import (
     JobCancelled,
@@ -19,6 +24,7 @@ class JobRunner:
         handler_registry,
         log_service,
         app_context=None,
+        thread_budget_service=None,
     ):
 
         self.repository = repository
@@ -30,6 +36,8 @@ class JobRunner:
         self.log_service = log_service
 
         self.app_context = app_context
+
+        self.thread_budget_service = thread_budget_service
 
         self.state_machine = JobStateMachine()
 
@@ -52,6 +60,9 @@ class JobRunner:
 
     def context(
         self,
+        environment=None,
+        thread_budget_observation=None,
+        thread_budget_state=None,
     ):
 
         return JobExecutionContext(
@@ -59,6 +70,9 @@ class JobRunner:
             log_service=self.log_service,
             queue_service=self.queue_service,
             app_context=self.app_context,
+            environment=environment,
+            thread_budget_observation=thread_budget_observation,
+            thread_budget_state=thread_budget_state,
         )
 
     def run_next(
@@ -167,6 +181,9 @@ class JobRunner:
         self.active_worker = worker
 
         context = self.context()
+        thread_budget_observation = None
+        thread_budget_state = None
+        primary_error = None
 
         try:
 
@@ -189,6 +206,37 @@ class JobRunner:
                 "Job báº¯t Ä‘áº§u cháº¡y.",
                 stage="runner",
             )
+
+            thread_budget_observation, thread_budget_state = (
+                self.prepare_thread_budget(
+                    job,
+                    worker,
+                )
+            )
+
+            if thread_budget_state is not None:
+
+                context = self.context(
+                    environment=thread_budget_state.environment_after,
+                    thread_budget_observation=thread_budget_observation,
+                    thread_budget_state=thread_budget_state,
+                )
+
+                self.store_thread_budget_audit(
+                    job.job_id,
+                    thread_budget_observation,
+                    thread_budget_state,
+                )
+
+                if (
+                    thread_budget_state.mode == FEATURE_MODE_ENFORCE
+                    and thread_budget_state.status
+                    != THREAD_BUDGET_STATE_APPLIED
+                ):
+
+                    raise RuntimeError(
+                        "thread_budget_enforcement_not_applied"
+                    )
 
             result = worker.execute(
                 job,
@@ -230,6 +278,10 @@ class JobRunner:
 
         except JobPaused:
 
+            primary_error = JobPaused(
+                "job_pause_requested"
+            )
+
             job = self.repository.load(
                 job.job_id
             ) or job
@@ -256,6 +308,10 @@ class JobRunner:
             return job
 
         except JobCancelled:
+
+            primary_error = JobCancelled(
+                "job_cancel_requested"
+            )
 
             job = self.repository.load(
                 job.job_id
@@ -294,6 +350,8 @@ class JobRunner:
             return job
 
         except Exception as exc:
+
+            primary_error = exc
 
             job = self.repository.load(
                 job.job_id
@@ -340,6 +398,11 @@ class JobRunner:
 
         finally:
 
+            self.restore_thread_budget(
+                thread_budget_state,
+                primary_error=primary_error,
+            )
+
             try:
 
                 latest = self.repository.load(
@@ -359,6 +422,148 @@ class JobRunner:
             self.active_job_id = ""
 
             self.active_worker = None
+
+    def prepare_thread_budget(
+        self,
+        job,
+        worker,
+    ):
+
+        if self.thread_budget_service is None:
+
+            return None, None
+
+        requirement = self.thread_budget_requirement(
+            job,
+            worker,
+        )
+
+        return self.thread_budget_service.prepare_enforcement(
+            engine_id=self.thread_budget_engine_id(
+                job,
+                worker,
+            ),
+            environment=dict(
+                job.payload.get(
+                    "environment",
+                    {},
+                )
+            ),
+            workload_class=requirement.workload_class,
+            requested_threads=requirement.cpu_threads,
+            total_logical_cpu_threads=cpu_count()
+            or 1,
+            job_id=job.job_id,
+            lease_id=job.resource_lease_id,
+            process_id=str(
+                getpid()
+            ),
+            owner_id=self.lease_owner,
+            process_thread_count=threading.active_count(),
+        )
+
+    def restore_thread_budget(
+        self,
+        thread_budget_state,
+        primary_error=None,
+    ):
+
+        if (
+            self.thread_budget_service is None
+            or thread_budget_state is None
+            or thread_budget_state.status != THREAD_BUDGET_STATE_APPLIED
+        ):
+
+            return None
+
+        restored = self.thread_budget_service.restore_enforcement(
+            thread_budget_state,
+            engine_id=thread_budget_state.engine_id,
+            primary_error=primary_error,
+        )
+
+        self.store_thread_budget_audit(
+            restored.job_id,
+            None,
+            restored,
+        )
+
+        return restored
+
+    def thread_budget_requirement(
+        self,
+        job,
+        worker,
+    ):
+
+        if job.resource_requirement:
+
+            return ResourceRequirement.from_dict(
+                job.resource_requirement
+            )
+
+        return ResourceRequirement.from_dict(
+            getattr(
+                worker,
+                "resource_requirement",
+                {},
+            )
+        )
+
+    def thread_budget_engine_id(
+        self,
+        job,
+        worker,
+    ):
+
+        return (
+            job.payload.get(
+                "thread_budget_engine_id",
+                "",
+            )
+            or job.payload.get(
+                "engine_id",
+                "",
+            )
+            or getattr(
+                worker,
+                "thread_budget_engine_id",
+                "",
+            )
+            or job.job_type
+        )
+
+    def store_thread_budget_audit(
+        self,
+        job_id,
+        observation,
+        state,
+    ):
+
+        job = self.repository.load(
+            job_id
+        )
+
+        if job is None:
+
+            return None
+
+        job.recovery_state[
+            "thread_budget_phase8"
+        ] = {
+            "observation": observation.to_dict()
+            if observation is not None
+            else None,
+            "state": state.to_dict()
+            if state is not None
+            else None,
+        }
+
+        self.repository.save(
+            job
+        )
+
+        return job
 
     def release_resource_lease(
         self,

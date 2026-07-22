@@ -85,3 +85,12 @@ Thread Budget modes:
 - `enforce`: Phase 7 chi goi simulated executor an toan; production executor van UNAVAILABLE neu chua co integration boundary.
 
 Trong Phase 7, Thread Budget khong mutate `os.environ`, khong goi runtime library setter production, khong doi CPU affinity, khong doi JobQueue/JobRunner va khong bat Generate/Training production.
+
+Thread Budget Phase 8 them integration contract cho production-safe enforcement:
+
+- `monitor_only` van la default va chi sinh observation/plan/audit, khong mutate runtime.
+- `enforce` chi apply khi JobRunner duoc inject `ThreadBudgetService` va engine co capability/adapter da dang ky.
+- Environment enforcement la scoped copy truyen qua `JobExecutionContext`, khong ghi vao `os.environ`.
+- Runtime enforcement di qua adapter contract `capture_current_settings`, `validate_thread_budget`, `apply_thread_budget`, `restore_thread_budget`.
+- Apply dien ra truoc workload; restore dien ra sau workload trong lifecycle runner va khong che primary workload error.
+- Khong co CPU affinity, khong kill process, khong thay queue ordering, retry, pause/cancel hoac final-state semantics mac dinh.

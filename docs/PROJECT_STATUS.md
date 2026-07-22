@@ -4,7 +4,7 @@ Ngay cap nhat: 2026-07-22
 
 ## Trang thai hien tai
 
-- Sprint vua thuc hien: Resource Safety Hardening Phase 7 - Thread Budget Enforcement Foundation.
+- Sprint vua thuc hien: Resource Safety Hardening Phase 8 - Production Thread Enforcement Integration.
 - Nen Generate Pipeline AVS-014.16 da co o muc request/session/source snapshot/plan/manifest/recovery/API/job prepare.
 - Resource Policy schema v2 da co foundation resolve/migration/fallback/fingerprint o muc monitor-only/disabled.
 - Resource Safety Phase 2 da co snapshot validation/freshness va shadow Resource Decision v2 monitor-only, khong doi scheduling/runtime behavior.
@@ -13,6 +13,7 @@ Ngay cap nhat: 2026-07-22
 - Resource Safety Phase 5 da co Process Supervisor foundation cho identity, registry, tree discovery, shadow shutdown plan va audit; mac dinh monitor_only va khong kill process production.
 - Resource Safety Phase 6 da co Runtime Guard action foundation monitor_only/enforce-gated voi pressure classification, action recommendation, cooldown/hysteresis/retry, simulated executor va structured observation; mac dinh monitor_only va khong kill/pause/terminate production.
 - Resource Safety Phase 7 da co Thread Budget foundation monitor_only/enforce-gated voi workload allocation, oversubscription/nested parallelism detection, environment/runtime plan, restore plan, cooldown/dedup/retry va simulated executor; khong mutate thread/env/runtime production.
+- Resource Safety Phase 8 da co production-safe Thread Budget integration contract voi scoped environment copy, runtime adapter registry, apply-before-workload/restore-after-workload hook trong JobRunner khi duoc inject, rollback audit va primary-error preservation; mac dinh `thread_budget_mode` van monitor_only.
 - Chua tich hop GPT-SoVITS runtime cho Generate production trong phase nay.
 - Chua Train GPT-SoVITS that trong phase nay.
 - Chua Generate Audio that trong phase nay.
@@ -50,7 +51,7 @@ Ngay cap nhat: 2026-07-22
 | Runtime Guard action foundation | READY | Phase 6 co RuntimeGuardObservation, pressure level, WOULD_* action, cooldown/hysteresis/retry va simulated executor dung policy resolved. |
 | Runtime Guard production action | UNAVAILABLE | Default monitor_only; enforce chi goi simulated executor an toan, khong pause/terminate/kill-tree process that va khong doi Job state/scheduling. |
 | Thread Budget foundation | READY | Phase 7 co ThreadBudgetObservation, workload allocation deterministic, oversubscription/nested detection, environment/runtime/restore plan va simulated executor. |
-| Thread Budget production enforcement | UNAVAILABLE | Default monitor_only; enforce Phase 7 chi simulated, khong mutate os.environ, runtime library thread setting, CPU affinity, JobQueue hoac engine production. |
+| Thread Budget production enforcement integration | DEGRADED | Phase 8 co scoped environment/runtime adapter contract va optional JobRunner hook; default van monitor_only, chua dang ky GPT-SoVITS adapter production. |
 | Style Profile / Voice DNA foundation | DEGRADED | Quan ly/import/export foundation co; prosody analyzer that chua co. |
 | Runtime GPT-SoVITS integration cho Generate | UNAVAILABLE | La pham vi sprint sau, khong lam trong AVS-014.16A. |
 
@@ -67,13 +68,13 @@ Ngay cap nhat: 2026-07-22
 - Chua co full audio validation policy bang ffprobe/codec cho artifact production.
 - Chua chay Train GPT-SoVITS production.
 - Chua co prosody analyzer that cho Voice DNA.
-- Chua co Process Supervisor production kill-tree, runtime guard production action, thread budget enforcement hoac per-job CPU fallback confirmation workflow.
+- Chua co Process Supervisor production kill-tree, runtime guard production action hoac per-job CPU fallback confirmation workflow.
 - Resource Decision v2 hien chi shadow/monitor-only; chua duoc dung de block Queue, doi job state, cap/release lease, doi CPU fallback, thread, batch hoac runtime guard.
 - Resource Lease v2 enforcement chi chay khi `resource_lease_v2_mode=enforce`; mac dinh monitor_only van giu legacy/Phase 3 behavior.
 - Process Supervisor hien chi foundation/monitor-only/simulated; chua co provider production day du, khong kill process that.
 - Runtime Guard hien chi foundation/monitor-only/simulated; chua co action executor production, khong pause/terminate/kill-tree process that.
-- Thread Budget hien chi foundation/monitor-only/simulated; chua co production executor/integration contract de mutate environment, library runtime thread settings hoac CPU affinity.
+- Thread Budget Phase 8 da co production-safe integration contract, nhung default monitor_only va chua co GPT-SoVITS adapter production dang ky; khong co CPU affinity/system-wide environment mutation.
 
 ## Sprint tiep theo du kien
 
-- AVS-014.17 GPT-SoVITS Runtime Integration chi bat dau sau khi source/docs/tests hien tai dat va Resource Safety Hardening Phase 7 neu co duoc phe duyet rieng.
+- AVS-014.17 GPT-SoVITS Runtime Integration chi bat dau sau khi source/docs/tests hien tai dat va Resource Safety Hardening Phase 8 duoc review.

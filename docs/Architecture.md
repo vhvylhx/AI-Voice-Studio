@@ -1457,3 +1457,27 @@ Ranh gioi:
 - Khong goi CPU affinity, `taskset`, `start /affinity` hoac `psutil.cpu_affinity`.
 - Khong goi production runtime library setter neu chua co contract/integration test.
 - Khong thay JobQueue scheduling, Job final state, retry, pause, cancel, Generate/Training execution hoac engine adapter.
+
+---
+
+## Resource Safety Hardening Phase 8
+
+Phase 8 them Production Thread Enforcement Integration foundation, mac dinh van monitor-only.
+
+Thanh phan:
+
+- `ThreadBudgetEngineCapability` mo ta engine co ho tro scoped environment thread settings, runtime thread settings, restore va max safe threads.
+- `ThreadBudgetCapabilityRegistry` dang ky capability/adapter theo `engine_id`.
+- `ThreadBudgetRuntimeAdapter` la contract capture/validate/apply/restore cho runtime setting; production adapter that chua duoc dang ky trong phase nay.
+- `ScopedThreadBudgetExecutor` tao `ThreadBudgetApplyState`, apply scoped environment copy, goi adapter runtime neu duoc ho tro, rollback khi apply fail va restore sau workload.
+- `JobRunner` co hook optional qua dependency injection; neu khong inject `thread_budget_service`, flow cu giu nguyen.
+
+Nguyen tac Phase 8:
+
+- Default `thread_budget_mode` khong doi: `monitor_only`.
+- `monitor_only` chi audit/propose, khong mutate runtime.
+- Environment enforcement khong dung `os.environ`; scoped environment nam trong `JobExecutionContext.environment`.
+- Runtime enforcement chi qua registered adapter contract, khong import/goi GPT-SoVITS logic that.
+- Apply truoc worker workload; restore trong runner lifecycle sau workload va khong che primary error.
+- Khong CPU affinity, khong kill process, khong thay JobQueue ordering, retry, pause/cancel hoac final-state semantics mac dinh.
+- Phase 8 khong phai Phase 9: chua dang ky GPT-SoVITS/VieNeu production adapter va chua rollout enforcement mac dinh.

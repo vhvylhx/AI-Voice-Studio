@@ -1,5 +1,27 @@
 # Changelog
 
+## Resource Safety Hardening Phase 9: Production Engine Adapter Registration va Controlled Rollout
+
+### Added
+
+- Controlled rollout policy cho Thread Budget: engine allowlist/denylist, deterministic rollout percentage, explicit opt-in va fail_open=false.
+- Expanded `ThreadBudgetEngineCapability` voi execution mode, framework, scoped environment, adapter metadata, production readiness, unavailable reason va provenance.
+- Default Thread Budget capability registry tu engine source evidence.
+- GPT-SoVITS capability production-ready chi cho scoped subprocess environment adapter.
+- Unsupported capability records cho non-production engines.
+- `SubprocessEnvironmentThreadAdapter`, `PyTorchThreadBudgetAdapter` lazy import va `UnsupportedEngineThreadAdapter`.
+- Tests Phase 9 cho discovery, rollout, unknown/unavailable engine, scoped env, fake PyTorch adapter va JobRunner integration.
+
+### Changed
+
+- AppContext khoi tao Thread Budget registry/service va inject vao JobRunner; default monitor_only nen khong enforce.
+- Production enforcement khong chay neu engine khong allowlisted/opt-in/rollout selected hoac adapter/capability khong san sang.
+
+### Notes
+
+- Khong load model, khong goi GPU, khong internet, khong CPU affinity/process kill.
+- Khong production-ready cho VieNeu vi source hien tai khong co engine integration.
+
 ## Resource Safety Hardening Phase 8: Production Thread Enforcement Integration
 
 ### Added

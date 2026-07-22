@@ -489,6 +489,31 @@ class ResourcePolicyService:
         )
 
         normalized.setdefault(
+            "thread_budget_engine_allowlist",
+            [],
+        )
+
+        normalized.setdefault(
+            "thread_budget_engine_denylist",
+            [],
+        )
+
+        normalized.setdefault(
+            "thread_budget_rollout_percentage",
+            0.0,
+        )
+
+        normalized.setdefault(
+            "thread_budget_require_explicit_engine_opt_in",
+            True,
+        )
+
+        normalized.setdefault(
+            "thread_budget_fail_open",
+            False,
+        )
+
+        normalized.setdefault(
             "snapshot_unknown_state_policy",
             "monitor_only",
         )
@@ -739,6 +764,42 @@ class ResourcePolicyService:
 
             errors.append(
                 "invalid_thread_budget"
+            )
+
+        if not isinstance(
+            policy.thread_budget_engine_allowlist,
+            list,
+        ):
+
+            errors.append(
+                "invalid_thread_budget_engine_allowlist"
+            )
+
+        if not isinstance(
+            policy.thread_budget_engine_denylist,
+            list,
+        ):
+
+            errors.append(
+                "invalid_thread_budget_engine_denylist"
+            )
+
+        rollout = float(
+            policy.thread_budget_rollout_percentage
+        )
+
+        if rollout < 0 or rollout > 100:
+
+            errors.append(
+                "invalid_thread_budget_rollout_percentage"
+            )
+
+        if bool(
+            policy.thread_budget_fail_open
+        ):
+
+            errors.append(
+                "thread_budget_fail_open_must_be_false"
             )
 
         for value in policy.thread_limits.values():
@@ -1031,6 +1092,26 @@ class ResourcePolicyService:
 
         data["thread_budget_restore_on_release"] = (
             resolved.thread_budget_restore_on_release
+        )
+
+        data["thread_budget_engine_allowlist"] = list(
+            resolved.thread_budget_engine_allowlist
+        )
+
+        data["thread_budget_engine_denylist"] = list(
+            resolved.thread_budget_engine_denylist
+        )
+
+        data["thread_budget_rollout_percentage"] = (
+            resolved.thread_budget_rollout_percentage
+        )
+
+        data["thread_budget_require_explicit_engine_opt_in"] = (
+            resolved.thread_budget_require_explicit_engine_opt_in
+        )
+
+        data["thread_budget_fail_open"] = (
+            resolved.thread_budget_fail_open
         )
 
         data["cpu_fallback_requires_job_confirmation"] = (

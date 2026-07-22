@@ -213,6 +213,14 @@ def test_load_valid_v2_and_missing_fields_use_safe_defaults():
     assert resolved.batch_size == 1
     assert resolved.thread_limits["ui_light_threads"] == 2
     assert resolved.allow_cpu_fallback is False
+    assert resolved.thread_budget_engine_allowlist == []
+    assert resolved.thread_budget_engine_denylist == []
+    assert resolved.thread_budget_rollout_percentage == 0.0
+    assert (
+        resolved.thread_budget_require_explicit_engine_opt_in
+        is True
+    )
+    assert resolved.thread_budget_fail_open is False
 
 
 def test_unknown_top_level_field_does_not_crash():
@@ -327,6 +335,50 @@ def test_invalid_thread_limits():
     assert any(
         "invalid_thread_limit" in notice
         for notice in resolved.notices
+    )
+
+
+def test_invalid_thread_budget_rollout_policy_is_fail_safe():
+
+    invalid_percentage = service_with_policy(
+        {
+            "schema_version": 2,
+            "thread_budget_rollout_percentage": 101,
+        }
+    ).resolve(
+        migrate=False
+    )
+    fail_open = service_with_policy(
+        {
+            "schema_version": 2,
+            "thread_budget_fail_open": True,
+        }
+    ).resolve(
+        migrate=False
+    )
+    invalid_allowlist = service_with_policy(
+        {
+            "schema_version": 2,
+            "thread_budget_engine_allowlist": "gpt_sovits",
+        }
+    ).resolve(
+        migrate=False
+    )
+
+    assert invalid_percentage.source == "built_in_fallback"
+    assert fail_open.source == "built_in_fallback"
+    assert invalid_allowlist.source == "built_in_fallback"
+    assert any(
+        "invalid_thread_budget_rollout_percentage" in notice
+        for notice in invalid_percentage.notices
+    )
+    assert any(
+        "thread_budget_fail_open_must_be_false" in notice
+        for notice in fail_open.notices
+    )
+    assert any(
+        "invalid_thread_budget_engine_allowlist" in notice
+        for notice in invalid_allowlist.notices
     )
 
 

@@ -43,6 +43,8 @@ class AppContext(metaclass=AppContextMeta):
         "resource_decision_service",
         "resource_lease_manager",
         "resource_monitor_service",
+        "thread_budget_capability_registry",
+        "thread_budget_service",
         "generate_repository",
         "generate_session_service",
         "generate_text_structure_service",
@@ -93,6 +95,10 @@ class AppContext(metaclass=AppContextMeta):
         from services.resource_monitor_service import ResourceMonitorService
         from services.resource_policy_service import ResourcePolicyService
         from services.resource_snapshot_service import ResourceSnapshotService
+        from services.thread_budget_capability_registry import (
+            build_default_thread_budget_registry,
+        )
+        from services.thread_budget_service import ThreadBudgetService
         from services.generate_repository import GenerateRepository
         from services.generate_session_service import GenerateSessionService
         from services.generate_text_structure_service import (
@@ -170,14 +176,6 @@ class AppContext(metaclass=AppContextMeta):
 
         cls.resource_lease_manager.cleanup_stale()
 
-        cls.job_runner = JobRunner(
-            repository=cls.job_repository,
-            queue_service=cls.job_queue_service,
-            handler_registry=cls.job_handler_registry,
-            log_service=cls.job_log_service,
-            app_context=cls,
-        )
-
         cls.resource_monitor_service = ResourceMonitorService(
             hardware_detection=cls.hardware_detection_service,
             snapshot_service=cls.resource_snapshot_service,
@@ -234,6 +232,26 @@ class AppContext(metaclass=AppContextMeta):
 
         cls.engine_manager.register(
             gpt
+        )
+
+        cls.thread_budget_capability_registry = (
+            build_default_thread_budget_registry(
+                cls.engine_manager
+            )
+        )
+
+        cls.thread_budget_service = ThreadBudgetService(
+            policy_service=cls.resource_policy_service,
+            capability_registry=cls.thread_budget_capability_registry,
+        )
+
+        cls.job_runner = JobRunner(
+            repository=cls.job_repository,
+            queue_service=cls.job_queue_service,
+            handler_registry=cls.job_handler_registry,
+            log_service=cls.job_log_service,
+            app_context=cls,
+            thread_budget_service=cls.thread_budget_service,
         )
 
         cls._initialized = True

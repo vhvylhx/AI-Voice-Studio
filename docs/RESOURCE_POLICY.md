@@ -94,3 +94,18 @@ Thread Budget Phase 8 them integration contract cho production-safe enforcement:
 - Runtime enforcement di qua adapter contract `capture_current_settings`, `validate_thread_budget`, `apply_thread_budget`, `restore_thread_budget`.
 - Apply dien ra truoc workload; restore dien ra sau workload trong lifecycle runner va khong che primary workload error.
 - Khong co CPU affinity, khong kill process, khong thay queue ordering, retry, pause/cancel hoac final-state semantics mac dinh.
+
+Thread Budget Phase 9 them controlled rollout policy:
+
+- `thread_budget_engine_allowlist`: danh sach engine duoc phep rollout khi mode enforce.
+- `thread_budget_engine_denylist`: danh sach engine luon defer, uu tien cao hon allowlist.
+- `thread_budget_rollout_percentage`: gate deterministic 0-100 theo `job_id|engine_id`; default 0.
+- `thread_budget_require_explicit_engine_opt_in`: default true.
+- `thread_budget_fail_open`: default false va gia tri true bi xem la policy invalid.
+
+Production apply chi duoc chay khi `thread_budget_mode=enforce`, engine co capability production-ready, adapter health check dat, engine nam trong allowlist hoac explicit opt-in, rollout selected va capture previous state thanh cong. Unknown/unregistered/unavailable engine deu deferred, khong fail-open.
+
+Source evidence Phase 9:
+
+- `gpt_sovits`: engine_id that trong `GPTSoVITSEngine.info()`, generate chay subprocess qua `GPTSoVITSAdapter.run(..., env=env)`, nen chi dang ky scoped subprocess environment adapter.
+- `mock`, `xtts`, `vieneu`: khong production-ready cho Thread Budget production enforcement.

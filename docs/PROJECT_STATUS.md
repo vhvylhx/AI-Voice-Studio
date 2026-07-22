@@ -4,7 +4,7 @@ Ngay cap nhat: 2026-07-22
 
 ## Trang thai hien tai
 
-- Sprint vua thuc hien: Resource Safety Hardening Phase 8 - Production Thread Enforcement Integration.
+- Sprint vua thuc hien: Resource Safety Hardening Phase 9 - Production Engine Adapter Registration va Controlled Rollout.
 - Nen Generate Pipeline AVS-014.16 da co o muc request/session/source snapshot/plan/manifest/recovery/API/job prepare.
 - Resource Policy schema v2 da co foundation resolve/migration/fallback/fingerprint o muc monitor-only/disabled.
 - Resource Safety Phase 2 da co snapshot validation/freshness va shadow Resource Decision v2 monitor-only, khong doi scheduling/runtime behavior.
@@ -14,6 +14,7 @@ Ngay cap nhat: 2026-07-22
 - Resource Safety Phase 6 da co Runtime Guard action foundation monitor_only/enforce-gated voi pressure classification, action recommendation, cooldown/hysteresis/retry, simulated executor va structured observation; mac dinh monitor_only va khong kill/pause/terminate production.
 - Resource Safety Phase 7 da co Thread Budget foundation monitor_only/enforce-gated voi workload allocation, oversubscription/nested parallelism detection, environment/runtime plan, restore plan, cooldown/dedup/retry va simulated executor; khong mutate thread/env/runtime production.
 - Resource Safety Phase 8 da co production-safe Thread Budget integration contract voi scoped environment copy, runtime adapter registry, apply-before-workload/restore-after-workload hook trong JobRunner khi duoc inject, rollback audit va primary-error preservation; mac dinh `thread_budget_mode` van monitor_only.
+- Resource Safety Phase 9 da dang ky Thread Budget capability theo source evidence: `gpt_sovits` chi production-ready cho scoped subprocess environment, `mock`/`xtts`/`vieneu` khong production-ready; rollout enforce can allowlist/opt-in va deterministic gate.
 - Chua tich hop GPT-SoVITS runtime cho Generate production trong phase nay.
 - Chua Train GPT-SoVITS that trong phase nay.
 - Chua Generate Audio that trong phase nay.
@@ -51,7 +52,7 @@ Ngay cap nhat: 2026-07-22
 | Runtime Guard action foundation | READY | Phase 6 co RuntimeGuardObservation, pressure level, WOULD_* action, cooldown/hysteresis/retry va simulated executor dung policy resolved. |
 | Runtime Guard production action | UNAVAILABLE | Default monitor_only; enforce chi goi simulated executor an toan, khong pause/terminate/kill-tree process that va khong doi Job state/scheduling. |
 | Thread Budget foundation | READY | Phase 7 co ThreadBudgetObservation, workload allocation deterministic, oversubscription/nested detection, environment/runtime/restore plan va simulated executor. |
-| Thread Budget production enforcement integration | DEGRADED | Phase 8 co scoped environment/runtime adapter contract va optional JobRunner hook; default van monitor_only, chua dang ky GPT-SoVITS adapter production. |
+| Thread Budget production enforcement integration | DEGRADED | Phase 9 co registry/rollout va GPT-SoVITS scoped subprocess environment adapter; default van monitor_only, khong runtime setter/model load/GPU. |
 | Style Profile / Voice DNA foundation | DEGRADED | Quan ly/import/export foundation co; prosody analyzer that chua co. |
 | Runtime GPT-SoVITS integration cho Generate | UNAVAILABLE | La pham vi sprint sau, khong lam trong AVS-014.16A. |
 
@@ -73,8 +74,8 @@ Ngay cap nhat: 2026-07-22
 - Resource Lease v2 enforcement chi chay khi `resource_lease_v2_mode=enforce`; mac dinh monitor_only van giu legacy/Phase 3 behavior.
 - Process Supervisor hien chi foundation/monitor-only/simulated; chua co provider production day du, khong kill process that.
 - Runtime Guard hien chi foundation/monitor-only/simulated; chua co action executor production, khong pause/terminate/kill-tree process that.
-- Thread Budget Phase 8 da co production-safe integration contract, nhung default monitor_only va chua co GPT-SoVITS adapter production dang ky; khong co CPU affinity/system-wide environment mutation.
+- Thread Budget Phase 9 da co GPT-SoVITS scoped subprocess environment registration, nhung default monitor_only va enforce van can allowlist/opt-in/rollout; khong co CPU affinity/system-wide environment mutation.
 
 ## Sprint tiep theo du kien
 
-- AVS-014.17 GPT-SoVITS Runtime Integration chi bat dau sau khi source/docs/tests hien tai dat va Resource Safety Hardening Phase 8 duoc review.
+- Phase 10 neu co moi duoc mo rong sang engine-specific rollout production sau khi Phase 9 duoc review.

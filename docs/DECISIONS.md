@@ -684,3 +684,17 @@
 - Ngay cap nhat: 2026-07-22.
 
 ---
+
+# DEC-070: Phase 9 chi dang ky adapter theo source evidence va rollout deterministic
+
+- Trang thai: Chap nhan.
+- Boi canh: Can rollout Thread Budget production enforcement nhung khong duoc suy doan engine/runtime chua duoc source chung minh.
+- Quyet dinh: `gpt_sovits` duoc dang ky production-ready chi cho scoped subprocess environment vi source dung `subprocess.run(..., env=env)`.
+- Quyet dinh: Khong dang ky PyTorch in-process production cho GPT-SoVITS vi repo khong chay GPT-SoVITS in-process; PyTorch adapter chi co contract/lazy tests bang fake module.
+- Quyet dinh: `mock`, `xtts` va `vieneu` la unsupported/not production-ready capability record.
+- Quyet dinh: Enforce production can allowlist/explicit opt-in, deterministic rollout percentage, adapter health check, capture previous state va fail_open=false.
+- Ly do: Cho phep rollout co kiem soat ma khong load model, GPU, internet, CPU affinity hoac thay doi output logic engine.
+- He qua: Default van monitor_only; Phase 10 neu co moi mo rong rollout/adapter engine-specific that.
+- Ngay cap nhat: 2026-07-22.
+
+---

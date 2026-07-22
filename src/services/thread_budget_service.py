@@ -1,4 +1,5 @@
 from datetime import datetime
+import hashlib
 from uuid import uuid4
 
 from models.resource_model import (
@@ -35,6 +36,15 @@ from models.resource_model import (
     THREAD_REASON_AVAILABLE,
     THREAD_REASON_CONSTRAINED,
     THREAD_REASON_ENVIRONMENT_PLAN_REQUIRED,
+    THREAD_REASON_ADAPTER_CAPTURE_FAILED,
+    THREAD_REASON_ADAPTER_HEALTH_CHECK_FAILED,
+    THREAD_REASON_CONTROLLED_ROLLOUT_DEFERRED,
+    THREAD_REASON_ENGINE_CAPABILITY_MISSING,
+    THREAD_REASON_ENGINE_CAPABILITY_NOT_PRODUCTION_READY,
+    THREAD_REASON_ENGINE_DENIED,
+    THREAD_REASON_ENGINE_NOT_ALLOWLISTED,
+    THREAD_REASON_ENGINE_NOT_REGISTERED,
+    THREAD_REASON_ENGINE_OPT_IN_REQUIRED,
     THREAD_REASON_HEAVY_JOB_LIMIT_REACHED,
     THREAD_REASON_IDENTITY_UNKNOWN,
     THREAD_REASON_INVALID,
@@ -50,11 +60,15 @@ from models.resource_model import (
     THREAD_REASON_REQUEST_ABOVE_WORKLOAD_LIMIT,
     THREAD_REASON_RESERVE_VIOLATION,
     THREAD_REASON_RESTORE_REQUIRED,
+    THREAD_REASON_ROLLOUT_INVALID,
+    THREAD_REASON_ROLLOUT_NOT_SELECTED,
+    THREAD_REASON_ROLLOUT_SELECTED,
     THREAD_REASON_RUNTIME_PLAN_REQUIRED,
     THREAD_REASON_STALE,
     THREAD_REASON_TOTAL_ABOVE_POLICY_LIMIT,
     THREAD_REASON_UNKNOWN,
     THREAD_REASON_ENFORCEMENT_DEFERRED,
+    THREAD_REASON_UNKNOWN_ENGINE_DEFERRED,
     ThreadBudgetApplyState,
     WORKLOAD_CLASS_CPU_HEAVY,
     WORKLOAD_CLASS_GPU_INFERENCE,
@@ -145,6 +159,7 @@ class ThreadBudgetService:
         process_observation=None,
         runtime_guard_observation=None,
         runtime_settings=None,
+        engine_opt_in=False,
     ):
 
         policy = self.resolve_policy()
@@ -162,9 +177,41 @@ class ThreadBudgetService:
             or {}
         )
 
-        if adapter is not None and not runtime_settings:
+        rollout = self.rollout_decision(
+            policy=policy,
+            engine_id=engine_id,
+            capability=capability,
+            adapter=adapter,
+            job_id=job_id,
+            engine_opt_in=engine_opt_in,
+            check_adapter=mode == FEATURE_MODE_ENFORCE,
+        )
 
-            runtime_settings = adapter.capture_current_settings()
+        if (
+            adapter is not None
+            and not runtime_settings
+            and rollout[
+                "allowed"
+            ]
+        ):
+
+            try:
+
+                runtime_settings = adapter.capture_current_settings()
+
+            except Exception:
+
+                rollout[
+                    "allowed"
+                ] = False
+                rollout[
+                    "reason_codes"
+                ].extend(
+                    [
+                        THREAD_REASON_ADAPTER_CAPTURE_FAILED,
+                        THREAD_REASON_CONTROLLED_ROLLOUT_DEFERRED,
+                    ]
+                )
 
         if capability is not None:
 
@@ -223,9 +270,55 @@ class ThreadBudgetService:
                         + [
                             THREAD_REASON_ENFORCEMENT_DEFERRED
                         ]
+                        + rollout[
+                            "reason_codes"
+                        ]
                     )
                 ),
                 policy_fingerprint=observation.policy_fingerprint,
+                metadata={
+                    "rollout": rollout,
+                },
+            )
+            return observation, state
+
+        if not rollout[
+            "allowed"
+        ]:
+
+            state = ThreadBudgetApplyState(
+                budget_id=observation.budget_id,
+                observation_id=observation.observation_id,
+                job_id=job_id,
+                lease_id=lease_id,
+                process_id=process_id,
+                owner_id=owner_id,
+                engine_id=engine_id,
+                mode=mode,
+                status=THREAD_BUDGET_STATE_DEFERRED,
+                environment_before=dict(
+                    environment
+                    or {}
+                ),
+                environment_after=dict(
+                    environment
+                    or {}
+                ),
+                reason_codes=sorted(
+                    set(
+                        observation.reason_codes
+                        + rollout[
+                            "reason_codes"
+                        ]
+                        + [
+                            THREAD_REASON_CONTROLLED_ROLLOUT_DEFERRED
+                        ]
+                    )
+                ),
+                policy_fingerprint=observation.policy_fingerprint,
+                metadata={
+                    "rollout": rollout,
+                },
             )
             return observation, state
 
@@ -238,8 +331,329 @@ class ThreadBudgetService:
             runtime_adapter=adapter,
             environment=environment,
         )
+        state.reason_codes = sorted(
+            set(
+                state.reason_codes
+                + rollout[
+                    "reason_codes"
+                ]
+            )
+        )
+        state.metadata[
+            "rollout"
+        ] = rollout
 
         return observation, state
+
+    def rollout_decision(
+        self,
+        policy,
+        engine_id,
+        capability,
+        adapter,
+        job_id="",
+        engine_opt_in=False,
+        check_adapter=True,
+    ):
+
+        reason_codes = []
+
+        if not engine_id:
+
+            return {
+                "allowed": False,
+                "selected": False,
+                "reason_codes": [
+                    THREAD_REASON_ENGINE_NOT_REGISTERED,
+                    THREAD_REASON_UNKNOWN_ENGINE_DEFERRED,
+                ],
+            }
+
+        if self.capability_registry is not None and hasattr(
+            self.capability_registry,
+            "reason_codes",
+        ):
+
+            reason_codes.extend(
+                self.capability_registry.reason_codes(
+                    engine_id
+                )
+            )
+
+        if capability is None:
+
+            reason_codes.extend(
+                [
+                    THREAD_REASON_ENGINE_CAPABILITY_MISSING,
+                    THREAD_REASON_ENGINE_NOT_REGISTERED,
+                    THREAD_REASON_UNKNOWN_ENGINE_DEFERRED,
+                ]
+            )
+            return self.rollout_result(
+                False,
+                False,
+                reason_codes,
+                policy,
+                engine_id,
+                job_id,
+            )
+
+        if engine_id in set(
+            getattr(
+                policy,
+                "thread_budget_engine_denylist",
+                [],
+            )
+        ):
+
+            reason_codes.append(
+                THREAD_REASON_ENGINE_DENIED
+            )
+            return self.rollout_result(
+                False,
+                False,
+                reason_codes,
+                policy,
+                engine_id,
+                job_id,
+            )
+
+        if not bool(
+            getattr(
+                capability,
+                "production_ready",
+                False,
+            )
+        ):
+
+            reason_codes.append(
+                THREAD_REASON_ENGINE_CAPABILITY_NOT_PRODUCTION_READY
+            )
+            return self.rollout_result(
+                False,
+                False,
+                reason_codes,
+                policy,
+                engine_id,
+                job_id,
+            )
+
+        if adapter is None:
+
+            reason_codes.append(
+                THREAD_REASON_ENGINE_NOT_REGISTERED
+            )
+            return self.rollout_result(
+                False,
+                False,
+                reason_codes,
+                policy,
+                engine_id,
+                job_id,
+            )
+
+        if not check_adapter:
+
+            return self.rollout_result(
+                False,
+                False,
+                reason_codes,
+                policy,
+                engine_id,
+                job_id,
+            )
+
+        try:
+
+            health = adapter.health_check()
+
+        except Exception:
+
+            health = {
+                "ready": False,
+                "reason_codes": [
+                    THREAD_REASON_ADAPTER_HEALTH_CHECK_FAILED
+                ],
+            }
+
+        if not health.get(
+            "ready",
+            False,
+        ):
+
+            reason_codes.extend(
+                health.get(
+                    "reason_codes",
+                    [
+                        THREAD_REASON_ADAPTER_HEALTH_CHECK_FAILED
+                    ],
+                )
+            )
+            return self.rollout_result(
+                False,
+                False,
+                reason_codes,
+                policy,
+                engine_id,
+                job_id,
+            )
+
+        allowlist = set(
+            getattr(
+                policy,
+                "thread_budget_engine_allowlist",
+                [],
+            )
+        )
+
+        allowlisted = engine_id in allowlist
+
+        if (
+            getattr(
+                policy,
+                "thread_budget_require_explicit_engine_opt_in",
+                True,
+            )
+            and not allowlisted
+            and not engine_opt_in
+        ):
+
+            reason_codes.append(
+                THREAD_REASON_ENGINE_OPT_IN_REQUIRED
+            )
+            return self.rollout_result(
+                False,
+                False,
+                reason_codes,
+                policy,
+                engine_id,
+                job_id,
+            )
+
+        if not allowlisted and not engine_opt_in:
+
+            reason_codes.append(
+                THREAD_REASON_ENGINE_NOT_ALLOWLISTED
+            )
+            return self.rollout_result(
+                False,
+                False,
+                reason_codes,
+                policy,
+                engine_id,
+                job_id,
+            )
+
+        percentage = float(
+            getattr(
+                policy,
+                "thread_budget_rollout_percentage",
+                0.0,
+            )
+        )
+
+        if percentage < 0 or percentage > 100:
+
+            reason_codes.append(
+                THREAD_REASON_ROLLOUT_INVALID
+            )
+            return self.rollout_result(
+                False,
+                False,
+                reason_codes,
+                policy,
+                engine_id,
+                job_id,
+            )
+
+        selected = self.rollout_selected(
+            percentage,
+            job_id,
+            engine_id,
+        )
+
+        reason_codes.append(
+            THREAD_REASON_ROLLOUT_SELECTED
+            if selected
+            else THREAD_REASON_ROLLOUT_NOT_SELECTED
+        )
+
+        return self.rollout_result(
+            selected,
+            selected,
+            reason_codes,
+            policy,
+            engine_id,
+            job_id,
+        )
+
+    def rollout_result(
+        self,
+        allowed,
+        selected,
+        reason_codes,
+        policy,
+        engine_id,
+        job_id,
+    ):
+
+        return {
+            "allowed": bool(
+                allowed
+            ),
+            "selected": bool(
+                selected
+            ),
+            "engine_id": engine_id,
+            "job_id": job_id,
+            "percentage": float(
+                getattr(
+                    policy,
+                    "thread_budget_rollout_percentage",
+                    0.0,
+                )
+            ),
+            "reason_codes": sorted(
+                set(
+                    reason_codes
+                )
+            ),
+            "policy_fingerprint": getattr(
+                policy,
+                "fingerprint",
+                "",
+            ),
+        }
+
+    def rollout_selected(
+        self,
+        percentage,
+        job_id,
+        engine_id,
+    ):
+
+        if percentage <= 0:
+
+            return False
+
+        if percentage >= 100:
+
+            return True
+
+        key = f"{job_id}|{engine_id}".encode(
+            "utf-8"
+        )
+        value = int(
+            hashlib.sha256(
+                key
+            ).hexdigest()[:8],
+            16,
+        )
+        bucket = value % 10000
+
+        return bucket < int(
+            percentage * 100
+        )
 
     def restore_enforcement(
         self,

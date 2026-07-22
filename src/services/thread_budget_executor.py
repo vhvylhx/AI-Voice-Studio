@@ -8,12 +8,18 @@ from models.resource_model import (
     THREAD_BUDGET_STATE_SIMULATED,
     THREAD_REASON_ADAPTER_UNAVAILABLE,
     THREAD_REASON_ADAPTER_UNSUPPORTED,
+    THREAD_REASON_ADAPTER_APPLY_FAILED,
+    THREAD_REASON_ADAPTER_CAPTURE_FAILED,
+    THREAD_REASON_ADAPTER_PARTIAL_APPLY,
+    THREAD_REASON_ADAPTER_ROLLBACK_COMPLETED,
+    THREAD_REASON_ADAPTER_ROLLBACK_FAILED,
     THREAD_REASON_ACTION_FAILED,
     THREAD_REASON_ACTION_NOT_ALLOWED,
     THREAD_REASON_ACTION_SIMULATED,
     THREAD_REASON_ENFORCEMENT_APPLIED,
     THREAD_REASON_ENFORCEMENT_DEFERRED,
     THREAD_REASON_ENGINE_CAPABILITY_MISSING,
+    THREAD_REASON_ENGINE_CAPABILITY_NOT_PRODUCTION_READY,
     THREAD_REASON_ENVIRONMENT_APPLIED,
     THREAD_REASON_ENVIRONMENT_RESTORED,
     THREAD_REASON_MODE_ENFORCE,
@@ -26,6 +32,7 @@ from models.resource_model import (
     THREAD_REASON_ROLLBACK_COMPLETED,
     THREAD_REASON_ROLLBACK_FAILED,
     THREAD_REASON_ROLLBACK_REQUIRED,
+    THREAD_REASON_SUBPROCESS_ENVIRONMENT_APPLIED,
     THREAD_REASON_PRODUCTION_EXECUTOR_UNAVAILABLE,
     THREAD_REASON_RESTORE_REQUIRED,
     ThreadBudgetApplyState,
@@ -207,6 +214,18 @@ class ScopedThreadBudgetExecutor(ThreadBudgetExecutor):
             )
             return state
 
+        if not getattr(
+            capability,
+            "production_ready",
+            False,
+        ):
+
+            state.status = THREAD_BUDGET_STATE_DEFERRED
+            state.reason_codes.append(
+                THREAD_REASON_ENGINE_CAPABILITY_NOT_PRODUCTION_READY
+            )
+            return state
+
         if runtime_adapter is None and capability.supports_runtime_threads:
 
             state.status = THREAD_BUDGET_STATE_DEFERRED
@@ -228,10 +247,31 @@ class ScopedThreadBudgetExecutor(ThreadBudgetExecutor):
 
         if runtime_adapter is not None:
 
-            if not runtime_adapter.validate_thread_budget(
-                observation,
-                capability,
-            ):
+            try:
+
+                valid = runtime_adapter.validate_thread_budget(
+                    observation,
+                    capability,
+                )
+
+            except Exception as exc:
+
+                state.status = THREAD_BUDGET_STATE_DEFERRED
+                state.reason_codes.append(
+                    THREAD_REASON_ADAPTER_UNSUPPORTED
+                )
+                state.audit.append(
+                    {
+                        "action": "validate",
+                        "result": "failed",
+                        "error": str(
+                            exc
+                        ),
+                    }
+                )
+                return state
+
+            if not valid:
 
                 state.status = THREAD_BUDGET_STATE_DEFERRED
                 state.reason_codes.append(
@@ -239,7 +279,28 @@ class ScopedThreadBudgetExecutor(ThreadBudgetExecutor):
                 )
                 return state
 
-            state.runtime_before = runtime_adapter.capture_current_settings()
+            try:
+
+                state.runtime_before = (
+                    runtime_adapter.capture_current_settings()
+                )
+
+            except Exception as exc:
+
+                state.status = THREAD_BUDGET_STATE_DEFERRED
+                state.reason_codes.append(
+                    THREAD_REASON_ADAPTER_CAPTURE_FAILED
+                )
+                state.audit.append(
+                    {
+                        "action": "capture",
+                        "result": "failed",
+                        "error": str(
+                            exc
+                        ),
+                    }
+                )
+                return state
 
         environment_applied = False
 
@@ -248,6 +309,7 @@ class ScopedThreadBudgetExecutor(ThreadBudgetExecutor):
             state.environment_after = self.apply_environment_plan(
                 state.environment_before,
                 observation.environment_plan,
+                capability,
             )
             environment_applied = bool(
                 observation.environment_plan
@@ -258,6 +320,16 @@ class ScopedThreadBudgetExecutor(ThreadBudgetExecutor):
                 state.reason_codes.append(
                     THREAD_REASON_ENVIRONMENT_APPLIED
                 )
+
+                if getattr(
+                    capability,
+                    "execution_mode",
+                    "",
+                ) == "subprocess":
+
+                    state.reason_codes.append(
+                        THREAD_REASON_SUBPROCESS_ENVIRONMENT_APPLIED
+                    )
 
         try:
 
@@ -286,6 +358,8 @@ class ScopedThreadBudgetExecutor(ThreadBudgetExecutor):
             state.reason_codes.extend(
                 [
                     THREAD_REASON_RUNTIME_APPLY_FAILED,
+                    THREAD_REASON_ADAPTER_APPLY_FAILED,
+                    THREAD_REASON_ADAPTER_PARTIAL_APPLY,
                     THREAD_REASON_PARTIAL_APPLY,
                     THREAD_REASON_ROLLBACK_REQUIRED,
                 ]
@@ -458,11 +532,21 @@ class ScopedThreadBudgetExecutor(ThreadBudgetExecutor):
         self,
         environment,
         environment_plan,
+        capability=None,
     ):
 
         scoped = dict(
             environment
             or {}
+        )
+
+        supported = set(
+            getattr(
+                capability,
+                "supported_environment_variables",
+                [],
+            )
+            or []
         )
 
         for name, change in sorted(
@@ -471,6 +555,10 @@ class ScopedThreadBudgetExecutor(ThreadBudgetExecutor):
                 or {}
             ).items()
         ):
+
+            if supported and name not in supported:
+
+                continue
 
             scoped[
                 name
@@ -505,11 +593,17 @@ class ScopedThreadBudgetExecutor(ThreadBudgetExecutor):
             state.reason_codes.append(
                 THREAD_REASON_ROLLBACK_COMPLETED
             )
+            state.reason_codes.append(
+                THREAD_REASON_ADAPTER_ROLLBACK_COMPLETED
+            )
 
         except Exception as exc:
 
             state.reason_codes.append(
                 THREAD_REASON_ROLLBACK_FAILED
+            )
+            state.reason_codes.append(
+                THREAD_REASON_ADAPTER_ROLLBACK_FAILED
             )
             state.audit.append(
                 {

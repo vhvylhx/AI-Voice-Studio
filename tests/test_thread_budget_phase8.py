@@ -70,6 +70,10 @@ class FakePolicyService:
             max_threads_per_cpu_heavy_job=4,
             reserve_cpu_threads=1,
             thread_budget_cooldown_seconds=0,
+            thread_budget_engine_allowlist=[
+                "engine_test"
+            ],
+            thread_budget_rollout_percentage=100,
         )
 
     def resolve(
@@ -96,6 +100,7 @@ def make_registry(
             supports_restore=True,
             supports_intraop_threads=True,
             supports_interop_threads=True,
+            production_ready=True,
         ),
         adapter=adapter
         or FakeThreadBudgetRuntimeAdapter(
@@ -436,4 +441,3 @@ def test_job_runner_enforce_missing_capability_blocks_workload(tmp_path):
 
     assert result.state == "failed"
     assert result.error_message == "thread_budget_enforcement_not_applied"
-

@@ -1481,3 +1481,31 @@ Nguyen tac Phase 8:
 - Apply truoc worker workload; restore trong runner lifecycle sau workload va khong che primary error.
 - Khong CPU affinity, khong kill process, khong thay JobQueue ordering, retry, pause/cancel hoac final-state semantics mac dinh.
 - Phase 8 khong phai Phase 9: chua dang ky GPT-SoVITS/VieNeu production adapter va chua rollout enforcement mac dinh.
+
+---
+
+## Resource Safety Hardening Phase 9
+
+Phase 9 them Production Engine Adapter Registration va Controlled Rollout cho Thread Budget.
+
+Source evidence:
+
+- Engine production that trong repo: `gpt_sovits` tu `GPTSoVITSEngine.info()`.
+- GPT-SoVITS generate chay subprocess qua `GPTSoVITSAdapter.run()` va truyen `env=env`.
+- Khong co VieNeu engine production trong source hien tai.
+- `mock` la demo/test engine; `xtts` la skeleton chua generate/train.
+
+Thanh phan:
+
+- `ThreadBudgetCapabilityRegistry` co default builder tu `EngineManager`.
+- `SubprocessEnvironmentThreadAdapter` cho GPT-SoVITS scoped environment.
+- `PyTorchThreadBudgetAdapter` lazy import, chi contract/test fake; khong production-register cho GPT-SoVITS.
+- Controlled rollout fields trong `ResourcePolicy`/`ResolvedResourcePolicy`.
+
+Nguyen tac Phase 9:
+
+- Default `thread_budget_mode` van `monitor_only`.
+- Enforcement can `enforce`, engine registered production-ready, allowlist/opt-in, deterministic rollout selected va adapter health/capture thanh cong.
+- GPT-SoVITS chi duoc apply thread variables vao scoped env truoc subprocess start; khong mutate `os.environ`.
+- Khong load model, khong goi GPU, khong sua inference/training output, khong CPU affinity, khong kill process.
+- Unknown/unavailable/not-production-ready engine deferred voi stable reason codes, khong fail-open.

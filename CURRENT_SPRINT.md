@@ -1,5 +1,14 @@
 # Current Sprint
 
+## Cap nhat Resource Safety Hardening Phase 9
+
+- Phase 9 Production Engine Adapter Registration va Controlled Rollout da hoan thanh o muc source-evidence registration.
+- `thread_budget_mode` mac dinh van `monitor_only`.
+- `gpt_sovits` duoc dang ky production-ready chi cho scoped subprocess environment; khong runtime setter in-process.
+- `mock`, `xtts`, `vieneu` khong production-ready.
+- Enforce can allowlist/opt-in va deterministic rollout; default khong engine nao duoc enforce mac dinh.
+- Chua Phase 10.
+
 ## Cap nhat Resource Safety Hardening Phase 8
 
 - Phase 8 Production Thread Enforcement Integration da hoan thanh o muc foundation/integration contract.

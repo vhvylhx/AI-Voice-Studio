@@ -3,7 +3,8 @@
 ## Cap nhat gan nhat
 
 - [x] Resource Safety Hardening Phase 8: Production Thread Enforcement Integration foundation.
-- [ ] Resource Safety Hardening Phase 9: dang ky adapter production cho engine cu the va rollout enforcement co gate.
+- [x] Resource Safety Hardening Phase 9: dang ky adapter production theo source evidence va rollout enforcement co gate.
+- [ ] Resource Safety Hardening Phase 10: rollout/adapter engine-specific production mo rong neu duoc phe duyet.
 
 > Nguyên tắc:
 >

@@ -460,6 +460,12 @@ class JobRunner:
             ),
             owner_id=self.lease_owner,
             process_thread_count=threading.active_count(),
+            engine_opt_in=bool(
+                job.payload.get(
+                    "thread_budget_engine_opt_in",
+                    False,
+                )
+            ),
         )
 
     def restore_thread_budget(

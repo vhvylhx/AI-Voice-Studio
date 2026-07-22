@@ -646,6 +646,49 @@ THREAD_REASON_CLEANUP_ERROR = "thread_cleanup_error"
 THREAD_REASON_PRIMARY_ERROR_PRESERVED = (
     "thread_primary_error_preserved"
 )
+THREAD_REASON_ENGINE_REGISTERED = "thread_engine_registered"
+THREAD_REASON_ENGINE_NOT_REGISTERED = "thread_engine_not_registered"
+THREAD_REASON_ENGINE_NOT_ALLOWLISTED = "thread_engine_not_allowlisted"
+THREAD_REASON_ENGINE_DENIED = "thread_engine_denied"
+THREAD_REASON_ENGINE_OPT_IN_REQUIRED = "thread_engine_opt_in_required"
+THREAD_REASON_ROLLOUT_SELECTED = "thread_rollout_selected"
+THREAD_REASON_ROLLOUT_NOT_SELECTED = "thread_rollout_not_selected"
+THREAD_REASON_ROLLOUT_INVALID = "thread_rollout_invalid"
+THREAD_REASON_ENGINE_CAPABILITY_AVAILABLE = (
+    "thread_engine_capability_available"
+)
+THREAD_REASON_ENGINE_CAPABILITY_UNAVAILABLE = (
+    "thread_engine_capability_unavailable"
+)
+THREAD_REASON_ENGINE_CAPABILITY_NOT_PRODUCTION_READY = (
+    "thread_engine_capability_not_production_ready"
+)
+THREAD_REASON_ADAPTER_REGISTERED = "thread_adapter_registered"
+THREAD_REASON_ADAPTER_LAZY_IMPORT_FAILED = (
+    "thread_adapter_lazy_import_failed"
+)
+THREAD_REASON_ADAPTER_HEALTH_CHECK_FAILED = (
+    "thread_adapter_health_check_failed"
+)
+THREAD_REASON_ADAPTER_CAPTURE_FAILED = "thread_adapter_capture_failed"
+THREAD_REASON_ADAPTER_APPLY_FAILED = "thread_adapter_apply_failed"
+THREAD_REASON_ADAPTER_RESTORE_FAILED = "thread_adapter_restore_failed"
+THREAD_REASON_ADAPTER_PARTIAL_APPLY = "thread_adapter_partial_apply"
+THREAD_REASON_ADAPTER_ROLLBACK_COMPLETED = (
+    "thread_adapter_rollback_completed"
+)
+THREAD_REASON_ADAPTER_ROLLBACK_FAILED = "thread_adapter_rollback_failed"
+THREAD_REASON_PYTORCH_UNAVAILABLE = "thread_pytorch_unavailable"
+THREAD_REASON_PYTORCH_INTEROP_UNSUPPORTED = (
+    "thread_pytorch_interop_unsupported"
+)
+THREAD_REASON_SUBPROCESS_ENVIRONMENT_APPLIED = (
+    "thread_subprocess_environment_applied"
+)
+THREAD_REASON_UNKNOWN_ENGINE_DEFERRED = "thread_unknown_engine_deferred"
+THREAD_REASON_CONTROLLED_ROLLOUT_DEFERRED = (
+    "thread_controlled_rollout_deferred"
+)
 
 THREAD_REASON_CODES = (
     THREAD_REASON_AVAILABLE,
@@ -699,6 +742,31 @@ THREAD_REASON_CODES = (
     THREAD_REASON_POLICY_CHANGED_DURING_EXECUTION,
     THREAD_REASON_CLEANUP_ERROR,
     THREAD_REASON_PRIMARY_ERROR_PRESERVED,
+    THREAD_REASON_ENGINE_REGISTERED,
+    THREAD_REASON_ENGINE_NOT_REGISTERED,
+    THREAD_REASON_ENGINE_NOT_ALLOWLISTED,
+    THREAD_REASON_ENGINE_DENIED,
+    THREAD_REASON_ENGINE_OPT_IN_REQUIRED,
+    THREAD_REASON_ROLLOUT_SELECTED,
+    THREAD_REASON_ROLLOUT_NOT_SELECTED,
+    THREAD_REASON_ROLLOUT_INVALID,
+    THREAD_REASON_ENGINE_CAPABILITY_AVAILABLE,
+    THREAD_REASON_ENGINE_CAPABILITY_UNAVAILABLE,
+    THREAD_REASON_ENGINE_CAPABILITY_NOT_PRODUCTION_READY,
+    THREAD_REASON_ADAPTER_REGISTERED,
+    THREAD_REASON_ADAPTER_LAZY_IMPORT_FAILED,
+    THREAD_REASON_ADAPTER_HEALTH_CHECK_FAILED,
+    THREAD_REASON_ADAPTER_CAPTURE_FAILED,
+    THREAD_REASON_ADAPTER_APPLY_FAILED,
+    THREAD_REASON_ADAPTER_RESTORE_FAILED,
+    THREAD_REASON_ADAPTER_PARTIAL_APPLY,
+    THREAD_REASON_ADAPTER_ROLLBACK_COMPLETED,
+    THREAD_REASON_ADAPTER_ROLLBACK_FAILED,
+    THREAD_REASON_PYTORCH_UNAVAILABLE,
+    THREAD_REASON_PYTORCH_INTEROP_UNSUPPORTED,
+    THREAD_REASON_SUBPROCESS_ENVIRONMENT_APPLIED,
+    THREAD_REASON_UNKNOWN_ENGINE_DEFERRED,
+    THREAD_REASON_CONTROLLED_ROLLOUT_DEFERRED,
 )
 
 
@@ -1798,7 +1866,17 @@ class ThreadBudgetEngineCapability:
 
     engine_id: str
 
+    engine_name: str = ""
+
+    execution_mode: str = "unknown"
+
+    runtime_framework: str = "unknown"
+
     adapter_id: str = ""
+
+    adapter_name: str = ""
+
+    adapter_version: str = ""
 
     supports_environment_threads: bool = True
 
@@ -1806,17 +1884,35 @@ class ThreadBudgetEngineCapability:
 
     supports_restore: bool = True
 
+    supports_scoped_environment: bool = True
+
     supports_intraop_threads: bool = False
 
     supports_interop_threads: bool = False
 
+    requires_restart_for_thread_change: bool = False
+
     max_safe_threads: int = 0
 
-    capability_version: str = "phase8"
+    capability_version: str = "phase9"
+
+    production_ready: bool = False
+
+    unavailable_reason: str = ""
+
+    supported_environment_variables: list = field(
+        default_factory=list
+    )
+
+    provenance: dict = field(
+        default_factory=dict
+    )
 
     metadata: dict = field(
         default_factory=dict
     )
+
+    schema_version: int = 1
 
     def to_dict(
         self,
@@ -2026,6 +2122,20 @@ class ResourcePolicy:
 
     thread_budget_restore_on_release: bool = True
 
+    thread_budget_engine_allowlist: list = field(
+        default_factory=list
+    )
+
+    thread_budget_engine_denylist: list = field(
+        default_factory=list
+    )
+
+    thread_budget_rollout_percentage: float = 0.0
+
+    thread_budget_require_explicit_engine_opt_in: bool = True
+
+    thread_budget_fail_open: bool = False
+
     pressure_cpu_warning_percent: float = 90.0
 
     pressure_ram_warning_percent: float = 90.0
@@ -2232,6 +2342,20 @@ class ResolvedResourcePolicy:
 
     thread_budget_restore_on_release: bool = True
 
+    thread_budget_engine_allowlist: list = field(
+        default_factory=list
+    )
+
+    thread_budget_engine_denylist: list = field(
+        default_factory=list
+    )
+
+    thread_budget_rollout_percentage: float = 0.0
+
+    thread_budget_require_explicit_engine_opt_in: bool = True
+
+    thread_budget_fail_open: bool = False
+
     cooperative_stop_grace_seconds: int = 20
 
     kill_escalation_wait_seconds: int = 5
@@ -2346,6 +2470,19 @@ class ResolvedResourcePolicy:
             "thread_budget_restore_on_release": (
                 self.thread_budget_restore_on_release
             ),
+            "thread_budget_engine_allowlist": list(
+                self.thread_budget_engine_allowlist
+            ),
+            "thread_budget_engine_denylist": list(
+                self.thread_budget_engine_denylist
+            ),
+            "thread_budget_rollout_percentage": (
+                self.thread_budget_rollout_percentage
+            ),
+            "thread_budget_require_explicit_engine_opt_in": (
+                self.thread_budget_require_explicit_engine_opt_in
+            ),
+            "thread_budget_fail_open": self.thread_budget_fail_open,
             "cooperative_stop_grace_seconds": (
                 self.cooperative_stop_grace_seconds
             ),
@@ -2527,6 +2664,23 @@ class ResolvedResourcePolicy:
             ),
             thread_budget_restore_on_release=bool(
                 policy.thread_budget_restore_on_release
+            ),
+            thread_budget_engine_allowlist=list(
+                policy.thread_budget_engine_allowlist
+                or []
+            ),
+            thread_budget_engine_denylist=list(
+                policy.thread_budget_engine_denylist
+                or []
+            ),
+            thread_budget_rollout_percentage=float(
+                policy.thread_budget_rollout_percentage
+            ),
+            thread_budget_require_explicit_engine_opt_in=bool(
+                policy.thread_budget_require_explicit_engine_opt_in
+            ),
+            thread_budget_fail_open=bool(
+                policy.thread_budget_fail_open
             ),
             cooperative_stop_grace_seconds=int(
                 policy.cooperative_stop_grace_seconds

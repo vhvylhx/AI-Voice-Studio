@@ -675,3 +675,16 @@
 - Enforce trong Phase 6 chi goi simulated executor an toan; destructive terminate/kill-tree luon deferred va khong goi kill process that.
 - Khong doi JobQueue scheduling, JobRunner final state/retry/pause/cancel, Thread Budget, Generate/Training production, engine adapter hoac GPT-SoVITS runtime.
 - Chua Phase 7: khong production Runtime Guard action, khong Thread Budget enforcement, khong real process pause/terminate/kill-tree.
+
+---
+
+## Cap nhat Resource Safety Hardening Phase 7
+
+- Da them Thread Budget Enforcement Foundation o muc model/service/test, mac dinh `thread_budget_mode=monitor_only`.
+- Thread Budget dung `ResourcePolicyService.resolve()` va `ResolvedResourcePolicy` lam single source of truth cho total CPU threads, reserve, per-workload limits, heavy job limit, nested parallelism, cooldown, TTL va restore policy.
+- `ThreadBudgetObservation` ghi budget/job/lease/process/owner, workload, requested/resolved threads, active/projected total, environment/runtime plan, action/state, reason codes, policy fingerprint va audit metadata.
+- Workload allocation deterministic cho light, cpu_heavy, gpu_inference, gpu_training va io_heavy; unknown/stale/invalid khong fail-open.
+- Oversubscription detection co total/request/projected/reserve/heavy/process-thread/policy mismatch boundary.
+- Environment/runtime plan chi la structured plan va simulated executor; monitor_only khong mutate, enforce Phase 7 khong goi production setter.
+- Khong doi JobQueue scheduling, JobRunner final state/retry/pause/cancel, Generate/Training production, engine adapter, CPU affinity hoac GPT-SoVITS runtime.
+- Chua Phase 8: khong production thread/affinity/runtime mutation va khong JobRunner safety integration enforcement.

@@ -60,3 +60,28 @@ Runtime Guard modes:
 - `enforce`: Phase 6 chi goi simulated executor an toan; destructive terminate/kill-tree van deferred.
 
 Trong Phase 6, Runtime Guard khong pause, terminate, kill-tree, doi Job state, doi scheduling, doi thread/batch hoac goi GPT-SoVITS runtime production.
+
+Thread Budget Phase 7 dung `thread_budget_mode`, mac dinh `monitor_only`.
+
+Policy additive cho Thread Budget:
+
+- max_total_cpu_threads;
+- max_threads_per_light_job;
+- max_threads_per_cpu_heavy_job;
+- max_threads_per_gpu_inference_job;
+- max_threads_per_gpu_training_job;
+- max_threads_per_io_heavy_job;
+- max_parallel_heavy_jobs;
+- reserve_cpu_threads;
+- allow_nested_parallelism;
+- thread_budget_cooldown_seconds;
+- thread_budget_observation_ttl_seconds;
+- thread_budget_restore_on_release.
+
+Thread Budget modes:
+
+- `disabled`: giu legacy behavior, khong production action.
+- `monitor_only`: tinh structured observation va WOULD_* plan, khong mutate.
+- `enforce`: Phase 7 chi goi simulated executor an toan; production executor van UNAVAILABLE neu chua co integration boundary.
+
+Trong Phase 7, Thread Budget khong mutate `os.environ`, khong goi runtime library setter production, khong doi CPU affinity, khong doi JobQueue/JobRunner va khong bat Generate/Training production.

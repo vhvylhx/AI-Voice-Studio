@@ -575,6 +575,7 @@ Có thể clone một giọng và tạo Audio bằng GPT-SoVITS.
 - [x] Acquire/renew/release/reconcile v2 co owner/job validation, fail-safe corrupt store, atomic persistence va reason codes on dinh.
 - [x] Process Supervisor va kill-tree foundation monitor-only/simulated cho identity, registry, tree discovery, shadow shutdown plan va audit.
 - [x] Runtime Guard action foundation monitor-only/simulated cho pressure, WOULD_* action, cooldown, hysteresis, retry va reconciliation observation.
-- [ ] Production kill-tree, Runtime Guard action va Thread Budget enforcement thuoc Phase sau neu duoc phe duyet rieng.
+- [x] Thread Budget foundation monitor-only/simulated cho workload allocation, oversubscription, nested parallelism, environment/runtime plan va restore.
+- [ ] Production kill-tree, Runtime Guard action, Thread Budget production enforcement va JobRunner safety integration thuoc Phase sau neu duoc phe duyet rieng.
 
 ---

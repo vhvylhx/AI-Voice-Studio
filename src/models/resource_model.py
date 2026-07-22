@@ -493,6 +493,160 @@ RUNTIME_REASON_CODES = (
     RUNTIME_REASON_DESTRUCTIVE_ACTION_UNAVAILABLE,
 )
 
+THREAD_BUDGET_STATUS_VALID = "valid"
+THREAD_BUDGET_STATUS_CONSTRAINED = "constrained"
+THREAD_BUDGET_STATUS_OVERSUBSCRIBED = "oversubscribed"
+THREAD_BUDGET_STATUS_DEFERRED = "deferred"
+THREAD_BUDGET_STATUS_UNKNOWN = "unknown"
+THREAD_BUDGET_STATUS_STALE = "stale"
+THREAD_BUDGET_STATUS_INVALID = "invalid"
+THREAD_BUDGET_STATUS_UNAVAILABLE = "unavailable"
+
+THREAD_BUDGET_STATUSES = (
+    THREAD_BUDGET_STATUS_VALID,
+    THREAD_BUDGET_STATUS_CONSTRAINED,
+    THREAD_BUDGET_STATUS_OVERSUBSCRIBED,
+    THREAD_BUDGET_STATUS_DEFERRED,
+    THREAD_BUDGET_STATUS_UNKNOWN,
+    THREAD_BUDGET_STATUS_STALE,
+    THREAD_BUDGET_STATUS_INVALID,
+    THREAD_BUDGET_STATUS_UNAVAILABLE,
+)
+
+THREAD_BUDGET_ACTION_NONE = "NONE"
+THREAD_BUDGET_ACTION_ASSIGN = "WOULD_ASSIGN_BUDGET"
+THREAD_BUDGET_ACTION_REDUCE = "WOULD_REDUCE_THREADS"
+THREAD_BUDGET_ACTION_DEFER_JOB = "WOULD_DEFER_JOB"
+THREAD_BUDGET_ACTION_DISABLE_NESTED = (
+    "WOULD_DISABLE_NESTED_PARALLELISM"
+)
+THREAD_BUDGET_ACTION_APPLY_ENVIRONMENT = "WOULD_APPLY_ENVIRONMENT"
+THREAD_BUDGET_ACTION_APPLY_RUNTIME = "WOULD_APPLY_RUNTIME_SETTING"
+THREAD_BUDGET_ACTION_RESTORE = "WOULD_RESTORE_THREAD_SETTINGS"
+THREAD_BUDGET_ACTION_RECONCILE = "WOULD_RECONCILE"
+THREAD_BUDGET_ACTION_SKIP = "WOULD_SKIP"
+THREAD_BUDGET_ACTION_DEFER = "WOULD_DEFER"
+
+THREAD_BUDGET_ACTIONS = (
+    THREAD_BUDGET_ACTION_NONE,
+    THREAD_BUDGET_ACTION_ASSIGN,
+    THREAD_BUDGET_ACTION_REDUCE,
+    THREAD_BUDGET_ACTION_DEFER_JOB,
+    THREAD_BUDGET_ACTION_DISABLE_NESTED,
+    THREAD_BUDGET_ACTION_APPLY_ENVIRONMENT,
+    THREAD_BUDGET_ACTION_APPLY_RUNTIME,
+    THREAD_BUDGET_ACTION_RESTORE,
+    THREAD_BUDGET_ACTION_RECONCILE,
+    THREAD_BUDGET_ACTION_SKIP,
+    THREAD_BUDGET_ACTION_DEFER,
+)
+
+THREAD_BUDGET_STATE_PROPOSED = "proposed"
+THREAD_BUDGET_STATE_SUPPRESSED = "suppressed"
+THREAD_BUDGET_STATE_DEFERRED = "deferred"
+THREAD_BUDGET_STATE_SIMULATED = "simulated"
+THREAD_BUDGET_STATE_APPLIED = "applied"
+THREAD_BUDGET_STATE_RESTORED = "restored"
+THREAD_BUDGET_STATE_FAILED = "failed"
+THREAD_BUDGET_STATE_UNKNOWN = "unknown"
+
+THREAD_BUDGET_STATES = (
+    THREAD_BUDGET_STATE_PROPOSED,
+    THREAD_BUDGET_STATE_SUPPRESSED,
+    THREAD_BUDGET_STATE_DEFERRED,
+    THREAD_BUDGET_STATE_SIMULATED,
+    THREAD_BUDGET_STATE_APPLIED,
+    THREAD_BUDGET_STATE_RESTORED,
+    THREAD_BUDGET_STATE_FAILED,
+    THREAD_BUDGET_STATE_UNKNOWN,
+)
+
+THREAD_REASON_AVAILABLE = "thread_budget_available"
+THREAD_REASON_CONSTRAINED = "thread_budget_constrained"
+THREAD_REASON_OVERSUBSCRIBED = "thread_budget_oversubscribed"
+THREAD_REASON_UNKNOWN = "thread_budget_unknown"
+THREAD_REASON_STALE = "thread_budget_stale"
+THREAD_REASON_INVALID = "thread_budget_invalid"
+THREAD_REASON_REQUEST_ABOVE_WORKLOAD_LIMIT = (
+    "thread_request_above_workload_limit"
+)
+THREAD_REASON_TOTAL_ABOVE_POLICY_LIMIT = (
+    "thread_total_above_policy_limit"
+)
+THREAD_REASON_RESERVE_VIOLATION = "thread_reserve_violation"
+THREAD_REASON_HEAVY_JOB_LIMIT_REACHED = (
+    "thread_heavy_job_limit_reached"
+)
+THREAD_REASON_NESTED_PARALLELISM = (
+    "thread_nested_parallelism_detected"
+)
+THREAD_REASON_ENVIRONMENT_PLAN_REQUIRED = (
+    "thread_environment_plan_required"
+)
+THREAD_REASON_RUNTIME_PLAN_REQUIRED = (
+    "thread_runtime_plan_required"
+)
+THREAD_REASON_RESTORE_REQUIRED = "thread_restore_required"
+THREAD_REASON_ACTION_COOLDOWN = "thread_action_cooldown"
+THREAD_REASON_ACTION_DUPLICATE_SUPPRESSED = (
+    "thread_action_duplicate_suppressed"
+)
+THREAD_REASON_ACTION_NOT_ALLOWED = "thread_action_not_allowed"
+THREAD_REASON_ACTION_SIMULATED = "thread_action_simulated"
+THREAD_REASON_ACTION_FAILED = "thread_action_failed"
+THREAD_REASON_ACTION_RETRY_EXHAUSTED = (
+    "thread_action_retry_exhausted"
+)
+THREAD_REASON_LEASE_RECONCILIATION_REQUIRED = (
+    "thread_lease_reconciliation_required"
+)
+THREAD_REASON_PROCESS_RECONCILIATION_REQUIRED = (
+    "thread_process_reconciliation_required"
+)
+THREAD_REASON_IDENTITY_UNKNOWN = "thread_identity_unknown"
+THREAD_REASON_MODE_DISABLED = "thread_mode_disabled"
+THREAD_REASON_MODE_MONITOR_ONLY = "thread_mode_monitor_only"
+THREAD_REASON_MODE_ENFORCE = "thread_mode_enforce"
+THREAD_REASON_PRODUCTION_EXECUTOR_UNAVAILABLE = (
+    "thread_production_executor_unavailable"
+)
+THREAD_REASON_POLICY_MISMATCH = "thread_policy_mismatch"
+THREAD_REASON_PROCESS_THREAD_COUNT_UNKNOWN = (
+    "thread_process_thread_count_unknown"
+)
+
+THREAD_REASON_CODES = (
+    THREAD_REASON_AVAILABLE,
+    THREAD_REASON_CONSTRAINED,
+    THREAD_REASON_OVERSUBSCRIBED,
+    THREAD_REASON_UNKNOWN,
+    THREAD_REASON_STALE,
+    THREAD_REASON_INVALID,
+    THREAD_REASON_REQUEST_ABOVE_WORKLOAD_LIMIT,
+    THREAD_REASON_TOTAL_ABOVE_POLICY_LIMIT,
+    THREAD_REASON_RESERVE_VIOLATION,
+    THREAD_REASON_HEAVY_JOB_LIMIT_REACHED,
+    THREAD_REASON_NESTED_PARALLELISM,
+    THREAD_REASON_ENVIRONMENT_PLAN_REQUIRED,
+    THREAD_REASON_RUNTIME_PLAN_REQUIRED,
+    THREAD_REASON_RESTORE_REQUIRED,
+    THREAD_REASON_ACTION_COOLDOWN,
+    THREAD_REASON_ACTION_DUPLICATE_SUPPRESSED,
+    THREAD_REASON_ACTION_NOT_ALLOWED,
+    THREAD_REASON_ACTION_SIMULATED,
+    THREAD_REASON_ACTION_FAILED,
+    THREAD_REASON_ACTION_RETRY_EXHAUSTED,
+    THREAD_REASON_LEASE_RECONCILIATION_REQUIRED,
+    THREAD_REASON_PROCESS_RECONCILIATION_REQUIRED,
+    THREAD_REASON_IDENTITY_UNKNOWN,
+    THREAD_REASON_MODE_DISABLED,
+    THREAD_REASON_MODE_MONITOR_ONLY,
+    THREAD_REASON_MODE_ENFORCE,
+    THREAD_REASON_PRODUCTION_EXECUTOR_UNAVAILABLE,
+    THREAD_REASON_POLICY_MISMATCH,
+    THREAD_REASON_PROCESS_THREAD_COUNT_UNKNOWN,
+)
+
 
 def now_iso():
 
@@ -1463,6 +1617,129 @@ class RuntimeGuardObservation:
 
 
 @dataclass
+class ThreadBudgetObservation:
+
+    observation_id: str = ""
+
+    budget_id: str = ""
+
+    job_id: str = ""
+
+    lease_id: str = ""
+
+    process_id: str = ""
+
+    owner_id: str = ""
+
+    observed_at: str = field(
+        default_factory=now_iso
+    )
+
+    mode: str = FEATURE_MODE_MONITOR_ONLY
+
+    status: str = THREAD_BUDGET_STATUS_UNKNOWN
+
+    workload_class: str = WORKLOAD_CLASS_LIGHT
+
+    requested_threads: int = 0
+
+    resolved_threads: int = 0
+
+    active_job_count: int = 0
+
+    active_heavy_job_count: int = 0
+
+    total_logical_cpu_threads: int = 0
+
+    reserve_cpu_threads: int = 0
+
+    available_budget_threads: int = 0
+
+    active_total_threads: int = 0
+
+    projected_total_threads: int = 0
+
+    oversubscribed: bool = False
+
+    nested_parallelism_detected: bool = False
+
+    environment_plan: dict = field(
+        default_factory=dict
+    )
+
+    runtime_plan: dict = field(
+        default_factory=dict
+    )
+
+    action: str = THREAD_BUDGET_ACTION_NONE
+
+    action_state: str = THREAD_BUDGET_STATE_PROPOSED
+
+    reason_codes: list = field(
+        default_factory=list
+    )
+
+    cooldown_active: bool = False
+
+    duplicate_suppressed: bool = False
+
+    action_attempt: int = 0
+
+    action_allowed: bool = False
+
+    action_executed: bool = False
+
+    action_simulated: bool = False
+
+    reconciliation_required: bool = False
+
+    restore_required: bool = False
+
+    policy_fingerprint: str = ""
+
+    metadata: dict = field(
+        default_factory=dict
+    )
+
+    provenance: dict = field(
+        default_factory=dict
+    )
+
+    schema_version: int = 1
+
+    def to_dict(
+        self,
+    ):
+
+        return asdict(
+            self
+        )
+
+    @classmethod
+    def from_dict(
+        cls,
+        data,
+    ):
+
+        if isinstance(
+            data,
+            cls,
+        ):
+
+            return data
+
+        data = data or {}
+
+        return cls(
+            **{
+                key: value
+                for key, value in data.items()
+                if key in cls.__dataclass_fields__
+            }
+        )
+
+
+@dataclass
 class ResourcePolicy:
 
     schema_version: int = RESOURCE_POLICY_SCHEMA_VERSION
@@ -1522,6 +1799,30 @@ class ResourcePolicy:
     allow_simulated_terminate: bool = False
 
     allow_simulated_kill_tree: bool = False
+
+    max_total_cpu_threads: int = 8
+
+    max_threads_per_light_job: int = 2
+
+    max_threads_per_cpu_heavy_job: int = 4
+
+    max_threads_per_gpu_inference_job: int = 2
+
+    max_threads_per_gpu_training_job: int = 2
+
+    max_threads_per_io_heavy_job: int = 2
+
+    max_parallel_heavy_jobs: int = 1
+
+    reserve_cpu_threads: int = 1
+
+    allow_nested_parallelism: bool = False
+
+    thread_budget_cooldown_seconds: float = 30.0
+
+    thread_budget_observation_ttl_seconds: float = 5.0
+
+    thread_budget_restore_on_release: bool = True
 
     pressure_cpu_warning_percent: float = 90.0
 
@@ -1705,6 +2006,30 @@ class ResolvedResourcePolicy:
 
     allow_simulated_kill_tree: bool = False
 
+    max_total_cpu_threads: int = 8
+
+    max_threads_per_light_job: int = 2
+
+    max_threads_per_cpu_heavy_job: int = 4
+
+    max_threads_per_gpu_inference_job: int = 2
+
+    max_threads_per_gpu_training_job: int = 2
+
+    max_threads_per_io_heavy_job: int = 2
+
+    max_parallel_heavy_jobs: int = 1
+
+    reserve_cpu_threads: int = 1
+
+    allow_nested_parallelism: bool = False
+
+    thread_budget_cooldown_seconds: float = 30.0
+
+    thread_budget_observation_ttl_seconds: float = 5.0
+
+    thread_budget_restore_on_release: bool = True
+
     cooperative_stop_grace_seconds: int = 20
 
     kill_escalation_wait_seconds: int = 5
@@ -1790,6 +2115,34 @@ class ResolvedResourcePolicy:
             ),
             "allow_simulated_kill_tree": (
                 self.allow_simulated_kill_tree
+            ),
+            "max_total_cpu_threads": self.max_total_cpu_threads,
+            "max_threads_per_light_job": (
+                self.max_threads_per_light_job
+            ),
+            "max_threads_per_cpu_heavy_job": (
+                self.max_threads_per_cpu_heavy_job
+            ),
+            "max_threads_per_gpu_inference_job": (
+                self.max_threads_per_gpu_inference_job
+            ),
+            "max_threads_per_gpu_training_job": (
+                self.max_threads_per_gpu_training_job
+            ),
+            "max_threads_per_io_heavy_job": (
+                self.max_threads_per_io_heavy_job
+            ),
+            "max_parallel_heavy_jobs": self.max_parallel_heavy_jobs,
+            "reserve_cpu_threads": self.reserve_cpu_threads,
+            "allow_nested_parallelism": self.allow_nested_parallelism,
+            "thread_budget_cooldown_seconds": (
+                self.thread_budget_cooldown_seconds
+            ),
+            "thread_budget_observation_ttl_seconds": (
+                self.thread_budget_observation_ttl_seconds
+            ),
+            "thread_budget_restore_on_release": (
+                self.thread_budget_restore_on_release
             ),
             "cooperative_stop_grace_seconds": (
                 self.cooperative_stop_grace_seconds
@@ -1936,6 +2289,42 @@ class ResolvedResourcePolicy:
             ),
             allow_simulated_kill_tree=bool(
                 policy.allow_simulated_kill_tree
+            ),
+            max_total_cpu_threads=int(
+                policy.max_total_cpu_threads
+            ),
+            max_threads_per_light_job=int(
+                policy.max_threads_per_light_job
+            ),
+            max_threads_per_cpu_heavy_job=int(
+                policy.max_threads_per_cpu_heavy_job
+            ),
+            max_threads_per_gpu_inference_job=int(
+                policy.max_threads_per_gpu_inference_job
+            ),
+            max_threads_per_gpu_training_job=int(
+                policy.max_threads_per_gpu_training_job
+            ),
+            max_threads_per_io_heavy_job=int(
+                policy.max_threads_per_io_heavy_job
+            ),
+            max_parallel_heavy_jobs=int(
+                policy.max_parallel_heavy_jobs
+            ),
+            reserve_cpu_threads=int(
+                policy.reserve_cpu_threads
+            ),
+            allow_nested_parallelism=bool(
+                policy.allow_nested_parallelism
+            ),
+            thread_budget_cooldown_seconds=float(
+                policy.thread_budget_cooldown_seconds
+            ),
+            thread_budget_observation_ttl_seconds=float(
+                policy.thread_budget_observation_ttl_seconds
+            ),
+            thread_budget_restore_on_release=bool(
+                policy.thread_budget_restore_on_release
             ),
             cooperative_stop_grace_seconds=int(
                 policy.cooperative_stop_grace_seconds

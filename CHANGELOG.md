@@ -1,5 +1,27 @@
 # Changelog
 
+## Resource Safety Hardening Phase 7: Thread Budget Enforcement Foundation
+
+### Added
+
+- Thread Budget foundation voi `ThreadBudgetObservation`, budget statuses, action states, stable reason codes va policy fingerprint.
+- Policy additive cho total CPU threads, per-workload limits, reserve CPU threads, heavy job concurrency, nested parallelism, cooldown, TTL va restore-on-release.
+- `ThreadBudgetService` cho workload allocation deterministic, oversubscription detection, nested parallelism detection, environment/runtime/restore plan, cooldown, duplicate suppression, retry exhaustion va lease/process/runtime guard reconciliation boundary.
+- `ThreadBudgetExecutor` va `SimulatedThreadBudgetExecutor` deterministic cho foundation/tests.
+- Tests Phase 7 cho workload classes, reserve/oversubscription, heavy job limit, unknown/stale/invalid, environment/runtime plan, mode boundary, simulated enforce, restore, cooldown/dedup/retry, integration va stable reason codes.
+
+### Changed
+
+- Production default van `thread_budget_mode=monitor_only`.
+- Enforce trong Phase 7 chi goi simulated executor an toan; khong mutate environment/runtime thread setting.
+- Khong doi JobQueue scheduling, JobRunner final state/retry/pause/cancel, Generate/Training execution, engine adapter, CPU affinity hoac GPT-SoVITS runtime.
+
+### Notes
+
+- Khong goi `taskset`, `start /affinity`, `psutil.cpu_affinity`, runtime library setter production hoac CPU stress.
+- Chua Phase 8/production Thread Budget enforcement.
+- Chua Train that, chua Generate that, khong tich hop GPT-SoVITS runtime moi.
+
 ## Resource Safety Hardening Phase 6: Runtime Guard Action Foundation
 
 ### Added

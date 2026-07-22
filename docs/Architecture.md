@@ -1410,3 +1410,50 @@ Ranh gioi:
 
 - Khong goi `taskkill`, `os.kill`, `psutil.Process.kill` hoac terminate process production.
 - Khong thay JobQueue scheduling, Job final state, retry, pause, cancel, lease enforcement, Thread Budget, Generate/Training execution hoac engine adapter.
+
+---
+
+## Resource Safety Hardening Phase 7
+
+Phase 7 them Thread Budget Enforcement Foundation, mac dinh monitor-only.
+
+Thanh phan:
+
+- `ThreadBudgetObservation`: structured observation cho budget/job/lease/process/owner, workload, requested/resolved threads, active/projected total, plans, action/state, reason codes va policy fingerprint.
+- `ThreadBudgetService`: allocation deterministic theo workload, oversubscription detection, nested parallelism detection, environment/runtime/restore plan, cooldown, duplicate suppression, retry va reconciliation boundary.
+- `ThreadBudgetExecutor`: executor contract.
+- `SimulatedThreadBudgetExecutor`: executor deterministic cho tests/foundation, khong mutate production environment/runtime.
+
+Policy Phase 7 lay tu `ResourcePolicyService.resolve()`:
+
+- `thread_budget_mode`;
+- `max_total_cpu_threads`;
+- `max_threads_per_light_job`;
+- `max_threads_per_cpu_heavy_job`;
+- `max_threads_per_gpu_inference_job`;
+- `max_threads_per_gpu_training_job`;
+- `max_threads_per_io_heavy_job`;
+- `max_parallel_heavy_jobs`;
+- `reserve_cpu_threads`;
+- `allow_nested_parallelism`;
+- `thread_budget_cooldown_seconds`;
+- `thread_budget_observation_ttl_seconds`;
+- `thread_budget_restore_on_release`;
+- `max_action_attempts`;
+- policy fingerprint.
+
+Nguyen tac Phase 7:
+
+- Default `thread_budget_mode` la monitor_only.
+- disabled giu legacy behavior va sinh skip/deferred neu service duoc goi.
+- monitor_only chi tinh budget/proposed plan, khong mutate environment/runtime.
+- enforce trong Phase 7 chi goi simulated executor an toan.
+- Unknown, stale hoac invalid budget state khong fail-open.
+- Restore chi duoc de xuat khi co previous state an toan.
+
+Ranh gioi:
+
+- Khong mutate `os.environ` production.
+- Khong goi CPU affinity, `taskset`, `start /affinity` hoac `psutil.cpu_affinity`.
+- Khong goi production runtime library setter neu chua co contract/integration test.
+- Khong thay JobQueue scheduling, Job final state, retry, pause, cancel, Generate/Training execution hoac engine adapter.

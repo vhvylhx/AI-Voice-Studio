@@ -658,3 +658,16 @@
 - Ngay cap nhat: 2026-07-22.
 
 ---
+
+# DEC-068: Thread Budget Phase 7 chi la enforcement foundation simulated
+
+- Trang thai: Chap nhan.
+- Boi canh: Can nen kiem soat CPU thread theo workload/job/engine truoc khi noi vao JobRunner hoac engine production.
+- Quyet dinh: Phase 7 them policy additive, `ThreadBudgetObservation`, `ThreadBudgetService` va simulated executor; default `thread_budget_mode=monitor_only`.
+- Quyet dinh: Allocation, oversubscription, nested parallelism, environment/runtime plan, restore, cooldown va retry phai dung `ResourcePolicyService.resolve()`/`ResolvedResourcePolicy`.
+- Quyet dinh: Enforce trong Phase 7 chi simulated; khong mutate `os.environ`, khong goi CPU affinity, khong goi production runtime setter va khong doi JobQueue/engine behavior.
+- Ly do: Tranh pha runtime/engine production khi chua co contract rollback/integration test day du.
+- He qua: Production Thread Budget enforcement va JobRunner safety integration can phase rieng va tests rieng.
+- Ngay cap nhat: 2026-07-22.
+
+---

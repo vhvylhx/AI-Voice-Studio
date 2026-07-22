@@ -429,6 +429,66 @@ class ResourcePolicyService:
         )
 
         normalized.setdefault(
+            "max_total_cpu_threads",
+            8,
+        )
+
+        normalized.setdefault(
+            "max_threads_per_light_job",
+            2,
+        )
+
+        normalized.setdefault(
+            "max_threads_per_cpu_heavy_job",
+            4,
+        )
+
+        normalized.setdefault(
+            "max_threads_per_gpu_inference_job",
+            2,
+        )
+
+        normalized.setdefault(
+            "max_threads_per_gpu_training_job",
+            2,
+        )
+
+        normalized.setdefault(
+            "max_threads_per_io_heavy_job",
+            2,
+        )
+
+        normalized.setdefault(
+            "max_parallel_heavy_jobs",
+            1,
+        )
+
+        normalized.setdefault(
+            "reserve_cpu_threads",
+            1,
+        )
+
+        normalized.setdefault(
+            "allow_nested_parallelism",
+            False,
+        )
+
+        normalized.setdefault(
+            "thread_budget_cooldown_seconds",
+            30.0,
+        )
+
+        normalized.setdefault(
+            "thread_budget_observation_ttl_seconds",
+            5.0,
+        )
+
+        normalized.setdefault(
+            "thread_budget_restore_on_release",
+            True,
+        )
+
+        normalized.setdefault(
             "snapshot_unknown_state_policy",
             "monitor_only",
         )
@@ -614,6 +674,8 @@ class ResourcePolicyService:
             "deescalation_stable_seconds",
             "observation_ttl_seconds",
             "action_retry_backoff_seconds",
+            "thread_budget_cooldown_seconds",
+            "thread_budget_observation_ttl_seconds",
             "cooperative_stop_grace_seconds",
             "kill_escalation_wait_seconds",
         ):
@@ -635,6 +697,48 @@ class ResourcePolicyService:
 
             errors.append(
                 "invalid_action_attempts"
+            )
+
+        for name in (
+            "max_total_cpu_threads",
+            "max_threads_per_light_job",
+            "max_threads_per_cpu_heavy_job",
+            "max_threads_per_gpu_inference_job",
+            "max_threads_per_gpu_training_job",
+            "max_threads_per_io_heavy_job",
+            "max_parallel_heavy_jobs",
+        ):
+
+            if int(
+                getattr(
+                    policy,
+                    name,
+                )
+            ) <= 0:
+
+                errors.append(
+                    "invalid_thread_budget"
+                )
+
+        if int(
+            policy.reserve_cpu_threads
+        ) < 0:
+
+            errors.append(
+                "invalid_thread_budget"
+            )
+
+        if (
+            int(
+                policy.reserve_cpu_threads
+            )
+            >= int(
+                policy.max_total_cpu_threads
+            )
+        ):
+
+            errors.append(
+                "invalid_thread_budget"
             )
 
         for value in policy.thread_limits.values():
@@ -883,6 +987,50 @@ class ResourcePolicyService:
 
         data["allow_simulated_kill_tree"] = (
             resolved.allow_simulated_kill_tree
+        )
+
+        data["max_total_cpu_threads"] = resolved.max_total_cpu_threads
+
+        data["max_threads_per_light_job"] = (
+            resolved.max_threads_per_light_job
+        )
+
+        data["max_threads_per_cpu_heavy_job"] = (
+            resolved.max_threads_per_cpu_heavy_job
+        )
+
+        data["max_threads_per_gpu_inference_job"] = (
+            resolved.max_threads_per_gpu_inference_job
+        )
+
+        data["max_threads_per_gpu_training_job"] = (
+            resolved.max_threads_per_gpu_training_job
+        )
+
+        data["max_threads_per_io_heavy_job"] = (
+            resolved.max_threads_per_io_heavy_job
+        )
+
+        data["max_parallel_heavy_jobs"] = (
+            resolved.max_parallel_heavy_jobs
+        )
+
+        data["reserve_cpu_threads"] = resolved.reserve_cpu_threads
+
+        data["allow_nested_parallelism"] = (
+            resolved.allow_nested_parallelism
+        )
+
+        data["thread_budget_cooldown_seconds"] = (
+            resolved.thread_budget_cooldown_seconds
+        )
+
+        data["thread_budget_observation_ttl_seconds"] = (
+            resolved.thread_budget_observation_ttl_seconds
+        )
+
+        data["thread_budget_restore_on_release"] = (
+            resolved.thread_budget_restore_on_release
         )
 
         data["cpu_fallback_requires_job_confirmation"] = (

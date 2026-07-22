@@ -1,5 +1,29 @@
 # Changelog
 
+## Resource Safety Hardening Phase 5: Process Supervisor va Kill-tree Foundation
+
+### Added
+
+- Process Supervisor foundation voi `ProcessIdentity`, `ProcessSupervisorObservation`, process states/actions va stable reason codes.
+- Policy additive cho graceful shutdown, terminate, kill-tree timeout, identity requirement, orphan handling va observation TTL.
+- `ProcessProvider` abstraction va `StaticProcessProvider` fake deterministic cho tests.
+- `ProcessSupervisor` registry atomic, corrupt registry fail-safe, legacy/unknown field load va temp cleanup.
+- Process tree discovery deterministic, sorted, cycle-safe va khong dua PID ngoai tree vao action.
+- Shadow shutdown plan cho graceful stop, terminate va kill-tree voi simulated audit.
+- Tests Phase 5 cho identity validation, PID reuse, command/executable/parent mismatch, permission/provider unknown, stale, orphan/restart, tree, mode boundary va persistence.
+
+### Changed
+
+- Production default van `process_supervisor_mode=monitor_only`.
+- `enforce` trong Phase 5 chi la contract/gate fail-safe; khong production kill process.
+- Khong doi JobQueue scheduling, JobRunner flow, Generate/Training execution, Runtime Guard hay Thread Budget.
+
+### Notes
+
+- Khong goi `taskkill`, `os.kill` hoac `psutil.Process.kill`.
+- Chua production process provider/kill-tree executor.
+- Chua Train that, chua Generate that, khong tich hop GPT-SoVITS runtime moi.
+
 ## Resource Safety Hardening Phase 4: Lease Lifecycle v2 Enforcement
 
 ### Added

@@ -349,6 +349,36 @@ class ResourcePolicyService:
         )
 
         normalized.setdefault(
+            "graceful_shutdown_timeout_seconds",
+            20.0,
+        )
+
+        normalized.setdefault(
+            "terminate_timeout_seconds",
+            5.0,
+        )
+
+        normalized.setdefault(
+            "kill_tree_timeout_seconds",
+            5.0,
+        )
+
+        normalized.setdefault(
+            "process_identity_required",
+            True,
+        )
+
+        normalized.setdefault(
+            "orphan_handling_mode",
+            "monitor_only",
+        )
+
+        normalized.setdefault(
+            "process_observation_ttl_seconds",
+            5.0,
+        )
+
+        normalized.setdefault(
             "snapshot_unknown_state_policy",
             "monitor_only",
         )
@@ -526,6 +556,10 @@ class ResourcePolicyService:
             "resource_wait_recheck_seconds",
             "lease_ttl_seconds",
             "lease_renew_interval_seconds",
+            "graceful_shutdown_timeout_seconds",
+            "terminate_timeout_seconds",
+            "kill_tree_timeout_seconds",
+            "process_observation_ttl_seconds",
             "cooperative_stop_grace_seconds",
             "kill_escalation_wait_seconds",
         ):
@@ -723,6 +757,30 @@ class ResourcePolicyService:
 
         data["stale_lease_handling_mode"] = (
             resolved.stale_lease_handling_mode
+        )
+
+        data["graceful_shutdown_timeout_seconds"] = (
+            resolved.graceful_shutdown_timeout_seconds
+        )
+
+        data["terminate_timeout_seconds"] = (
+            resolved.terminate_timeout_seconds
+        )
+
+        data["kill_tree_timeout_seconds"] = (
+            resolved.kill_tree_timeout_seconds
+        )
+
+        data["process_identity_required"] = (
+            resolved.process_identity_required
+        )
+
+        data["orphan_handling_mode"] = (
+            resolved.orphan_handling_mode
+        )
+
+        data["process_observation_ttl_seconds"] = (
+            resolved.process_observation_ttl_seconds
         )
 
         data["cpu_fallback_requires_job_confirmation"] = (

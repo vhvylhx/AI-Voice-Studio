@@ -1330,3 +1330,41 @@ Ranh gioi:
 - Khong them Process Supervisor, kill-tree, Runtime Guard action hoac Thread Budget enforcement.
 - Khong dung process identity provider production de kill/restart process.
 - Khong train/generate/goi GPT-SoVITS runtime.
+
+---
+
+## Resource Safety Hardening Phase 5
+
+Phase 5 them Process Supervisor va kill-tree foundation, mac dinh monitor-only.
+
+Thanh phan:
+
+- `ProcessIdentity`: identity khong chi dua vao PID, gom pid/start time/parent/job/lease/owner/executable/command fingerprint/workload/resource/group/session/policy fingerprint.
+- `ProcessSupervisorObservation`: structured shadow observation cho process state, tree, identity validity, orphan/stale flags va proposed action.
+- `ProcessProvider`: abstraction cho process snapshot va list process; tests dung fake provider deterministic.
+- `ProcessSupervisor`: registry atomic, process tree discovery, identity validation, orphan/restart recovery observation va shutdown plan simulated.
+
+Policy Phase 5 lay tu `ResourcePolicyService.resolve()`:
+
+- `process_supervisor_mode`;
+- `graceful_shutdown_timeout_seconds`;
+- `terminate_timeout_seconds`;
+- `kill_tree_timeout_seconds`;
+- `process_identity_required`;
+- `orphan_handling_mode`;
+- `process_observation_ttl_seconds`;
+- policy fingerprint.
+
+Nguyen tac Phase 5:
+
+- Default `process_supervisor_mode` van monitor_only.
+- disabled khong supervisor action.
+- monitor_only chi quan sat, sinh WOULD_* action va audit.
+- enforce chi la gate/contract fail-safe trong Phase 5, khong production kill.
+- Unknown, permission denied, provider unavailable, tree incomplete hoac identity mismatch deu defer/non-destructive.
+
+Ranh gioi:
+
+- Khong goi `taskkill`, `os.kill`, `psutil.Process.kill` trong production path hay tests.
+- Khong thay JobQueue scheduling, retry, pause/cancel, Job final state, Generate/Training execution.
+- Khong bat Runtime Guard action hay Thread Budget enforcement.

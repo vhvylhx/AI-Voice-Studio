@@ -649,3 +649,16 @@
 - Persistence lease store ghi atomic schema_version 2, cleanup temp write va khong ghi de corrupt store trong enforce path.
 - `enforce` la mode Phase 4 chinh; `enforced` cu duoc giu nhu legacy alias de load du lieu Phase 1-3.
 - Chua Phase 5: khong Process Supervisor, khong kill-tree, khong Runtime Guard action, khong Thread Budget enforcement, khong Generate/Training production.
+
+---
+
+## Cap nhat Resource Safety Hardening Phase 5
+
+- Da them Process Supervisor foundation o muc model/service/test, mac dinh `process_supervisor_mode=monitor_only`.
+- Policy v2 them additive `graceful_shutdown_timeout_seconds`, `terminate_timeout_seconds`, `kill_tree_timeout_seconds`, `process_identity_required`, `orphan_handling_mode` va `process_observation_ttl_seconds`.
+- `ProcessIdentity` khong chi dua vao PID: co start time, parent, owner, job/lease, executable, command fingerprint, workload/resource, group/session, policy fingerprint va provenance.
+- `ProcessSupervisor` co registry atomic trong `workspace/jobs/processes` theo mac dinh, load legacy/unknown fields an toan va khong ghi de corrupt registry.
+- Process tree discovery qua provider abstraction, deterministic trong fake provider, tranh cycle va khong dua PID ngoai tree vao action.
+- Shutdown plan chi la shadow contract/simulated audit cho graceful stop, terminate va kill-tree; khong goi kill process that.
+- Orphan/restart recovery foundation tao observation/reconciliation cho job missing, lease missing/expired, PID reuse, provider unavailable, permission denied, stale va tree incomplete.
+- Chua Phase 6: khong production kill-tree, khong Runtime Guard action, khong Thread Budget enforcement, khong thay Generate/Training execution.

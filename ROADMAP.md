@@ -573,6 +573,7 @@ Có thể clone một giọng và tạo Audio bằng GPT-SoVITS.
 - [x] Corrupt/legacy/unknown lease store observation khong crash va khong ghi de.
 - [x] Resource Lease v2 enforcement gated theo policy `resource_lease_v2_mode=enforce`.
 - [x] Acquire/renew/release/reconcile v2 co owner/job validation, fail-safe corrupt store, atomic persistence va reason codes on dinh.
-- [ ] Process Supervisor/kill-tree, Runtime Guard action va Thread Budget enforcement thuoc Phase sau neu duoc phe duyet rieng.
+- [x] Process Supervisor va kill-tree foundation monitor-only/simulated cho identity, registry, tree discovery, shadow shutdown plan va audit.
+- [ ] Production kill-tree, Runtime Guard action va Thread Budget enforcement thuoc Phase sau neu duoc phe duyet rieng.
 
 ---

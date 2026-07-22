@@ -4,12 +4,13 @@ Ngay cap nhat: 2026-07-22
 
 ## Trang thai hien tai
 
-- Sprint vua thuc hien: Resource Safety Hardening Phase 4 - Lease Lifecycle v2 Enforcement gated.
+- Sprint vua thuc hien: Resource Safety Hardening Phase 5 - Process Supervisor va Kill-tree Foundation.
 - Nen Generate Pipeline AVS-014.16 da co o muc request/session/source snapshot/plan/manifest/recovery/API/job prepare.
 - Resource Policy schema v2 da co foundation resolve/migration/fallback/fingerprint o muc monitor-only/disabled.
 - Resource Safety Phase 2 da co snapshot validation/freshness va shadow Resource Decision v2 monitor-only, khong doi scheduling/runtime behavior.
 - Resource Safety Phase 3 da co Lease Lifecycle v2 shadow observation monitor-only, khong doi actual lease/scheduling/runtime behavior.
 - Resource Safety Phase 4 da co Lease Lifecycle v2 enforcement path chi kich hoat khi `resource_lease_v2_mode=enforce`; mac dinh van monitor_only.
+- Resource Safety Phase 5 da co Process Supervisor foundation cho identity, registry, tree discovery, shadow shutdown plan va audit; mac dinh monitor_only va khong kill process production.
 - Chua tich hop GPT-SoVITS runtime cho Generate production trong phase nay.
 - Chua Train GPT-SoVITS that trong phase nay.
 - Chua Generate Audio that trong phase nay.
@@ -42,6 +43,8 @@ Ngay cap nhat: 2026-07-22
 | Resource Lease v2 enforcement gated | READY | Acquire/renew/release/reconcile v2 co atomic persistence, owner/job validation, corrupt-store fail-safe va stable reason codes; chi active khi policy resolved la `enforce`. |
 | Resource Policy v2 enforcement | UNAVAILABLE | Van chi monitor-only/shadow; khong block job moi, khong doi scheduling/thread/batch/runtime action. |
 | Resource Lease v2 production rollout | DEGRADED | Enforcement path da co sau feature flag, nhung default production van monitor_only va chua co Process Supervisor/Runtime Guard/Thread Budget Phase 5. |
+| Process Supervisor foundation | READY | Process identity khong chi dua PID, registry atomic, tree discovery, shadow observation, shutdown plan simulated va stable reason codes. |
+| Process Supervisor production kill-tree | UNAVAILABLE | Phase 5 khong goi kill/terminate process that; enforce mode chi la contract/gate fail-safe. |
 | Style Profile / Voice DNA foundation | DEGRADED | Quan ly/import/export foundation co; prosody analyzer that chua co. |
 | Runtime GPT-SoVITS integration cho Generate | UNAVAILABLE | La pham vi sprint sau, khong lam trong AVS-014.16A. |
 
@@ -58,11 +61,11 @@ Ngay cap nhat: 2026-07-22
 - Chua co full audio validation policy bang ffprobe/codec cho artifact production.
 - Chua chay Train GPT-SoVITS production.
 - Chua co prosody analyzer that cho Voice DNA.
-- Chua co Process Supervisor enforcement/kill-tree, runtime pressure guard action, thread budget enforcement hoac per-job CPU fallback confirmation workflow.
+- Chua co Process Supervisor production kill-tree, runtime pressure guard action, thread budget enforcement hoac per-job CPU fallback confirmation workflow.
 - Resource Decision v2 hien chi shadow/monitor-only; chua duoc dung de block Queue, doi job state, cap/release lease, doi CPU fallback, thread, batch hoac runtime guard.
 - Resource Lease v2 enforcement chi chay khi `resource_lease_v2_mode=enforce`; mac dinh monitor_only van giu legacy/Phase 3 behavior.
-- Chua co Process Supervisor/kill-tree, Runtime Guard action, Thread Budget enforcement hay process identity provider production day du.
+- Process Supervisor hien chi foundation/monitor-only/simulated; chua co provider production day du, khong kill process that.
 
 ## Sprint tiep theo du kien
 
-- AVS-014.17 GPT-SoVITS Runtime Integration chi bat dau sau khi source/docs/tests hien tai dat va Resource Safety Hardening Phase 4 neu co duoc phe duyet rieng.
+- AVS-014.17 GPT-SoVITS Runtime Integration chi bat dau sau khi source/docs/tests hien tai dat va Resource Safety Hardening Phase 5 neu co duoc phe duyet rieng.

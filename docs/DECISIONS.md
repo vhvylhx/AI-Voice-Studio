@@ -631,3 +631,17 @@
 - Ngay cap nhat: 2026-07-22.
 
 ---
+
+# DEC-066: Process Supervisor Phase 5 chi la foundation monitor-only
+
+- Trang thai: Chap nhan.
+- Boi canh: Can nen quan sat process dai/nang tai nguyen truoc khi co bat ky production kill-tree nao.
+- Quyet dinh: Phase 5 them ProcessIdentity, ProcessSupervisorObservation, provider abstraction, registry atomic va shutdown plan simulated.
+- Quyet dinh: `process_supervisor_mode` mac dinh monitor_only; enforce trong Phase 5 chi la contract/gate fail-safe, khong tu kill process production.
+- Quyet dinh: Process identity khong chi dua vao PID ma phai gom start time, command/executable fingerprint, owner/job/lease va policy fingerprint.
+- Quyet dinh: Unknown identity, permission denied, provider unavailable, tree incomplete, PID reuse hoac owner mismatch phai defer/non-destructive.
+- Ly do: Bao ve process ngoai ownership boundary va tranh kill nham Codex, terminal, Python nguoi dung hoac process he thong.
+- He qua: Phase sau muon production kill-tree phai co phe duyet, provider production va tests rieng.
+- Ngay cap nhat: 2026-07-22.
+
+---

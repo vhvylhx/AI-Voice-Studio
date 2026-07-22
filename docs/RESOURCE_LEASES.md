@@ -55,3 +55,20 @@ Enforce path:
 Lease store duoc ghi bang atomic temp file + replace voi `schema_version=2`. Enforce path khong ghi de corrupt store.
 
 Phase 4 khong bao gom Process Supervisor, kill-tree, Runtime Guard action hay Thread Budget enforcement.
+
+## Process Supervisor Foundation
+
+Resource Safety Hardening Phase 5 bo sung nen Process Supervisor doc lap voi lease lifecycle.
+
+Lease reconciliation co the truyen identity/process state cho observation, nhung Phase 5 khong thay doi acquire/renew/release lease va khong kill process production.
+
+Process Supervisor co the phat hien:
+
+- process missing trong khi lease con;
+- process con khi job missing;
+- lease expired/stale trong khi process con;
+- owner/identity mismatch;
+- PID reuse;
+- tree incomplete hoac provider unavailable.
+
+Ket qua chi la shadow observation/proposed reconciliation trong Phase 5.

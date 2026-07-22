@@ -217,6 +217,126 @@ LEASE_REASON_CODES = (
     LEASE_REASON_MODE_ENFORCE,
 )
 
+PROCESS_STATE_REGISTERED = "registered"
+PROCESS_STATE_STARTING = "starting"
+PROCESS_STATE_RUNNING = "running"
+PROCESS_STATE_STOPPING = "stopping"
+PROCESS_STATE_TERMINATED = "terminated"
+PROCESS_STATE_KILLED = "killed"
+PROCESS_STATE_EXITED = "exited"
+PROCESS_STATE_ORPHANED = "orphaned"
+PROCESS_STATE_MISSING = "missing"
+PROCESS_STATE_STALE = "stale"
+PROCESS_STATE_UNKNOWN = "unknown"
+PROCESS_STATE_IDENTITY_MISMATCH = "identity_mismatch"
+
+PROCESS_STATES = (
+    PROCESS_STATE_REGISTERED,
+    PROCESS_STATE_STARTING,
+    PROCESS_STATE_RUNNING,
+    PROCESS_STATE_STOPPING,
+    PROCESS_STATE_TERMINATED,
+    PROCESS_STATE_KILLED,
+    PROCESS_STATE_EXITED,
+    PROCESS_STATE_ORPHANED,
+    PROCESS_STATE_MISSING,
+    PROCESS_STATE_STALE,
+    PROCESS_STATE_UNKNOWN,
+    PROCESS_STATE_IDENTITY_MISMATCH,
+)
+
+PROCESS_ACTION_WOULD_REGISTER = "WOULD_REGISTER"
+PROCESS_ACTION_WOULD_OBSERVE = "WOULD_OBSERVE"
+PROCESS_ACTION_WOULD_REQUEST_GRACEFUL_STOP = (
+    "WOULD_REQUEST_GRACEFUL_STOP"
+)
+PROCESS_ACTION_WOULD_TERMINATE = "WOULD_TERMINATE"
+PROCESS_ACTION_WOULD_KILL_TREE = "WOULD_KILL_TREE"
+PROCESS_ACTION_WOULD_MARK_EXITED = "WOULD_MARK_EXITED"
+PROCESS_ACTION_WOULD_MARK_ORPHANED = "WOULD_MARK_ORPHANED"
+PROCESS_ACTION_WOULD_RECONCILE = "WOULD_RECONCILE"
+PROCESS_ACTION_WOULD_DEFER = "WOULD_DEFER"
+PROCESS_ACTION_WOULD_SKIP = "WOULD_SKIP"
+PROCESS_ACTION_WOULD_BLOCK_IDENTITY_MISMATCH = (
+    "WOULD_BLOCK_IDENTITY_MISMATCH"
+)
+
+PROCESS_ACTIONS = (
+    PROCESS_ACTION_WOULD_REGISTER,
+    PROCESS_ACTION_WOULD_OBSERVE,
+    PROCESS_ACTION_WOULD_REQUEST_GRACEFUL_STOP,
+    PROCESS_ACTION_WOULD_TERMINATE,
+    PROCESS_ACTION_WOULD_KILL_TREE,
+    PROCESS_ACTION_WOULD_MARK_EXITED,
+    PROCESS_ACTION_WOULD_MARK_ORPHANED,
+    PROCESS_ACTION_WOULD_RECONCILE,
+    PROCESS_ACTION_WOULD_DEFER,
+    PROCESS_ACTION_WOULD_SKIP,
+    PROCESS_ACTION_WOULD_BLOCK_IDENTITY_MISMATCH,
+)
+
+PROCESS_REASON_MISSING = "process_missing"
+PROCESS_REASON_EXITED = "process_exited"
+PROCESS_REASON_STALE = "process_stale"
+PROCESS_REASON_ORPHANED = "process_orphaned"
+PROCESS_REASON_IDENTITY_UNKNOWN = "process_identity_unknown"
+PROCESS_REASON_IDENTITY_MISMATCH = "process_identity_mismatch"
+PROCESS_REASON_PID_REUSED = "process_pid_reused"
+PROCESS_REASON_OWNER_MISMATCH = "process_owner_mismatch"
+PROCESS_REASON_JOB_MISSING = "process_job_missing"
+PROCESS_REASON_LEASE_MISSING = "process_lease_missing"
+PROCESS_REASON_LEASE_EXPIRED = "process_lease_expired"
+PROCESS_REASON_PARENT_MISMATCH = "process_parent_mismatch"
+PROCESS_REASON_COMMAND_MISMATCH = "process_command_mismatch"
+PROCESS_REASON_EXECUTABLE_MISMATCH = "process_executable_mismatch"
+PROCESS_REASON_TREE_INCOMPLETE = "process_tree_incomplete"
+PROCESS_REASON_PROVIDER_UNAVAILABLE = "process_provider_unavailable"
+PROCESS_REASON_PERMISSION_DENIED = "process_permission_denied"
+PROCESS_REASON_REGISTRY_CORRUPT = "process_registry_corrupt"
+PROCESS_REASON_REGISTRY_UNAVAILABLE = "process_registry_unavailable"
+PROCESS_REASON_GRACEFUL_STOP_DUE = "process_graceful_stop_due"
+PROCESS_REASON_TERMINATE_DUE = "process_terminate_due"
+PROCESS_REASON_KILL_TREE_DUE = "process_kill_tree_due"
+PROCESS_REASON_RECONCILIATION_REQUIRED = (
+    "process_reconciliation_required"
+)
+PROCESS_REASON_RECONCILIATION_DEFERRED = (
+    "process_reconciliation_deferred"
+)
+PROCESS_REASON_MODE_DISABLED = "process_mode_disabled"
+PROCESS_REASON_MODE_MONITOR_ONLY = "process_mode_monitor_only"
+PROCESS_REASON_MODE_ENFORCE = "process_mode_enforce"
+
+PROCESS_REASON_CODES = (
+    PROCESS_REASON_MISSING,
+    PROCESS_REASON_EXITED,
+    PROCESS_REASON_STALE,
+    PROCESS_REASON_ORPHANED,
+    PROCESS_REASON_IDENTITY_UNKNOWN,
+    PROCESS_REASON_IDENTITY_MISMATCH,
+    PROCESS_REASON_PID_REUSED,
+    PROCESS_REASON_OWNER_MISMATCH,
+    PROCESS_REASON_JOB_MISSING,
+    PROCESS_REASON_LEASE_MISSING,
+    PROCESS_REASON_LEASE_EXPIRED,
+    PROCESS_REASON_PARENT_MISMATCH,
+    PROCESS_REASON_COMMAND_MISMATCH,
+    PROCESS_REASON_EXECUTABLE_MISMATCH,
+    PROCESS_REASON_TREE_INCOMPLETE,
+    PROCESS_REASON_PROVIDER_UNAVAILABLE,
+    PROCESS_REASON_PERMISSION_DENIED,
+    PROCESS_REASON_REGISTRY_CORRUPT,
+    PROCESS_REASON_REGISTRY_UNAVAILABLE,
+    PROCESS_REASON_GRACEFUL_STOP_DUE,
+    PROCESS_REASON_TERMINATE_DUE,
+    PROCESS_REASON_KILL_TREE_DUE,
+    PROCESS_REASON_RECONCILIATION_REQUIRED,
+    PROCESS_REASON_RECONCILIATION_DEFERRED,
+    PROCESS_REASON_MODE_DISABLED,
+    PROCESS_REASON_MODE_MONITOR_ONLY,
+    PROCESS_REASON_MODE_ENFORCE,
+)
+
 
 def now_iso():
 
@@ -914,6 +1034,184 @@ class ResourceLeaseObservation:
 
 
 @dataclass
+class ProcessIdentity:
+
+    process_id: str = ""
+
+    pid: int = 0
+
+    parent_pid: int = 0
+
+    job_id: str = ""
+
+    lease_id: str = ""
+
+    owner_id: str = ""
+
+    executable: str = ""
+
+    command_fingerprint: str = ""
+
+    process_start_time: str = ""
+
+    registered_at: str = field(
+        default_factory=now_iso
+    )
+
+    last_observed_at: str = ""
+
+    workload_class: str = WORKLOAD_CLASS_LIGHT
+
+    resource_kind: str = "cpu"
+
+    process_group_id: str = ""
+
+    session_id: str = ""
+
+    policy_fingerprint: str = ""
+
+    metadata: dict = field(
+        default_factory=dict
+    )
+
+    provenance: dict = field(
+        default_factory=dict
+    )
+
+    schema_version: int = 1
+
+    def to_dict(
+        self,
+    ):
+
+        return asdict(
+            self
+        )
+
+    @classmethod
+    def from_dict(
+        cls,
+        data,
+    ):
+
+        if isinstance(
+            data,
+            cls,
+        ):
+
+            return data
+
+        data = data or {}
+
+        identity = cls(
+            **{
+                key: value
+                for key, value in data.items()
+                if key in cls.__dataclass_fields__
+            }
+        )
+
+        if identity.workload_class not in WORKLOAD_CLASSES:
+
+            identity.workload_class = WORKLOAD_CLASS_LIGHT
+
+        return identity
+
+
+@dataclass
+class ProcessSupervisorObservation:
+
+    actual_process_state: str = PROCESS_STATE_UNKNOWN
+
+    shadow_process_state: str = PROCESS_STATE_UNKNOWN
+
+    shadow_action: str = PROCESS_ACTION_WOULD_SKIP
+
+    reason_codes: list = field(
+        default_factory=list
+    )
+
+    process_identity: dict = field(
+        default_factory=dict
+    )
+
+    job_id: str = ""
+
+    lease_id: str = ""
+
+    root_pid: int = 0
+
+    descendant_pids: list = field(
+        default_factory=list
+    )
+
+    process_tree_complete: bool = False
+
+    identity_valid: bool = False
+
+    owner_valid: bool = False
+
+    is_alive: bool = False
+
+    is_orphan: bool = False
+
+    is_stale: bool = False
+
+    would_request_graceful_stop: bool = False
+
+    would_terminate: bool = False
+
+    would_kill_tree: bool = False
+
+    would_reconcile: bool = False
+
+    policy_fingerprint: str = ""
+
+    observed_at: str = field(
+        default_factory=now_iso
+    )
+
+    monitor_only: bool = True
+
+    audit: list = field(
+        default_factory=list
+    )
+
+    schema_version: int = 1
+
+    def to_dict(
+        self,
+    ):
+
+        return asdict(
+            self
+        )
+
+    @classmethod
+    def from_dict(
+        cls,
+        data,
+    ):
+
+        if isinstance(
+            data,
+            cls,
+        ):
+
+            return data
+
+        data = data or {}
+
+        return cls(
+            **{
+                key: value
+                for key, value in data.items()
+                if key in cls.__dataclass_fields__
+            }
+        )
+
+
+@dataclass
 class ResourcePolicy:
 
     schema_version: int = RESOURCE_POLICY_SCHEMA_VERSION
@@ -941,6 +1239,18 @@ class ResourcePolicy:
     lease_renew_interval_seconds: float = 120.0
 
     stale_lease_handling_mode: str = "monitor_only"
+
+    graceful_shutdown_timeout_seconds: float = 20.0
+
+    terminate_timeout_seconds: float = 5.0
+
+    kill_tree_timeout_seconds: float = 5.0
+
+    process_identity_required: bool = True
+
+    orphan_handling_mode: str = "monitor_only"
+
+    process_observation_ttl_seconds: float = 5.0
 
     pressure_cpu_warning_percent: float = 90.0
 
@@ -1092,6 +1402,18 @@ class ResolvedResourcePolicy:
 
     stale_lease_handling_mode: str = "monitor_only"
 
+    graceful_shutdown_timeout_seconds: float = 20.0
+
+    terminate_timeout_seconds: float = 5.0
+
+    kill_tree_timeout_seconds: float = 5.0
+
+    process_identity_required: bool = True
+
+    orphan_handling_mode: str = "monitor_only"
+
+    process_observation_ttl_seconds: float = 5.0
+
     cooperative_stop_grace_seconds: int = 20
 
     kill_escalation_wait_seconds: int = 5
@@ -1141,6 +1463,22 @@ class ResolvedResourcePolicy:
             ),
             "stale_lease_handling_mode": (
                 self.stale_lease_handling_mode
+            ),
+            "graceful_shutdown_timeout_seconds": (
+                self.graceful_shutdown_timeout_seconds
+            ),
+            "terminate_timeout_seconds": (
+                self.terminate_timeout_seconds
+            ),
+            "kill_tree_timeout_seconds": (
+                self.kill_tree_timeout_seconds
+            ),
+            "process_identity_required": (
+                self.process_identity_required
+            ),
+            "orphan_handling_mode": self.orphan_handling_mode,
+            "process_observation_ttl_seconds": (
+                self.process_observation_ttl_seconds
             ),
             "cooperative_stop_grace_seconds": (
                 self.cooperative_stop_grace_seconds
@@ -1239,6 +1577,24 @@ class ResolvedResourcePolicy:
             ),
             stale_lease_handling_mode=str(
                 policy.stale_lease_handling_mode
+            ),
+            graceful_shutdown_timeout_seconds=float(
+                policy.graceful_shutdown_timeout_seconds
+            ),
+            terminate_timeout_seconds=float(
+                policy.terminate_timeout_seconds
+            ),
+            kill_tree_timeout_seconds=float(
+                policy.kill_tree_timeout_seconds
+            ),
+            process_identity_required=bool(
+                policy.process_identity_required
+            ),
+            orphan_handling_mode=str(
+                policy.orphan_handling_mode
+            ),
+            process_observation_ttl_seconds=float(
+                policy.process_observation_ttl_seconds
             ),
             cooperative_stop_grace_seconds=int(
                 policy.cooperative_stop_grace_seconds

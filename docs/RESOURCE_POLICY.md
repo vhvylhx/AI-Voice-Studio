@@ -37,3 +37,26 @@ Policy additive cho Process Supervisor:
 - process_observation_ttl_seconds.
 
 Trong Phase 5, `enforce` chi la contract/gate fail-safe va khong tu kill process production.
+
+Runtime Guard Phase 6 dung `runtime_guard_mode`, mac dinh `monitor_only`.
+
+Policy additive cho Runtime Guard:
+
+- action_cooldown_seconds;
+- deescalation_stable_seconds;
+- observation_ttl_seconds;
+- max_action_attempts;
+- action_retry_backoff_seconds;
+- allow_simulated_throttle;
+- allow_simulated_pause;
+- allow_simulated_graceful_stop;
+- allow_simulated_terminate;
+- allow_simulated_kill_tree.
+
+Runtime Guard modes:
+
+- `disabled`: sinh skip/deferred, khong action.
+- `monitor_only`: sinh structured observation va WOULD_* recommendation, khong execute.
+- `enforce`: Phase 6 chi goi simulated executor an toan; destructive terminate/kill-tree van deferred.
+
+Trong Phase 6, Runtime Guard khong pause, terminate, kill-tree, doi Job state, doi scheduling, doi thread/batch hoac goi GPT-SoVITS runtime production.

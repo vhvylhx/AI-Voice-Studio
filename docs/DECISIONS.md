@@ -645,3 +645,16 @@
 - Ngay cap nhat: 2026-07-22.
 
 ---
+
+# DEC-067: Runtime Guard Phase 6 chi la action foundation simulated
+
+- Trang thai: Chap nhan.
+- Boi canh: Sau Resource Policy, Decision, Lease va Process Supervisor foundation, can nen Runtime Guard de phan loai pressure va de xuat action ma chua duoc phep tac dong production process/job.
+- Quyet dinh: Phase 6 them `runtime_guard_mode`, `RuntimeGuardObservation`, `RuntimeGuard` va simulated action executor; default la monitor_only.
+- Quyet dinh: Runtime Guard phai dung `ResourcePolicyService.resolve()`/`ResolvedResourcePolicy` lam single source of truth cho mode, cooldown, hysteresis, retry va simulated action allow-list.
+- Quyet dinh: Enforce trong Phase 6 chi duoc goi simulated executor; terminate/kill-tree destructive luon deferred va khong goi `taskkill`, `os.kill`, `psutil` kill/terminate.
+- Ly do: Cho phep validate pressure/action contract deterministic truoc khi Phase sau noi action production nguy hiem hon.
+- He qua: Runtime Guard production pause/terminate/kill-tree, Thread Budget enforcement va JobRunner safety integration can phase rieng va tests rieng.
+- Ngay cap nhat: 2026-07-22.
+
+---

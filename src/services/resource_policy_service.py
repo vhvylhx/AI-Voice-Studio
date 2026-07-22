@@ -379,6 +379,56 @@ class ResourcePolicyService:
         )
 
         normalized.setdefault(
+            "action_cooldown_seconds",
+            30.0,
+        )
+
+        normalized.setdefault(
+            "deescalation_stable_seconds",
+            60.0,
+        )
+
+        normalized.setdefault(
+            "observation_ttl_seconds",
+            5.0,
+        )
+
+        normalized.setdefault(
+            "max_action_attempts",
+            3,
+        )
+
+        normalized.setdefault(
+            "action_retry_backoff_seconds",
+            10.0,
+        )
+
+        normalized.setdefault(
+            "allow_simulated_throttle",
+            True,
+        )
+
+        normalized.setdefault(
+            "allow_simulated_pause",
+            False,
+        )
+
+        normalized.setdefault(
+            "allow_simulated_graceful_stop",
+            False,
+        )
+
+        normalized.setdefault(
+            "allow_simulated_terminate",
+            False,
+        )
+
+        normalized.setdefault(
+            "allow_simulated_kill_tree",
+            False,
+        )
+
+        normalized.setdefault(
             "snapshot_unknown_state_policy",
             "monitor_only",
         )
@@ -560,6 +610,10 @@ class ResourcePolicyService:
             "terminate_timeout_seconds",
             "kill_tree_timeout_seconds",
             "process_observation_ttl_seconds",
+            "action_cooldown_seconds",
+            "deescalation_stable_seconds",
+            "observation_ttl_seconds",
+            "action_retry_backoff_seconds",
             "cooperative_stop_grace_seconds",
             "kill_escalation_wait_seconds",
         ):
@@ -574,6 +628,14 @@ class ResourcePolicyService:
                 errors.append(
                     "invalid_timeout"
                 )
+
+        if int(
+            policy.max_action_attempts
+        ) <= 0:
+
+            errors.append(
+                "invalid_action_attempts"
+            )
 
         for value in policy.thread_limits.values():
 
@@ -781,6 +843,46 @@ class ResourcePolicyService:
 
         data["process_observation_ttl_seconds"] = (
             resolved.process_observation_ttl_seconds
+        )
+
+        data["action_cooldown_seconds"] = (
+            resolved.action_cooldown_seconds
+        )
+
+        data["deescalation_stable_seconds"] = (
+            resolved.deescalation_stable_seconds
+        )
+
+        data["observation_ttl_seconds"] = (
+            resolved.observation_ttl_seconds
+        )
+
+        data["max_action_attempts"] = (
+            resolved.max_action_attempts
+        )
+
+        data["action_retry_backoff_seconds"] = (
+            resolved.action_retry_backoff_seconds
+        )
+
+        data["allow_simulated_throttle"] = (
+            resolved.allow_simulated_throttle
+        )
+
+        data["allow_simulated_pause"] = (
+            resolved.allow_simulated_pause
+        )
+
+        data["allow_simulated_graceful_stop"] = (
+            resolved.allow_simulated_graceful_stop
+        )
+
+        data["allow_simulated_terminate"] = (
+            resolved.allow_simulated_terminate
+        )
+
+        data["allow_simulated_kill_tree"] = (
+            resolved.allow_simulated_kill_tree
         )
 
         data["cpu_fallback_requires_job_confirmation"] = (

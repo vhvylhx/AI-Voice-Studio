@@ -4,13 +4,14 @@ Ngay cap nhat: 2026-07-22
 
 ## Trang thai hien tai
 
-- Sprint vua thuc hien: Resource Safety Hardening Phase 5 - Process Supervisor va Kill-tree Foundation.
+- Sprint vua thuc hien: Resource Safety Hardening Phase 6 - Runtime Guard Action Foundation.
 - Nen Generate Pipeline AVS-014.16 da co o muc request/session/source snapshot/plan/manifest/recovery/API/job prepare.
 - Resource Policy schema v2 da co foundation resolve/migration/fallback/fingerprint o muc monitor-only/disabled.
 - Resource Safety Phase 2 da co snapshot validation/freshness va shadow Resource Decision v2 monitor-only, khong doi scheduling/runtime behavior.
 - Resource Safety Phase 3 da co Lease Lifecycle v2 shadow observation monitor-only, khong doi actual lease/scheduling/runtime behavior.
 - Resource Safety Phase 4 da co Lease Lifecycle v2 enforcement path chi kich hoat khi `resource_lease_v2_mode=enforce`; mac dinh van monitor_only.
 - Resource Safety Phase 5 da co Process Supervisor foundation cho identity, registry, tree discovery, shadow shutdown plan va audit; mac dinh monitor_only va khong kill process production.
+- Resource Safety Phase 6 da co Runtime Guard action foundation monitor_only/enforce-gated voi pressure classification, action recommendation, cooldown/hysteresis/retry, simulated executor va structured observation; mac dinh monitor_only va khong kill/pause/terminate production.
 - Chua tich hop GPT-SoVITS runtime cho Generate production trong phase nay.
 - Chua Train GPT-SoVITS that trong phase nay.
 - Chua Generate Audio that trong phase nay.
@@ -45,6 +46,8 @@ Ngay cap nhat: 2026-07-22
 | Resource Lease v2 production rollout | DEGRADED | Enforcement path da co sau feature flag, nhung default production van monitor_only va chua co Process Supervisor/Runtime Guard/Thread Budget Phase 5. |
 | Process Supervisor foundation | READY | Process identity khong chi dua PID, registry atomic, tree discovery, shadow observation, shutdown plan simulated va stable reason codes. |
 | Process Supervisor production kill-tree | UNAVAILABLE | Phase 5 khong goi kill/terminate process that; enforce mode chi la contract/gate fail-safe. |
+| Runtime Guard action foundation | READY | Phase 6 co RuntimeGuardObservation, pressure level, WOULD_* action, cooldown/hysteresis/retry va simulated executor dung policy resolved. |
+| Runtime Guard production action | UNAVAILABLE | Default monitor_only; enforce chi goi simulated executor an toan, khong pause/terminate/kill-tree process that va khong doi Job state/scheduling. |
 | Style Profile / Voice DNA foundation | DEGRADED | Quan ly/import/export foundation co; prosody analyzer that chua co. |
 | Runtime GPT-SoVITS integration cho Generate | UNAVAILABLE | La pham vi sprint sau, khong lam trong AVS-014.16A. |
 
@@ -61,11 +64,12 @@ Ngay cap nhat: 2026-07-22
 - Chua co full audio validation policy bang ffprobe/codec cho artifact production.
 - Chua chay Train GPT-SoVITS production.
 - Chua co prosody analyzer that cho Voice DNA.
-- Chua co Process Supervisor production kill-tree, runtime pressure guard action, thread budget enforcement hoac per-job CPU fallback confirmation workflow.
+- Chua co Process Supervisor production kill-tree, runtime guard production action, thread budget enforcement hoac per-job CPU fallback confirmation workflow.
 - Resource Decision v2 hien chi shadow/monitor-only; chua duoc dung de block Queue, doi job state, cap/release lease, doi CPU fallback, thread, batch hoac runtime guard.
 - Resource Lease v2 enforcement chi chay khi `resource_lease_v2_mode=enforce`; mac dinh monitor_only van giu legacy/Phase 3 behavior.
 - Process Supervisor hien chi foundation/monitor-only/simulated; chua co provider production day du, khong kill process that.
+- Runtime Guard hien chi foundation/monitor-only/simulated; chua co action executor production, khong pause/terminate/kill-tree process that.
 
 ## Sprint tiep theo du kien
 
-- AVS-014.17 GPT-SoVITS Runtime Integration chi bat dau sau khi source/docs/tests hien tai dat va Resource Safety Hardening Phase 5 neu co duoc phe duyet rieng.
+- AVS-014.17 GPT-SoVITS Runtime Integration chi bat dau sau khi source/docs/tests hien tai dat va Resource Safety Hardening Phase 6 neu co duoc phe duyet rieng.

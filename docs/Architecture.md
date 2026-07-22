@@ -1368,3 +1368,45 @@ Ranh gioi:
 - Khong goi `taskkill`, `os.kill`, `psutil.Process.kill` trong production path hay tests.
 - Khong thay JobQueue scheduling, retry, pause/cancel, Job final state, Generate/Training execution.
 - Khong bat Runtime Guard action hay Thread Budget enforcement.
+
+---
+
+## Resource Safety Hardening Phase 6
+
+Phase 6 them Runtime Guard Action Foundation, mac dinh monitor-only.
+
+Thanh phan:
+
+- `RuntimeGuardObservation`: structured observation cho pressure level, action, action_state, reason_codes, snapshot/workload/job/lease/process/policy fingerprint va audit metadata.
+- `RuntimeGuard`: phan loai pressure, de xuat action, cooldown, duplicate suppression, escalation/deescalation hysteresis, retry exhaustion va reconciliation boundary.
+- `RuntimeGuardActionExecutor`: interface action executor.
+- `SimulatedRuntimeGuardActionExecutor`: executor deterministic cho tests/foundation, khong mutate production process.
+
+Policy Phase 6 lay tu `ResourcePolicyService.resolve()`:
+
+- `runtime_guard_mode`;
+- `action_cooldown_seconds`;
+- `deescalation_stable_seconds`;
+- `observation_ttl_seconds`;
+- `max_action_attempts`;
+- `action_retry_backoff_seconds`;
+- `allow_simulated_throttle`;
+- `allow_simulated_pause`;
+- `allow_simulated_graceful_stop`;
+- `allow_simulated_terminate`;
+- `allow_simulated_kill_tree`;
+- policy fingerprint.
+
+Nguyen tac Phase 6:
+
+- Default `runtime_guard_mode` la monitor_only.
+- disabled sinh skip/deferred va khong action.
+- monitor_only chi sinh observation/action proposal.
+- enforce trong Phase 6 chi goi simulated executor an toan.
+- Unknown, stale hoac invalid snapshot khong fail-open.
+- Destructive terminate/kill-tree luon deferred trong Phase 6.
+
+Ranh gioi:
+
+- Khong goi `taskkill`, `os.kill`, `psutil.Process.kill` hoac terminate process production.
+- Khong thay JobQueue scheduling, Job final state, retry, pause, cancel, lease enforcement, Thread Budget, Generate/Training execution hoac engine adapter.

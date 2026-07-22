@@ -22,6 +22,7 @@ RESOURCE_FEATURE_MODE_KEYS = (
     "resource_lease_v2_mode",
     "thread_budget_mode",
     "process_supervisor_mode",
+    "runtime_guard_mode",
     "runtime_pressure_guard_mode",
     "job_runner_safety_integration_mode",
     "resource_observability_mode",
@@ -40,6 +41,7 @@ DEFAULT_RESOURCE_FEATURE_MODES = {
     "resource_lease_v2_mode": FEATURE_MODE_MONITOR_ONLY,
     "thread_budget_mode": FEATURE_MODE_MONITOR_ONLY,
     "process_supervisor_mode": FEATURE_MODE_MONITOR_ONLY,
+    "runtime_guard_mode": FEATURE_MODE_MONITOR_ONLY,
     "runtime_pressure_guard_mode": FEATURE_MODE_MONITOR_ONLY,
     "job_runner_safety_integration_mode": FEATURE_MODE_DISABLED,
     "resource_observability_mode": FEATURE_MODE_MONITOR_ONLY,
@@ -335,6 +337,160 @@ PROCESS_REASON_CODES = (
     PROCESS_REASON_MODE_DISABLED,
     PROCESS_REASON_MODE_MONITOR_ONLY,
     PROCESS_REASON_MODE_ENFORCE,
+)
+
+RUNTIME_PRESSURE_NORMAL = "normal"
+RUNTIME_PRESSURE_WARNING = "warning"
+RUNTIME_PRESSURE_HIGH = "high"
+RUNTIME_PRESSURE_CRITICAL = "critical"
+RUNTIME_PRESSURE_EMERGENCY = "emergency"
+RUNTIME_PRESSURE_UNKNOWN = "unknown"
+RUNTIME_PRESSURE_STALE = "stale"
+RUNTIME_PRESSURE_INVALID = "invalid"
+
+RUNTIME_PRESSURE_LEVELS = (
+    RUNTIME_PRESSURE_NORMAL,
+    RUNTIME_PRESSURE_WARNING,
+    RUNTIME_PRESSURE_HIGH,
+    RUNTIME_PRESSURE_CRITICAL,
+    RUNTIME_PRESSURE_EMERGENCY,
+    RUNTIME_PRESSURE_UNKNOWN,
+    RUNTIME_PRESSURE_STALE,
+    RUNTIME_PRESSURE_INVALID,
+)
+
+RUNTIME_GUARD_ACTION_NONE = "NONE"
+RUNTIME_GUARD_ACTION_OBSERVE = "OBSERVE"
+RUNTIME_GUARD_ACTION_DEFER_HEAVY = "WOULD_DEFER_NEW_HEAVY_JOB"
+RUNTIME_GUARD_ACTION_REDUCE_CONCURRENCY = "WOULD_REDUCE_CONCURRENCY"
+RUNTIME_GUARD_ACTION_REDUCE_BATCH = "WOULD_REDUCE_BATCH"
+RUNTIME_GUARD_ACTION_REQUEST_PAUSE = "WOULD_REQUEST_PAUSE"
+RUNTIME_GUARD_ACTION_GRACEFUL_STOP = "WOULD_REQUEST_GRACEFUL_STOP"
+RUNTIME_GUARD_ACTION_TERMINATE = "WOULD_REQUEST_TERMINATE"
+RUNTIME_GUARD_ACTION_KILL_TREE = "WOULD_REQUEST_KILL_TREE"
+RUNTIME_GUARD_ACTION_RECONCILE_LEASE = "WOULD_RECONCILE_LEASE"
+RUNTIME_GUARD_ACTION_RECONCILE_PROCESS = "WOULD_RECONCILE_PROCESS"
+RUNTIME_GUARD_ACTION_MARK_UNAVAILABLE = (
+    "WOULD_MARK_RESOURCE_UNAVAILABLE"
+)
+RUNTIME_GUARD_ACTION_ESCALATE = "WOULD_ESCALATE"
+RUNTIME_GUARD_ACTION_DEESCALATE = "WOULD_DEESCALATE"
+RUNTIME_GUARD_ACTION_SKIP = "WOULD_SKIP"
+RUNTIME_GUARD_ACTION_DEFER = "WOULD_DEFER"
+
+RUNTIME_GUARD_ACTIONS = (
+    RUNTIME_GUARD_ACTION_NONE,
+    RUNTIME_GUARD_ACTION_OBSERVE,
+    RUNTIME_GUARD_ACTION_DEFER_HEAVY,
+    RUNTIME_GUARD_ACTION_REDUCE_CONCURRENCY,
+    RUNTIME_GUARD_ACTION_REDUCE_BATCH,
+    RUNTIME_GUARD_ACTION_REQUEST_PAUSE,
+    RUNTIME_GUARD_ACTION_GRACEFUL_STOP,
+    RUNTIME_GUARD_ACTION_TERMINATE,
+    RUNTIME_GUARD_ACTION_KILL_TREE,
+    RUNTIME_GUARD_ACTION_RECONCILE_LEASE,
+    RUNTIME_GUARD_ACTION_RECONCILE_PROCESS,
+    RUNTIME_GUARD_ACTION_MARK_UNAVAILABLE,
+    RUNTIME_GUARD_ACTION_ESCALATE,
+    RUNTIME_GUARD_ACTION_DEESCALATE,
+    RUNTIME_GUARD_ACTION_SKIP,
+    RUNTIME_GUARD_ACTION_DEFER,
+)
+
+RUNTIME_GUARD_STATE_PROPOSED = "proposed"
+RUNTIME_GUARD_STATE_SUPPRESSED = "suppressed"
+RUNTIME_GUARD_STATE_DEFERRED = "deferred"
+RUNTIME_GUARD_STATE_SIMULATED = "simulated"
+RUNTIME_GUARD_STATE_EXECUTING = "executing"
+RUNTIME_GUARD_STATE_COMPLETED = "completed"
+RUNTIME_GUARD_STATE_FAILED = "failed"
+RUNTIME_GUARD_STATE_CANCELLED = "cancelled"
+RUNTIME_GUARD_STATE_UNKNOWN = "unknown"
+
+RUNTIME_GUARD_STATES = (
+    RUNTIME_GUARD_STATE_PROPOSED,
+    RUNTIME_GUARD_STATE_SUPPRESSED,
+    RUNTIME_GUARD_STATE_DEFERRED,
+    RUNTIME_GUARD_STATE_SIMULATED,
+    RUNTIME_GUARD_STATE_EXECUTING,
+    RUNTIME_GUARD_STATE_COMPLETED,
+    RUNTIME_GUARD_STATE_FAILED,
+    RUNTIME_GUARD_STATE_CANCELLED,
+    RUNTIME_GUARD_STATE_UNKNOWN,
+)
+
+RUNTIME_REASON_PRESSURE_NORMAL = "runtime_pressure_normal"
+RUNTIME_REASON_PRESSURE_WARNING = "runtime_pressure_warning"
+RUNTIME_REASON_PRESSURE_HIGH = "runtime_pressure_high"
+RUNTIME_REASON_PRESSURE_CRITICAL = "runtime_pressure_critical"
+RUNTIME_REASON_PRESSURE_EMERGENCY = "runtime_pressure_emergency"
+RUNTIME_REASON_PRESSURE_UNKNOWN = "runtime_pressure_unknown"
+RUNTIME_REASON_SNAPSHOT_STALE = "runtime_snapshot_stale"
+RUNTIME_REASON_SNAPSHOT_INVALID = "runtime_snapshot_invalid"
+RUNTIME_REASON_RAM_BELOW_WARNING = "runtime_ram_below_warning"
+RUNTIME_REASON_RAM_BELOW_HIGH = "runtime_ram_below_high"
+RUNTIME_REASON_RAM_BELOW_CRITICAL = "runtime_ram_below_critical"
+RUNTIME_REASON_RAM_BELOW_EMERGENCY = "runtime_ram_below_emergency"
+RUNTIME_REASON_VRAM_BELOW_RESERVE = "runtime_vram_below_reserve"
+RUNTIME_REASON_DISK_BELOW_RESERVE = "runtime_disk_below_reserve"
+RUNTIME_REASON_HEAVY_JOB_ACTIVE = "runtime_heavy_job_active"
+RUNTIME_REASON_ACTION_COOLDOWN = "runtime_action_cooldown"
+RUNTIME_REASON_ACTION_DUPLICATE_SUPPRESSED = (
+    "runtime_action_duplicate_suppressed"
+)
+RUNTIME_REASON_ACTION_ESCALATED = "runtime_action_escalated"
+RUNTIME_REASON_ACTION_DEESCALATED = "runtime_action_deescalated"
+RUNTIME_REASON_ACTION_NOT_ALLOWED = "runtime_action_not_allowed"
+RUNTIME_REASON_ACTION_SIMULATED = "runtime_action_simulated"
+RUNTIME_REASON_ACTION_FAILED = "runtime_action_failed"
+RUNTIME_REASON_ACTION_RETRY_EXHAUSTED = (
+    "runtime_action_retry_exhausted"
+)
+RUNTIME_REASON_LEASE_RECONCILIATION_REQUIRED = (
+    "runtime_lease_reconciliation_required"
+)
+RUNTIME_REASON_PROCESS_RECONCILIATION_REQUIRED = (
+    "runtime_process_reconciliation_required"
+)
+RUNTIME_REASON_IDENTITY_UNKNOWN = "runtime_identity_unknown"
+RUNTIME_REASON_MODE_DISABLED = "runtime_mode_disabled"
+RUNTIME_REASON_MODE_MONITOR_ONLY = "runtime_mode_monitor_only"
+RUNTIME_REASON_MODE_ENFORCE = "runtime_mode_enforce"
+RUNTIME_REASON_DESTRUCTIVE_ACTION_UNAVAILABLE = (
+    "runtime_destructive_action_unavailable"
+)
+
+RUNTIME_REASON_CODES = (
+    RUNTIME_REASON_PRESSURE_NORMAL,
+    RUNTIME_REASON_PRESSURE_WARNING,
+    RUNTIME_REASON_PRESSURE_HIGH,
+    RUNTIME_REASON_PRESSURE_CRITICAL,
+    RUNTIME_REASON_PRESSURE_EMERGENCY,
+    RUNTIME_REASON_PRESSURE_UNKNOWN,
+    RUNTIME_REASON_SNAPSHOT_STALE,
+    RUNTIME_REASON_SNAPSHOT_INVALID,
+    RUNTIME_REASON_RAM_BELOW_WARNING,
+    RUNTIME_REASON_RAM_BELOW_HIGH,
+    RUNTIME_REASON_RAM_BELOW_CRITICAL,
+    RUNTIME_REASON_RAM_BELOW_EMERGENCY,
+    RUNTIME_REASON_VRAM_BELOW_RESERVE,
+    RUNTIME_REASON_DISK_BELOW_RESERVE,
+    RUNTIME_REASON_HEAVY_JOB_ACTIVE,
+    RUNTIME_REASON_ACTION_COOLDOWN,
+    RUNTIME_REASON_ACTION_DUPLICATE_SUPPRESSED,
+    RUNTIME_REASON_ACTION_ESCALATED,
+    RUNTIME_REASON_ACTION_DEESCALATED,
+    RUNTIME_REASON_ACTION_NOT_ALLOWED,
+    RUNTIME_REASON_ACTION_SIMULATED,
+    RUNTIME_REASON_ACTION_FAILED,
+    RUNTIME_REASON_ACTION_RETRY_EXHAUSTED,
+    RUNTIME_REASON_LEASE_RECONCILIATION_REQUIRED,
+    RUNTIME_REASON_PROCESS_RECONCILIATION_REQUIRED,
+    RUNTIME_REASON_IDENTITY_UNKNOWN,
+    RUNTIME_REASON_MODE_DISABLED,
+    RUNTIME_REASON_MODE_MONITOR_ONLY,
+    RUNTIME_REASON_MODE_ENFORCE,
+    RUNTIME_REASON_DESTRUCTIVE_ACTION_UNAVAILABLE,
 )
 
 
@@ -1212,6 +1368,101 @@ class ProcessSupervisorObservation:
 
 
 @dataclass
+class RuntimeGuardObservation:
+
+    observation_id: str = ""
+
+    observed_at: str = field(
+        default_factory=now_iso
+    )
+
+    pressure_level: str = RUNTIME_PRESSURE_UNKNOWN
+
+    previous_pressure_level: str = RUNTIME_PRESSURE_UNKNOWN
+
+    action: str = RUNTIME_GUARD_ACTION_OBSERVE
+
+    action_state: str = RUNTIME_GUARD_STATE_PROPOSED
+
+    reason_codes: list = field(
+        default_factory=list
+    )
+
+    snapshot_status: str = SNAPSHOT_STATUS_UNKNOWN
+
+    workload_class: str = WORKLOAD_CLASS_LIGHT
+
+    job_id: str = ""
+
+    lease_id: str = ""
+
+    process_id: str = ""
+
+    owner_id: str = ""
+
+    policy_fingerprint: str = ""
+
+    cooldown_active: bool = False
+
+    hysteresis_active: bool = False
+
+    duplicate_suppressed: bool = False
+
+    escalation_count: int = 0
+
+    action_attempt: int = 0
+
+    action_allowed: bool = False
+
+    action_executed: bool = False
+
+    action_simulated: bool = False
+
+    reconciliation_required: bool = False
+
+    metadata: dict = field(
+        default_factory=dict
+    )
+
+    provenance: dict = field(
+        default_factory=dict
+    )
+
+    schema_version: int = 1
+
+    def to_dict(
+        self,
+    ):
+
+        return asdict(
+            self
+        )
+
+    @classmethod
+    def from_dict(
+        cls,
+        data,
+    ):
+
+        if isinstance(
+            data,
+            cls,
+        ):
+
+            return data
+
+        data = data or {}
+
+        return cls(
+            **{
+                key: value
+                for key, value in data.items()
+                if key in cls.__dataclass_fields__
+            }
+        )
+
+
+@dataclass
 class ResourcePolicy:
 
     schema_version: int = RESOURCE_POLICY_SCHEMA_VERSION
@@ -1251,6 +1502,26 @@ class ResourcePolicy:
     orphan_handling_mode: str = "monitor_only"
 
     process_observation_ttl_seconds: float = 5.0
+
+    action_cooldown_seconds: float = 30.0
+
+    deescalation_stable_seconds: float = 60.0
+
+    observation_ttl_seconds: float = 5.0
+
+    max_action_attempts: int = 3
+
+    action_retry_backoff_seconds: float = 10.0
+
+    allow_simulated_throttle: bool = True
+
+    allow_simulated_pause: bool = False
+
+    allow_simulated_graceful_stop: bool = False
+
+    allow_simulated_terminate: bool = False
+
+    allow_simulated_kill_tree: bool = False
 
     pressure_cpu_warning_percent: float = 90.0
 
@@ -1414,6 +1685,26 @@ class ResolvedResourcePolicy:
 
     process_observation_ttl_seconds: float = 5.0
 
+    action_cooldown_seconds: float = 30.0
+
+    deescalation_stable_seconds: float = 60.0
+
+    observation_ttl_seconds: float = 5.0
+
+    max_action_attempts: int = 3
+
+    action_retry_backoff_seconds: float = 10.0
+
+    allow_simulated_throttle: bool = True
+
+    allow_simulated_pause: bool = False
+
+    allow_simulated_graceful_stop: bool = False
+
+    allow_simulated_terminate: bool = False
+
+    allow_simulated_kill_tree: bool = False
+
     cooperative_stop_grace_seconds: int = 20
 
     kill_escalation_wait_seconds: int = 5
@@ -1479,6 +1770,26 @@ class ResolvedResourcePolicy:
             "orphan_handling_mode": self.orphan_handling_mode,
             "process_observation_ttl_seconds": (
                 self.process_observation_ttl_seconds
+            ),
+            "action_cooldown_seconds": self.action_cooldown_seconds,
+            "deescalation_stable_seconds": (
+                self.deescalation_stable_seconds
+            ),
+            "observation_ttl_seconds": self.observation_ttl_seconds,
+            "max_action_attempts": self.max_action_attempts,
+            "action_retry_backoff_seconds": (
+                self.action_retry_backoff_seconds
+            ),
+            "allow_simulated_throttle": self.allow_simulated_throttle,
+            "allow_simulated_pause": self.allow_simulated_pause,
+            "allow_simulated_graceful_stop": (
+                self.allow_simulated_graceful_stop
+            ),
+            "allow_simulated_terminate": (
+                self.allow_simulated_terminate
+            ),
+            "allow_simulated_kill_tree": (
+                self.allow_simulated_kill_tree
             ),
             "cooperative_stop_grace_seconds": (
                 self.cooperative_stop_grace_seconds
@@ -1595,6 +1906,36 @@ class ResolvedResourcePolicy:
             ),
             process_observation_ttl_seconds=float(
                 policy.process_observation_ttl_seconds
+            ),
+            action_cooldown_seconds=float(
+                policy.action_cooldown_seconds
+            ),
+            deescalation_stable_seconds=float(
+                policy.deescalation_stable_seconds
+            ),
+            observation_ttl_seconds=float(
+                policy.observation_ttl_seconds
+            ),
+            max_action_attempts=int(
+                policy.max_action_attempts
+            ),
+            action_retry_backoff_seconds=float(
+                policy.action_retry_backoff_seconds
+            ),
+            allow_simulated_throttle=bool(
+                policy.allow_simulated_throttle
+            ),
+            allow_simulated_pause=bool(
+                policy.allow_simulated_pause
+            ),
+            allow_simulated_graceful_stop=bool(
+                policy.allow_simulated_graceful_stop
+            ),
+            allow_simulated_terminate=bool(
+                policy.allow_simulated_terminate
+            ),
+            allow_simulated_kill_tree=bool(
+                policy.allow_simulated_kill_tree
             ),
             cooperative_stop_grace_seconds=int(
                 policy.cooperative_stop_grace_seconds

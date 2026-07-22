@@ -574,6 +574,7 @@ Có thể clone một giọng và tạo Audio bằng GPT-SoVITS.
 - [x] Resource Lease v2 enforcement gated theo policy `resource_lease_v2_mode=enforce`.
 - [x] Acquire/renew/release/reconcile v2 co owner/job validation, fail-safe corrupt store, atomic persistence va reason codes on dinh.
 - [x] Process Supervisor va kill-tree foundation monitor-only/simulated cho identity, registry, tree discovery, shadow shutdown plan va audit.
+- [x] Runtime Guard action foundation monitor-only/simulated cho pressure, WOULD_* action, cooldown, hysteresis, retry va reconciliation observation.
 - [ ] Production kill-tree, Runtime Guard action va Thread Budget enforcement thuoc Phase sau neu duoc phe duyet rieng.
 
 ---

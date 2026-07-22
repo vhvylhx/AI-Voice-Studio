@@ -1,5 +1,28 @@
 # Changelog
 
+## Resource Safety Hardening Phase 6: Runtime Guard Action Foundation
+
+### Added
+
+- Runtime Guard action foundation voi `RuntimeGuardObservation`, pressure levels, action states, stable reason codes va policy fingerprint.
+- `runtime_guard_mode` mac dinh monitor_only, giu `runtime_pressure_guard_mode` cu nhu fallback tuong thich.
+- Policy additive cho action cooldown, deescalation stable window, observation TTL, retry/backoff va simulated action allow-list.
+- `RuntimeGuard` cho pressure classification, WOULD_* action recommendation, cooldown, duplicate suppression, escalation/deescalation hysteresis, retry exhaustion va lease/process reconciliation boundary.
+- `RuntimeGuardActionExecutor` va `SimulatedRuntimeGuardActionExecutor` deterministic cho foundation/tests.
+- Tests Phase 6 cho pressure boundaries, unknown/invalid/stale, safe mode boundary, destructive unavailable, cooldown, hysteresis, retry va lease/process integration.
+
+### Changed
+
+- Production default van `runtime_guard_mode=monitor_only`.
+- Enforce trong Phase 6 chi goi simulated executor an toan; khong pause/terminate/kill-tree process that.
+- Khong doi JobQueue scheduling, JobRunner final state/retry/pause/cancel, Thread Budget, Generate/Training execution, engine adapter hoac GPT-SoVITS runtime.
+
+### Notes
+
+- Khong goi `taskkill`, `os.kill`, `psutil.Process.kill` hoac terminate process production.
+- Chua Phase 7/production Runtime Guard action.
+- Chua Train that, chua Generate that, khong tich hop GPT-SoVITS runtime moi.
+
 ## Resource Safety Hardening Phase 5: Process Supervisor va Kill-tree Foundation
 
 ### Added

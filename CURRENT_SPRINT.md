@@ -662,3 +662,16 @@
 - Shutdown plan chi la shadow contract/simulated audit cho graceful stop, terminate va kill-tree; khong goi kill process that.
 - Orphan/restart recovery foundation tao observation/reconciliation cho job missing, lease missing/expired, PID reuse, provider unavailable, permission denied, stale va tree incomplete.
 - Chua Phase 6: khong production kill-tree, khong Runtime Guard action, khong Thread Budget enforcement, khong thay Generate/Training execution.
+
+---
+
+## Cap nhat Resource Safety Hardening Phase 6
+
+- Da them Runtime Guard Action Foundation o muc model/service/test, mac dinh `runtime_guard_mode=monitor_only`.
+- Runtime Guard dung `ResourcePolicyService.resolve()` va `ResolvedResourcePolicy` lam single source of truth cho mode, threshold, cooldown, hysteresis, retry va simulated action allow-list.
+- `RuntimeGuardObservation` ghi pressure level, previous level, action, action_state, reason_codes, snapshot/workload/job/lease/process/policy fingerprint va audit metadata.
+- Pressure level gom normal/warning/high/critical/emergency/unknown/stale/invalid; unknown/invalid/stale khong fail-open.
+- Action recommendation chi sinh `WOULD_*`/OBSERVE/SKIP/DEFER/DEESCALATE/RECONCILE, co cooldown, duplicate suppression, escalation bypass, deescalation stable window va retry exhaustion.
+- Enforce trong Phase 6 chi goi simulated executor an toan; destructive terminate/kill-tree luon deferred va khong goi kill process that.
+- Khong doi JobQueue scheduling, JobRunner final state/retry/pause/cancel, Thread Budget, Generate/Training production, engine adapter hoac GPT-SoVITS runtime.
+- Chua Phase 7: khong production Runtime Guard action, khong Thread Budget enforcement, khong real process pause/terminate/kill-tree.

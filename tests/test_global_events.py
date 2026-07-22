@@ -68,9 +68,3 @@ def test_log_service_emits_global_log_event():
     assert received[-1]["category"] == "test"
     assert received[-1]["message"] == "Hello"
     assert received[-1]["level"] == "info"
-
-
-test_job_progress_event_payload()
-test_log_service_emits_global_log_event()
-
-print("GLOBAL_EVENTS_TEST_OK")

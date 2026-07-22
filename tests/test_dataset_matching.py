@@ -671,25 +671,3 @@ def test_workflow_supports_manual_review_mode():
     assert result["output_folder"] == "output"
     assert result["auto_repair"] is False
     assert result["review_mode"] == "manual"
-
-
-test_match_text_with_multiple_mp3_by_chapter_number()
-test_match_chapter_text_name_with_numbered_audio()
-test_do_not_cross_match_different_chapter_numbers()
-test_test_files_are_not_auto_matched_with_typo()
-test_invalid_filename_is_reported()
-test_chinese_is_not_classified_anymore_when_filename_has_chapter()
-test_filename_content_mismatch_is_reported_and_not_rematched()
-test_duplicate_is_reported()
-test_dataset_repair_keeps_best_duplicate_and_copies_rest_to_ignored()
-test_dataset_repair_skips_unsafe_errors_and_keeps_running()
-test_dataset_review_creates_pending_items_from_repair_report()
-test_dataset_review_approve_all_allows_train_after_review()
-test_dataset_review_filter_by_reason_or_code()
-test_health_report_summary()
-test_train_audio_prep_stops_before_alignment_when_dataset_health_has_errors()
-test_workflow_uses_input_folder_as_output_by_default()
-test_workflow_requires_output_folder_when_not_using_input()
-test_workflow_supports_manual_review_mode()
-
-print("DATASET_MATCHING_TEST_OK")

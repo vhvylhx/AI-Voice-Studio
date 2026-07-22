@@ -486,18 +486,3 @@ def test_voice_config_has_default_variant_contract():
 
     assert migrated.default_variant_id == "default"
     assert migrated.variants[0]["id"] == "default"
-
-
-test_standard_mode_uses_selected_variant()
-test_ai_style_only_uses_ticked_variants_and_styles()
-test_all_variants_and_styles()
-test_no_variant_or_style_selected_blocks_ai_style()
-test_fallback_stays_inside_allowed_scope()
-test_timeline_does_not_change_mid_sentence()
-test_speed_validation()
-test_best_confidence_fallback_within_allowed_scope()
-test_temp_workspace_cleanup_and_output_clean()
-test_project_remembers_generate_selection()
-test_voice_config_has_default_variant_contract()
-
-print("GENERATE_ARCHITECTURE_TEST_OK")

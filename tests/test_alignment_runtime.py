@@ -222,12 +222,3 @@ def test_metadata_language_and_mock_alignment():
     assert language_seen["language"] == "vi"
     assert "|vi|" in metadata
     assert "|VI|" not in metadata
-
-
-test_package_missing()
-test_model_missing()
-test_model_load_failure()
-test_cpu_fallback()
-test_metadata_language_and_mock_alignment()
-
-print("ALIGNMENT_RUNTIME_TEST_OK")

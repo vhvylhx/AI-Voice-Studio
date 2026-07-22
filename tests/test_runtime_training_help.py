@@ -119,12 +119,3 @@ def test_migration_guide_and_full_guide():
     assert "Các chế độ cấu hình" in full
     assert "Giải thích tham số" in full
     assert "Hướng dẫn đổi máy" in full
-
-
-test_profile_help_is_vietnamese_and_complete()
-test_parameter_help_contains_required_terms()
-test_warning_messages_are_user_friendly_vietnamese()
-test_hardware_summary_uses_detection_data_not_hardcoded_gpu()
-test_migration_guide_and_full_guide()
-
-print("RUNTIME_TRAINING_HELP_TEST_OK")

@@ -401,12 +401,3 @@ def test_retry_limit_stops_job_without_final_output():
     assert not (
         root / "output" / "demo.wav"
     ).exists()
-
-
-test_voice_model_missing_blocks_generate()
-test_standard_mode_generates_wav_report_and_progress()
-test_ai_style_stays_in_scope_and_mp3_output()
-test_resume_does_not_generate_existing_chunk_again()
-test_retry_limit_stops_job_without_final_output()
-
-print("GENERATE_PIPELINE_TEST_OK")

@@ -141,10 +141,3 @@ def test_feature_readiness_has_required_features():
     ]:
 
         assert feature_id in ids
-
-
-test_bootstrap_setup_required_when_app_shell_missing()
-test_optional_dependency_degrades_not_crashes()
-test_feature_readiness_has_required_features()
-
-print("BOOTSTRAP_FEATURE_READINESS_TEST_OK")

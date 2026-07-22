@@ -546,12 +546,3 @@ def test_monitor_only_initial_modes_and_no_runtime_behavior_change():
     assert policy.reserve_ram_mb == 1024
     assert policy.allow_cpu_fallback is True
     assert policy.batch_size == 1
-
-
-test_load_valid_v2_and_missing_fields_use_safe_defaults()
-test_unknown_top_level_field_does_not_crash()
-test_policy_fingerprint_deterministic_and_key_order_independent()
-test_effective_policy_change_changes_fingerprint()
-test_monitor_only_initial_modes_and_no_runtime_behavior_change()
-
-print("RESOURCE_POLICY_V2_IMPORT_TEST_OK")

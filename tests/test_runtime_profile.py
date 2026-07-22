@@ -100,9 +100,3 @@ def test_switch_default_runtime_does_not_touch_voice_model():
     assert profiles["new"].is_default is True
     assert profiles["old"].is_default is False
     assert "voices/0001/model" in profiles["old"].compatibility_notes
-
-
-test_runtime_profile_serialization_and_relative_path()
-test_switch_default_runtime_does_not_touch_voice_model()
-
-print("RUNTIME_PROFILE_TEST_OK")

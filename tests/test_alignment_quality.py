@@ -559,14 +559,3 @@ def test_metadata_validation_reports_duplicates():
             wav
         )
     ]
-
-
-test_long_clip_split_by_word_timestamp_and_metadata_valid_only()
-test_bad_segment_is_skipped_and_processing_continues()
-test_source_is_skipped_when_error_rate_exceeded()
-test_weak_source_is_reported_and_not_written_to_metadata()
-test_progress_payload_has_required_fields()
-test_alignment_resume_skips_completed_source()
-test_metadata_validation_reports_duplicates()
-
-print("ALIGNMENT_QUALITY_TEST_OK")

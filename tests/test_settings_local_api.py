@@ -47,9 +47,3 @@ def test_settings_api_buttons_have_handlers():
     assert ".start()" in text
     assert ".stop()" in text
     assert ".regenerate_token()" in text
-
-
-test_settings_has_api_integration_group()
-test_settings_api_buttons_have_handlers()
-
-print("SETTINGS_LOCAL_API_TEST_OK")

@@ -450,10 +450,3 @@ def test_job_local_api_read_only(tmp_path):
     )
 
     assert logs_response["body"]["job_id"] == job.job_id
-
-
-test_job_model_serializes_unicode_and_json_safe()
-test_state_machine_valid_and_invalid_transitions()
-test_job_ui_source_exists()
-
-print("JOB_SYSTEM_IMPORT_TEST_OK")

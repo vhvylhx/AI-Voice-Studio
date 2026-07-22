@@ -323,14 +323,3 @@ def test_default_host_and_token_config():
             },
         )()
     )
-
-
-test_voice_catalog_does_not_leak_paths()
-test_variant_catalog_has_no_model_contract()
-test_create_job_blocks_voice_not_ready()
-test_create_job_ready_is_queued_not_generated()
-test_empty_text_and_bad_format_validation()
-test_cancel_and_result_not_ready()
-test_default_host_and_token_config()
-
-print("LOCAL_API_TEST_OK")

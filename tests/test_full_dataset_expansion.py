@@ -363,15 +363,3 @@ def test_voice_architecture_contract_separates_identity_from_generate_request():
     assert voice.voice_id == request.voice_id
     assert "speed" not in voice.__dict__
     assert request.to_dict()["variant_id"] == "story"
-
-
-test_dataset_scan_supports_separate_audio_and_text_folders()
-test_dataset_scan_supports_same_folder_mode()
-test_legacy_workspace_is_detected_as_same_folder()
-test_workflow_remembers_voice_runtime_and_project_selection()
-test_full_dataset_service_runs_scan_repair_review_without_alignment()
-test_auto_review_maps_safe_statuses_and_clears_pending()
-test_ignored_and_rejected_files_do_not_enter_dataset_items()
-test_voice_architecture_contract_separates_identity_from_generate_request()
-
-print("FULL_DATASET_EXPANSION_TEST_OK")

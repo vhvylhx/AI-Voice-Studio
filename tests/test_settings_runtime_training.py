@@ -65,10 +65,3 @@ def test_runtime_training_preserves_custom_backup():
     assert "current_training_profile_key" in text
     assert "new_key == \"custom\"" in text
     assert "new_key != \"custom\"" in text
-
-
-test_runtime_training_buttons_have_handlers()
-test_runtime_training_buttons_call_services()
-test_runtime_training_preserves_custom_backup()
-
-print("SETTINGS_RUNTIME_TRAINING_TEST_OK")

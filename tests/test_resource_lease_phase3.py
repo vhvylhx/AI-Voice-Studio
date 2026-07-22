@@ -571,10 +571,3 @@ def test_monitor_only_reason_codes_are_deterministic():
         observation.reason_codes
     )
     assert observation.monitor_only is True
-
-
-test_shadow_acquire_when_lease_missing()
-test_shadow_skips_when_lease_active_and_renew_not_due()
-test_shadow_renew_when_interval_due()
-
-print("RESOURCE_LEASE_PHASE3_IMPORT_TEST_OK")

@@ -108,8 +108,3 @@ def test_local_api_project_read_only_endpoints():
     )
 
     assert workspace["body"]["current_project"]["project_id"] == project.id
-
-
-test_local_api_project_read_only_endpoints()
-
-print("PROJECT_MANAGER_TEST_OK")

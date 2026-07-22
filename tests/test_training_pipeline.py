@@ -740,17 +740,3 @@ def test_smoke_command_construction_and_subprocess_failure():
     assert bad["ok"] is False
     assert bad["out_of_memory"] is True
     assert bad["exit_code"] == 1
-
-
-test_review_not_allowed_blocks_train()
-test_metadata_missing_and_empty()
-test_wav_wrong_format_is_rejected()
-test_runtime_and_pretrained_missing()
-test_validation_only_report_progress_and_run_id()
-test_smoke_test_mock_and_no_overwrite()
-test_resume_state_serialization()
-test_review_decisions_ignore_or_reject_error_files()
-test_runtime_profile_default_and_detection()
-test_smoke_command_construction_and_subprocess_failure()
-
-print("TRAINING_PIPELINE_TEST_OK")

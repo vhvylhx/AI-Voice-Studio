@@ -329,12 +329,3 @@ def test_app_managed_runtime_copy_changes_only_workers():
 
     assert sovits_config["train"]["batch_size"] == 1
     assert sovits_config["train"]["epochs"] == 50
-
-
-test_auto_detect_quadro_p1000_selects_compatibility()
-test_performance_uses_higher_config_for_stronger_mock()
-test_custom_config_roundtrip_and_project_memory()
-test_app_managed_runtime_copy_changes_only_workers()
-
-print("RUNTIME_TRAINING_PROFILE_TEST_OK")
-

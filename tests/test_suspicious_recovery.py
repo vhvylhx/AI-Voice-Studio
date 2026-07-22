@@ -284,9 +284,3 @@ def test_recovery_does_not_reuse_asr_segment_or_approve_low_similarity():
         == "similarity_too_low"
     )
     assert report["still_suspicious"][0]["old_similarity"] == 50
-
-
-test_recovery_groups_asr_segments_and_keeps_metadata_valid_only()
-test_recovery_does_not_reuse_asr_segment_or_approve_low_similarity()
-
-print("SUSPICIOUS_RECOVERY_TEST_OK")

@@ -252,13 +252,3 @@ def test_backup_export_import_validation_and_repair():
 
     assert repair["safe"] is True
     assert project.cache_dir.exists()
-
-
-test_project_create_uses_id_folder_and_display_name()
-test_legacy_project_load_gets_display_name_without_changing_id()
-test_project_rename_changes_display_name_only()
-test_duplicate_invalid_name_archive_and_restore_archive()
-test_open_close_switch_recent_and_current_project()
-test_backup_export_import_validation_and_repair()
-
-print("PROJECT_ACTIONS_TEST_OK")

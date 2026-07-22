@@ -349,12 +349,3 @@ def test_resource_ui_source_exists():
 
     assert "Resource Monitor" in text
     assert "pressure_state" in text
-
-
-test_resource_models_serialization()
-test_resource_decision_ready_cpu()
-test_resource_decision_waits_for_ram()
-test_gpu_requirement_selects_gpu()
-test_resource_ui_source_exists()
-
-print("RESOURCE_MANAGER_IMPORT_TEST_OK")

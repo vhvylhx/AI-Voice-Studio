@@ -1275,3 +1275,30 @@ Ranh gioi:
 - Khong train/generate/goi GPT-SoVITS runtime.
 
 ---
+
+## Resource Safety Hardening Phase 3
+
+Phase 3 chi them Lease Lifecycle v2 o dang shadow/monitor-only.
+
+Thanh phan:
+
+- `ResourceLeaseV2` mo hinh hoa lease lifecycle v2 voi lease_id, job_id, resource_kind, owner/runner, workload_class, acquired_at, last_renewed_at, expires_at, ttl, status, policy_fingerprint, process_identity, metadata/provenance va schema_version.
+- `ResourceLeaseObservation` la structured observation cho actual lease state, shadow lease state, shadow action, reason codes, flags would_* va policy fingerprint.
+- `ResourceLeaseShadowEvaluator` tinh toan acquire/renew/release/expiry/stale/reconciliation/duplicate theo clock inject duoc, khong sleep va khong dung process/GPU that.
+- `ResourceLeaseManager.shadow_observations()` va `shadow_observation_for_job()` chi doc lease legacy va sinh observation, khong goi `cleanup_stale()`, khong renew/release/save actual lease.
+
+Nguyen tac Phase 3:
+
+- Actual lease legacy van la source runtime.
+- Shadow lease v2 dung `ResourcePolicyService.resolve()` va `ResolvedResourcePolicy`.
+- Policy lease v2 doc tu single source of truth: `resource_lease_v2_mode`, max job/GPU job, `lease_ttl_seconds`, `lease_renew_interval_seconds`, `stale_lease_handling_mode` va policy fingerprint.
+- Corrupt/unavailable legacy lease store khong crash va khong bi ghi de trong observation path.
+- Reconciliation chi la proposed action: WOULD_ACQUIRE, WOULD_RENEW, WOULD_RELEASE, WOULD_EXPIRE, WOULD_MARK_STALE, WOULD_RECONCILE, WOULD_SKIP hoac WOULD_BLOCK_DUPLICATE.
+
+Ranh gioi:
+
+- Khong doi Job Queue scheduling.
+- Khong doi JobRunner behavior.
+- Khong renew/release/cleanup actual lease trong monitor-only observation.
+- Khong kich hoat Process Supervisor, Runtime Guard, Thread Budget, kill-tree, pause/cancel/retry behavior moi.
+- Khong train/generate/goi GPT-SoVITS runtime.

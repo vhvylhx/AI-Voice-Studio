@@ -622,3 +622,17 @@
 - Queue scheduling, JobRunner, ResourceLeaseManager, thread/batch/CPU fallback runtime, Runtime Guard va Process Supervisor khong doi.
 - resource_decision_v2_mode van monitor_only; khong enforcement trong Phase 2.
 - Chua Train that, chua Generate that, chua tich hop GPT-SoVITS runtime moi.
+
+---
+
+## Cap nhat Resource Safety Hardening Phase 3
+
+- Da them Lease Lifecycle v2 foundation o muc model/observation, khong thay actual lease legacy.
+- `ResourceLeaseV2` co lease_id, job_id, resource_kind, owner/runner, workload_class, acquired_at, last_renewed_at, expires_at, ttl_seconds, status, policy_fingerprint, process_identity, metadata/provenance va schema_version.
+- `ResourceLeaseObservation` co actual_lease_state, shadow_lease_state, shadow_action, reason_codes, lease/job/resource/owner, expires_at, flags expired/stale/duplicate/orphan va would_*.
+- `ResourceLeaseShadowEvaluator` tinh shadow acquire, renew due, skip renew, release due, expiry, stale, duplicate, owner mismatch, job/process missing, process identity mismatch va policy mismatch bang clock inject duoc.
+- `ResourceLeaseManager` co observation path rieng: `shadow_observations()` va `shadow_observation_for_job()` chi doc lease store, khong goi cleanup_stale/renew/release/save actual lease.
+- Policy v2 them additive `lease_renew_interval_seconds` va `stale_lease_handling_mode`; lease v2 observation dung `ResourcePolicyService.resolve()` va fingerprint.
+- Corrupt legacy lease store duoc report bang shadow observation, khong bi ghi de trong monitor-only.
+- resource_lease_v2_mode van monitor_only; khong enforcement trong Phase 3.
+- Chua Train that, chua Generate that, chua tich hop GPT-SoVITS runtime moi.

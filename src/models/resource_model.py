@@ -119,6 +119,78 @@ RESOURCE_REASON_CPU_FALLBACK_CONFIRMATION_REQUIRED = (
 )
 RESOURCE_REASON_HEAVY_JOB_ALREADY_ACTIVE = "heavy_job_already_active"
 
+LEASE_STATUS_ACTIVE = "active"
+LEASE_STATUS_EXPIRED = "expired"
+LEASE_STATUS_STALE = "stale"
+LEASE_STATUS_RELEASED = "released"
+LEASE_STATUS_ORPHANED = "orphaned"
+LEASE_STATUS_UNKNOWN = "unknown"
+
+LEASE_STATUSES = (
+    LEASE_STATUS_ACTIVE,
+    LEASE_STATUS_EXPIRED,
+    LEASE_STATUS_STALE,
+    LEASE_STATUS_RELEASED,
+    LEASE_STATUS_ORPHANED,
+    LEASE_STATUS_UNKNOWN,
+)
+
+LEASE_SHADOW_ACTION_WOULD_ACQUIRE = "WOULD_ACQUIRE"
+LEASE_SHADOW_ACTION_WOULD_RENEW = "WOULD_RENEW"
+LEASE_SHADOW_ACTION_WOULD_RELEASE = "WOULD_RELEASE"
+LEASE_SHADOW_ACTION_WOULD_EXPIRE = "WOULD_EXPIRE"
+LEASE_SHADOW_ACTION_WOULD_MARK_STALE = "WOULD_MARK_STALE"
+LEASE_SHADOW_ACTION_WOULD_RECONCILE = "WOULD_RECONCILE"
+LEASE_SHADOW_ACTION_WOULD_SKIP = "WOULD_SKIP"
+LEASE_SHADOW_ACTION_WOULD_BLOCK_DUPLICATE = "WOULD_BLOCK_DUPLICATE"
+
+LEASE_SHADOW_ACTIONS = (
+    LEASE_SHADOW_ACTION_WOULD_ACQUIRE,
+    LEASE_SHADOW_ACTION_WOULD_RENEW,
+    LEASE_SHADOW_ACTION_WOULD_RELEASE,
+    LEASE_SHADOW_ACTION_WOULD_EXPIRE,
+    LEASE_SHADOW_ACTION_WOULD_MARK_STALE,
+    LEASE_SHADOW_ACTION_WOULD_RECONCILE,
+    LEASE_SHADOW_ACTION_WOULD_SKIP,
+    LEASE_SHADOW_ACTION_WOULD_BLOCK_DUPLICATE,
+)
+
+LEASE_REASON_MISSING = "lease_missing"
+LEASE_REASON_EXPIRED = "lease_expired"
+LEASE_REASON_STALE = "lease_stale"
+LEASE_REASON_DUPLICATE = "lease_duplicate"
+LEASE_REASON_OWNER_MISMATCH = "lease_owner_mismatch"
+LEASE_REASON_JOB_MISSING = "lease_job_missing"
+LEASE_REASON_PROCESS_MISSING = "lease_process_missing"
+LEASE_REASON_PROCESS_IDENTITY_MISMATCH = "lease_process_identity_mismatch"
+LEASE_REASON_RENEWAL_DUE = "lease_renewal_due"
+LEASE_REASON_RELEASE_DUE = "lease_release_due"
+LEASE_REASON_ORPHANED = "lease_orphaned"
+LEASE_REASON_STORE_CORRUPT = "lease_store_corrupt"
+LEASE_REASON_STORE_UNAVAILABLE = "lease_store_unavailable"
+LEASE_REASON_SCHEMA_LEGACY = "lease_schema_legacy"
+LEASE_REASON_POLICY_MISMATCH = "lease_policy_mismatch"
+LEASE_REASON_RECONCILIATION_REQUIRED = "lease_reconciliation_required"
+
+LEASE_REASON_CODES = (
+    LEASE_REASON_MISSING,
+    LEASE_REASON_EXPIRED,
+    LEASE_REASON_STALE,
+    LEASE_REASON_DUPLICATE,
+    LEASE_REASON_OWNER_MISMATCH,
+    LEASE_REASON_JOB_MISSING,
+    LEASE_REASON_PROCESS_MISSING,
+    LEASE_REASON_PROCESS_IDENTITY_MISMATCH,
+    LEASE_REASON_RENEWAL_DUE,
+    LEASE_REASON_RELEASE_DUE,
+    LEASE_REASON_ORPHANED,
+    LEASE_REASON_STORE_CORRUPT,
+    LEASE_REASON_STORE_UNAVAILABLE,
+    LEASE_REASON_SCHEMA_LEGACY,
+    LEASE_REASON_POLICY_MISMATCH,
+    LEASE_REASON_RECONCILIATION_REQUIRED,
+)
+
 
 def now_iso():
 
@@ -594,6 +666,228 @@ class ResourceDecisionObservation:
 
 
 @dataclass
+class ResourceLeaseV2:
+
+    lease_id: str = ""
+
+    job_id: str = ""
+
+    resource_kind: str = "cpu"
+
+    owner_id: str = ""
+
+    runner_id: str = ""
+
+    workload_class: str = WORKLOAD_CLASS_LIGHT
+
+    acquired_at: str = field(
+        default_factory=now_iso
+    )
+
+    last_renewed_at: str = field(
+        default_factory=now_iso
+    )
+
+    expires_at: str = ""
+
+    ttl_seconds: float = 300.0
+
+    status: str = LEASE_STATUS_ACTIVE
+
+    policy_fingerprint: str = ""
+
+    process_identity: dict = field(
+        default_factory=dict
+    )
+
+    metadata: dict = field(
+        default_factory=dict
+    )
+
+    provenance: dict = field(
+        default_factory=dict
+    )
+
+    schema_version: int = 2
+
+    def to_dict(
+        self,
+    ):
+
+        return asdict(
+            self
+        )
+
+    @classmethod
+    def from_dict(
+        cls,
+        data,
+    ):
+
+        if isinstance(
+            data,
+            cls,
+        ):
+
+            return data
+
+        data = data or {}
+
+        lease = cls(
+            **{
+                key: value
+                for key, value in data.items()
+                if key in cls.__dataclass_fields__
+            }
+        )
+
+        if lease.status not in LEASE_STATUSES:
+
+            lease.status = LEASE_STATUS_UNKNOWN
+
+        if lease.workload_class not in WORKLOAD_CLASSES:
+
+            lease.workload_class = WORKLOAD_CLASS_LIGHT
+
+        return lease
+
+    @classmethod
+    def from_legacy(
+        cls,
+        lease,
+        policy=None,
+    ):
+
+        lease = ResourceLease.from_dict(
+            lease
+        )
+
+        requirement = ResourceRequirement.from_dict(
+            lease.requirement
+        )
+
+        ttl_seconds = float(
+            getattr(
+                policy,
+                "lease_ttl_seconds",
+                300.0,
+            )
+        )
+
+        return cls(
+            lease_id=lease.lease_id,
+            job_id=lease.job_id,
+            resource_kind=lease.resource_type,
+            owner_id=lease.owner,
+            runner_id=lease.owner,
+            workload_class=requirement.workload_class,
+            acquired_at=lease.acquired_at,
+            last_renewed_at=lease.renewed_at,
+            expires_at=lease.expires_at,
+            ttl_seconds=ttl_seconds,
+            status=lease.status
+            if lease.status in LEASE_STATUSES
+            else LEASE_STATUS_UNKNOWN,
+            policy_fingerprint=getattr(
+                policy,
+                "fingerprint",
+                "",
+            ),
+            process_identity={},
+            metadata={
+                "job_type": lease.job_type,
+                "gpu_device_id": lease.gpu_device_id,
+                "requirement": requirement.to_dict(),
+            },
+            provenance={
+                "source": "legacy_resource_lease",
+                "schema_version": 1,
+            },
+        )
+
+
+@dataclass
+class ResourceLeaseObservation:
+
+    actual_lease_state: str = LEASE_STATUS_UNKNOWN
+
+    shadow_lease_state: str = LEASE_STATUS_UNKNOWN
+
+    shadow_action: str = LEASE_SHADOW_ACTION_WOULD_SKIP
+
+    reason_codes: list = field(
+        default_factory=list
+    )
+
+    lease_id: str = ""
+
+    job_id: str = ""
+
+    resource_kind: str = "cpu"
+
+    owner_id: str = ""
+
+    expires_at: str = ""
+
+    is_expired: bool = False
+
+    is_stale: bool = False
+
+    duplicate_detected: bool = False
+
+    orphan_detected: bool = False
+
+    would_acquire: bool = False
+
+    would_renew: bool = False
+
+    would_release: bool = False
+
+    would_reconcile: bool = False
+
+    policy_fingerprint: str = ""
+
+    observed_at: str = field(
+        default_factory=now_iso
+    )
+
+    monitor_only: bool = True
+
+    schema_version: int = 2
+
+    def to_dict(
+        self,
+    ):
+
+        return asdict(
+            self
+        )
+
+    @classmethod
+    def from_dict(
+        cls,
+        data,
+    ):
+
+        if isinstance(
+            data,
+            cls,
+        ):
+
+            return data
+
+        data = data or {}
+
+        return cls(
+            **{
+                key: value
+                for key, value in data.items()
+                if key in cls.__dataclass_fields__
+            }
+        )
+
+
+@dataclass
 class ResourcePolicy:
 
     schema_version: int = RESOURCE_POLICY_SCHEMA_VERSION
@@ -617,6 +911,10 @@ class ResourcePolicy:
     resource_wait_recheck_seconds: float = 5.0
 
     lease_ttl_seconds: float = 300.0
+
+    lease_renew_interval_seconds: float = 120.0
+
+    stale_lease_handling_mode: str = "monitor_only"
 
     pressure_cpu_warning_percent: float = 90.0
 
@@ -764,6 +1062,10 @@ class ResolvedResourcePolicy:
 
     lease_ttl_seconds: float = 300.0
 
+    lease_renew_interval_seconds: float = 120.0
+
+    stale_lease_handling_mode: str = "monitor_only"
+
     cooperative_stop_grace_seconds: int = 20
 
     kill_escalation_wait_seconds: int = 5
@@ -808,6 +1110,12 @@ class ResolvedResourcePolicy:
                 self.resource_wait_recheck_seconds
             ),
             "lease_ttl_seconds": self.lease_ttl_seconds,
+            "lease_renew_interval_seconds": (
+                self.lease_renew_interval_seconds
+            ),
+            "stale_lease_handling_mode": (
+                self.stale_lease_handling_mode
+            ),
             "cooperative_stop_grace_seconds": (
                 self.cooperative_stop_grace_seconds
             ),
@@ -899,6 +1207,12 @@ class ResolvedResourcePolicy:
             ),
             lease_ttl_seconds=float(
                 policy.lease_ttl_seconds
+            ),
+            lease_renew_interval_seconds=float(
+                policy.lease_renew_interval_seconds
+            ),
+            stale_lease_handling_mode=str(
+                policy.stale_lease_handling_mode
             ),
             cooperative_stop_grace_seconds=int(
                 policy.cooperative_stop_grace_seconds

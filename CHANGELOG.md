@@ -1,5 +1,35 @@
 # Changelog
 
+## Resource Safety Hardening Phase 3: Lease Lifecycle v2 Monitor
+
+### Added
+
+- Lease lifecycle v2 foundation voi `ResourceLeaseV2`, `ResourceLeaseObservation`, stable shadow action va stable lease reason codes.
+- `ResourceLeaseShadowEvaluator` deterministic, co injectable clock, tinh shadow acquire/renew/release/expiry/stale/reconciliation/duplicate/owner-process-policy mismatch.
+- Policy additive fields `lease_renew_interval_seconds` va `stale_lease_handling_mode`, resolve qua `ResourcePolicyService`.
+- `ResourceLeaseManager.shadow_observations()` va `shadow_observation_for_job()` de quan sat lease legacy ma khong mutate actual lease.
+- Tests Phase 3 cho acquire, renew due/not due, release due, expiry, stale, duplicate, owner mismatch, job/process missing, process identity mismatch, policy fingerprint mismatch, corrupt store, unknown fields, legacy schema va monitor-only invariants.
+
+### Changed
+
+- Actual legacy lease path khong doi: acquire/renew/release/cleanup_stale van la behavior cu.
+- Shadow observation khong goi `cleanup_stale()` va khong ghi de corrupt lease store.
+- Resource lease v2 van monitor-only; khong block queue, khong doi Job state, khong doi scheduling, khong release/renew actual lease.
+
+### Validation
+
+- `.\.venv\Scripts\python.exe -m compileall src\models\resource_model.py src\services\resource_policy_service.py src\services\resource_lease_manager.py src\services\resource_lease_shadow_evaluator.py tests\test_resource_lease_phase3.py`: dat.
+- `.\.venv\Scripts\python.exe -m pytest tests\test_resource_lease_phase3.py -q -p no:cacheprovider`: 16 passed.
+- `.\.venv\Scripts\python.exe -m pytest tests\test_resource_policy_v2.py tests\test_resource_manager.py tests\test_resource_safety_phase2.py tests\test_resource_lease_phase3.py -q -p no:cacheprovider`: 52 passed.
+- `.\.venv\Scripts\python.exe -m compileall src tests`: exit code 0; van co dong `Can't list 'tests\.pytest_tmp_avs01424_c6'` do thu muc tmp cu bi khoa.
+
+### Notes
+
+- Phase 3 chi shadow/monitor-only, chua enforcement.
+- Chua Process Supervisor enforcement/kill-tree.
+- Chua Runtime Guard, Thread Budget hoac stale lease cleanup policy moi.
+- Chua Train that, chua Generate that, khong tich hop GPT-SoVITS runtime moi.
+
 ## Resource Safety Hardening Phase 2: Snapshot Validation va Shadow Decision
 
 ### Added

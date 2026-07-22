@@ -604,3 +604,16 @@
 - Ngay cap nhat: 2026-07-22.
 
 ---
+
+# DEC-064: Lease Lifecycle v2 la monitor-only observation trong Phase 3
+
+- Trang thai: Chap nhan.
+- Boi canh: Lease legacy dang duoc Job Queue/JobRunner dung de dieu phoi runtime, nhung can nen v2 de quan sat TTL, renew, expiry, stale, duplicate va reconciliation truoc khi enforcement.
+- Quyet dinh: Phase 3 them `ResourceLeaseV2`, `ResourceLeaseObservation` va `ResourceLeaseShadowEvaluator` de tinh shadow lifecycle; actual lease legacy van la source runtime.
+- Quyet dinh: Observation path phai dung `ResourcePolicyService.resolve()`/`ResolvedResourcePolicy`, co `lease_renew_interval_seconds`, `stale_lease_handling_mode` va policy fingerprint; khong hard-code policy trong ResourceLeaseManager.
+- Quyet dinh: `ResourceLeaseManager.shadow_observations()` va `shadow_observation_for_job()` khong duoc goi `cleanup_stale()`, `renew()`, `release()`, `release_job()` hoac `save_all()` khi chi quan sat.
+- Ly do: Cho phep phat hien leak/duplicate/stale/reconciliation can thiet ma khong doi scheduling, Job state, pause/cancel/retry hoac runtime behavior.
+- He qua: Phase enforcement sau nay phai co phe duyet va tests rieng truoc khi shadow action duoc dung de block queue hoac mutate lease that.
+- Ngay cap nhat: 2026-07-22.
+
+---

@@ -4,10 +4,11 @@ Ngay cap nhat: 2026-07-22
 
 ## Trang thai hien tai
 
-- Sprint vua thuc hien: Resource Safety Hardening Phase 2 - Snapshot Validation va Shadow Decision monitor-only.
+- Sprint vua thuc hien: Resource Safety Hardening Phase 3 - Lease Lifecycle v2 Monitor monitor-only.
 - Nen Generate Pipeline AVS-014.16 da co o muc request/session/source snapshot/plan/manifest/recovery/API/job prepare.
 - Resource Policy schema v2 da co foundation resolve/migration/fallback/fingerprint o muc monitor-only/disabled.
 - Resource Safety Phase 2 da co snapshot validation/freshness va shadow Resource Decision v2 monitor-only, khong doi scheduling/runtime behavior.
+- Resource Safety Phase 3 da co Lease Lifecycle v2 shadow observation monitor-only, khong doi actual lease/scheduling/runtime behavior.
 - Chua tich hop GPT-SoVITS runtime cho Generate production trong phase nay.
 - Chua Train GPT-SoVITS that trong phase nay.
 - Chua Generate Audio that trong phase nay.
@@ -36,7 +37,9 @@ Ngay cap nhat: 2026-07-22
 | Resource Policy v2 foundation | READY | Schema v2, feature modes doc lap, migration v1, safe resolve, backup/fallback va fingerprint deterministic da co. Runtime enforcement moi chua bat. |
 | Resource Snapshot validation | READY | Phan biet valid/invalid/unknown/stale cho RAM/GPU/VRAM/Disk, co freshness age va TTL tu policy. |
 | Resource Decision v2 shadow observation | READY | Tra structured shadow_observation monitor-only gom actual_decision, shadow_decision, reason_codes, snapshot_status, workload_class va policy_fingerprint. |
-| Resource Policy v2 enforcement | UNAVAILABLE | Phase 2 van chi monitor-only/shadow; khong block job moi, khong doi scheduling/thread/batch/runtime action. |
+| Resource Lease v2 shadow observation | READY | Lease lifecycle v2 monitor-only co structured observation cho acquire/renew/release/expiry/stale/reconciliation/duplicate va stable reason codes; actual legacy lease path khong doi. |
+| Resource Policy v2 enforcement | UNAVAILABLE | Van chi monitor-only/shadow; khong block job moi, khong doi scheduling/thread/batch/runtime action. |
+| Resource Lease v2 enforcement | UNAVAILABLE | Phase 3 chi monitor-only; khong renew/release/block queue/doi Job state theo shadow action. |
 | Style Profile / Voice DNA foundation | DEGRADED | Quan ly/import/export foundation co; prosody analyzer that chua co. |
 | Runtime GPT-SoVITS integration cho Generate | UNAVAILABLE | La pham vi sprint sau, khong lam trong AVS-014.16A. |
 
@@ -55,7 +58,8 @@ Ngay cap nhat: 2026-07-22
 - Chua co prosody analyzer that cho Voice DNA.
 - Chua co Process Supervisor enforcement/kill-tree, runtime pressure guard action, thread budget enforcement hoac per-job CPU fallback confirmation workflow.
 - Resource Decision v2 hien chi shadow/monitor-only; chua duoc dung de block Queue, doi job state, cap/release lease, doi CPU fallback, thread, batch hoac runtime guard.
+- Resource Lease v2 hien chi shadow/monitor-only; chua duoc dung de renew/release actual lease, cleanup stale, block duplicate that, reconcile job/process hay doi scheduling.
 
 ## Sprint tiep theo du kien
 
-- AVS-014.17 GPT-SoVITS Runtime Integration chi bat dau sau khi source/docs/tests hien tai dat va Resource Safety Hardening Phase 2 neu co duoc phe duyet rieng.
+- AVS-014.17 GPT-SoVITS Runtime Integration chi bat dau sau khi source/docs/tests hien tai dat va Resource Safety Hardening Phase 3 neu co duoc phe duyet rieng.

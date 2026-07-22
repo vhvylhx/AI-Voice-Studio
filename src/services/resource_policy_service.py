@@ -323,6 +323,31 @@ class ResourcePolicyService:
         )
 
         normalized.setdefault(
+            "snapshot_ttl_seconds",
+            2.0,
+        )
+
+        normalized.setdefault(
+            "resource_wait_recheck_seconds",
+            5.0,
+        )
+
+        normalized.setdefault(
+            "lease_ttl_seconds",
+            300.0,
+        )
+
+        normalized.setdefault(
+            "lease_renew_interval_seconds",
+            120.0,
+        )
+
+        normalized.setdefault(
+            "stale_lease_handling_mode",
+            "monitor_only",
+        )
+
+        normalized.setdefault(
             "snapshot_unknown_state_policy",
             "monitor_only",
         )
@@ -499,6 +524,7 @@ class ResourcePolicyService:
             "snapshot_ttl_seconds",
             "resource_wait_recheck_seconds",
             "lease_ttl_seconds",
+            "lease_renew_interval_seconds",
             "cooperative_stop_grace_seconds",
             "kill_escalation_wait_seconds",
         ):
@@ -688,6 +714,14 @@ class ResourcePolicyService:
 
         data["kill_escalation_wait_seconds"] = (
             resolved.kill_escalation_wait_seconds
+        )
+
+        data["lease_renew_interval_seconds"] = (
+            resolved.lease_renew_interval_seconds
+        )
+
+        data["stale_lease_handling_mode"] = (
+            resolved.stale_lease_handling_mode
         )
 
         data["cpu_fallback_requires_job_confirmation"] = (

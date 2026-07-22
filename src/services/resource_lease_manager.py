@@ -6,10 +6,13 @@ from pathlib import Path
 from uuid import uuid4
 
 from models.resource_model import (
+    LEASE_REASON_STORE_CORRUPT,
+    LEASE_REASON_STORE_UNAVAILABLE,
     ResourceLease,
     ResourceRequirement,
     now_iso,
 )
+from services.resource_lease_shadow_evaluator import ResourceLeaseShadowEvaluator
 from services.resource_policy_service import ResourcePolicyService
 
 
@@ -36,6 +39,8 @@ class ResourceLeaseManager:
             policy_service
             or ResourcePolicyService()
         )
+
+        self.shadow_evaluator = ResourceLeaseShadowEvaluator()
 
     def active_leases(
         self,
@@ -313,6 +318,159 @@ class ResourceLeaseManager:
                 []
             )
         ]
+
+    def load_all_for_observation(
+        self,
+    ):
+
+        if not self.file.exists():
+
+            return [], ""
+
+        try:
+
+            data = json.loads(
+                self.file.read_text(
+                    encoding="utf-8"
+                )
+            )
+
+        except PermissionError:
+
+            return [], LEASE_REASON_STORE_UNAVAILABLE
+
+        except Exception:
+
+            return [], LEASE_REASON_STORE_CORRUPT
+
+        try:
+
+            leases = [
+                ResourceLease.from_dict(
+                    item
+                )
+                for item in data.get(
+                    "leases",
+                    []
+                )
+            ]
+
+        except Exception:
+
+            return [], LEASE_REASON_STORE_CORRUPT
+
+        return leases, ""
+
+    def shadow_observations(
+        self,
+        jobs_by_id=None,
+        owner_id="",
+        process_alive_by_lease_id=None,
+        process_identity_by_lease_id=None,
+    ):
+
+        policy = self.resolve_policy_for_observation()
+
+        leases, store_error = self.load_all_for_observation()
+
+        if store_error:
+
+            return [
+                self.shadow_evaluator.observe_store_error(
+                    store_error,
+                    policy=policy,
+                ).to_dict()
+            ]
+
+        jobs_by_id = jobs_by_id or {}
+        process_alive_by_lease_id = process_alive_by_lease_id or {}
+        process_identity_by_lease_id = process_identity_by_lease_id or {}
+
+        return [
+            self.shadow_evaluator.observe(
+                lease,
+                all_leases=leases,
+                job=jobs_by_id.get(
+                    lease.job_id
+                ),
+                owner_id=owner_id,
+                process_alive=process_alive_by_lease_id.get(
+                    lease.lease_id
+                ),
+                actual_process_identity=process_identity_by_lease_id.get(
+                    lease.lease_id
+                ),
+                policy=policy,
+            ).to_dict()
+            for lease in leases
+        ]
+
+    def shadow_observation_for_job(
+        self,
+        job,
+        requirement,
+        selected_gpu_device_id="",
+        owner_id="",
+    ):
+
+        policy = self.resolve_policy_for_observation()
+
+        leases, store_error = self.load_all_for_observation()
+
+        if store_error:
+
+            return self.shadow_evaluator.observe_store_error(
+                store_error,
+                policy=policy,
+            ).to_dict()
+
+        requirement = ResourceRequirement.from_dict(
+            requirement
+        )
+
+        resource_kind = (
+            "gpu"
+            if requirement.requires_gpu
+            and selected_gpu_device_id
+            else "cpu"
+        )
+
+        for lease in leases:
+
+            if (
+                lease.job_id == job.job_id
+                and lease.resource_type == resource_kind
+            ):
+
+                return self.shadow_evaluator.observe(
+                    lease,
+                    all_leases=leases,
+                    job=job,
+                    owner_id=owner_id,
+                    policy=policy,
+                ).to_dict()
+
+        return self.shadow_evaluator.observe_missing(
+            job_id=job.job_id,
+            resource_kind=resource_kind,
+            owner_id=owner_id,
+            policy=policy,
+        ).to_dict()
+
+    def resolve_policy_for_observation(
+        self,
+    ):
+
+        if hasattr(
+            self.policy_service,
+            "resolve",
+        ):
+
+            return self.policy_service.resolve(
+                migrate=False
+            )
+
+        return self.policy_service.load()
 
     def save_all(
         self,

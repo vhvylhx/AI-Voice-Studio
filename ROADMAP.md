@@ -562,3 +562,16 @@ Có thể clone một giọng và tạo Audio bằng GPT-SoVITS.
 - [ ] Process Supervisor enforcement/kill-tree thuoc Phase sau neu duoc phe duyet rieng.
 
 ---
+
+# Cap nhat Resource Safety Hardening Phase 3
+
+- [x] Lease Lifecycle v2 foundation voi `ResourceLeaseV2` va `ResourceLeaseObservation`.
+- [x] Shadow evaluator monitor-only cho acquire/renew/release/expiry/stale/reconciliation/duplicate.
+- [x] Stable lease reason codes co tests deterministic.
+- [x] Policy additive fields cho `lease_renew_interval_seconds` va `stale_lease_handling_mode`.
+- [x] ResourceLeaseManager co observation path khong mutate actual lease legacy.
+- [x] Corrupt/legacy/unknown lease store observation khong crash va khong ghi de.
+- [ ] Resource Lease v2 enforcement chua bat, can phe duyet rieng.
+- [ ] Reconciliation action that, cleanup stale that va duplicate blocking that thuoc Phase sau neu duoc phe duyet rieng.
+
+---

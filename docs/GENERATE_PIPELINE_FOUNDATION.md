@@ -192,3 +192,27 @@ Generate pipeline cu van ton tai. Foundation moi chay song song va chi tao data 
 | Recovery foundation | READY | Co startup light scan, manifest rebuild va temp classification; khong load engine. |
 | Local API foundation | READY | Co route cho sessions, plan, units, attempts, artifacts, resume/retry/recovery. |
 | Generate foundation UI | DEGRADED | Co controls toi thieu tren AudioPage; chua polish session detail rieng. |
+
+---
+
+## AVS-014.17 Runtime Integration Delta
+
+AVS-014.17 giu nguyen foundation contract va bo sung production path co gate:
+
+- `RuntimeProfileService.validate(..., require_generate=True)` dong vai tro Runtime Doctor cho Generate.
+- `GET /api/v1/generate/runtime/doctor` tra trang thai runtime/profile/script/pretrained/FFmpeg/FFprobe.
+- `GenerateUnitJobWorker` la worker production cho mot unit, co ResourceRequirement GPU va khong CPU fallback mac dinh.
+- `GPTSoVITSGenerateProvider` resolve request/plan/unit/voice, validate Voice model va goi EngineManager -> GPTSoVITS Engine/Adapter.
+- `POST /api/v1/generate/sessions/{session_id}/units/{unit_id}/execute` chi enqueue job khi Runtime Doctor san sang.
+- Provider/engine loi se mark Attempt/Unit/Artifact `failed`; khong de ket `running` hoac `reserved`.
+- `inference_cli.py` la script Generate CLI bat buoc. `inference_webui.py` duoc report rieng va khong duoc gia dinh la CLI tuong duong.
+
+Capability truth sau delta:
+
+| Hang muc | Trang thai | Ghi chu |
+| --- | --- | --- |
+| Runtime Doctor Generate | READY | Co service/API report; status cu the phu thuoc profile hien tai. |
+| Generate unit production worker | READY | Worker/job/resource/provider path da co. |
+| Real GPT-SoVITS execution | DEGRADED | Chi chay khi Runtime Doctor va Voice model hop le; chua smoke runtime that trong validation mac dinh. |
+| WAV output qua foundation | DEGRADED | Co temp/reservation/WAV validation/promotion; chua nang READY neu chua co real smoke. |
+| MP3 output qua foundation | UNAVAILABLE | Chua noi trong AVS-014.17. |

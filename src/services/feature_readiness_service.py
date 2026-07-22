@@ -1235,22 +1235,25 @@ class FeatureReadinessService:
         return FeatureReadiness(
             feature_id="generate_preview_audio",
             name_vi="Generate Preview Audio",
-            status=STATUS_BLOCKED,
+            status=STATUS_DEGRADED,
             available=False,
+            degraded=True,
             blocked=True,
             required_components=[
                 "generate_unit_production_handler",
                 "valid_voice_model",
+                "runtime_doctor_ready",
             ],
             missing_components=[
-                "generate_unit_production_handler",
+                "valid_voice_model_or_runtime",
             ],
             remediation=[
                 "AVS-014.16 chưa triển khai production Generate Unit handler; không tạo audio giả.",
             ],
             settings_target="generate.execution",
             technical_details={
-                "truth_status": "UNAVAILABLE",
+                "truth_status": "DEGRADED",
+                "production_handler": True,
             },
         )
 
@@ -1270,20 +1273,23 @@ class FeatureReadinessService:
         return FeatureReadiness(
             feature_id="generate_resume_execution",
             name_vi="Generate Resume Execution",
-            status=STATUS_BLOCKED,
+            status=STATUS_DEGRADED,
             available=False,
+            degraded=True,
             blocked=True,
             required_components=[
                 "generate_unit_production_handler",
+                "runtime_doctor_ready",
             ],
             missing_components=[
-                "generate_unit_production_handler",
+                "runtime_or_voice_not_ready",
             ],
             remediation=[
                 "Hiện mới có resume inspection; resume execution cần worker generate_unit thật ở sprint sau.",
             ],
             technical_details={
-                "truth_status": "UNAVAILABLE",
+                "truth_status": "DEGRADED",
+                "production_handler": True,
             },
         )
 
@@ -1303,20 +1309,23 @@ class FeatureReadinessService:
         return FeatureReadiness(
             feature_id="generate_retry_execution",
             name_vi="Generate Retry Execution",
-            status=STATUS_BLOCKED,
+            status=STATUS_DEGRADED,
             available=False,
+            degraded=True,
             blocked=True,
             required_components=[
                 "generate_unit_production_handler",
+                "runtime_doctor_ready",
             ],
             missing_components=[
-                "generate_unit_production_handler",
+                "runtime_or_voice_not_ready",
             ],
             remediation=[
                 "Hiện mới có retry inspection; retry execution chưa được bật để tránh duplicate/fake output.",
             ],
             technical_details={
-                "truth_status": "UNAVAILABLE",
+                "truth_status": "DEGRADED",
+                "production_handler": True,
             },
         )
 
@@ -1372,20 +1381,24 @@ class FeatureReadinessService:
         return FeatureReadiness(
             feature_id="generate_wav_output",
             name_vi="Generate WAV Output",
-            status=STATUS_BLOCKED,
+            status=STATUS_DEGRADED,
             available=False,
+            degraded=True,
             blocked=True,
             required_components=[
                 "generate_unit_production_handler",
+                "runtime_doctor_ready",
+                "valid_voice_model",
             ],
             missing_components=[
-                "generate_unit_production_handler",
+                "runtime_or_voice_not_ready",
             ],
             remediation=[
                 "WAV output thật chưa bật trong AVS-014.16 foundation.",
             ],
             technical_details={
-                "truth_status": "UNAVAILABLE",
+                "truth_status": "DEGRADED",
+                "production_handler": True,
             },
         )
 

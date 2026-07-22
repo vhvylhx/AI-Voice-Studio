@@ -652,3 +652,157 @@ class GeneratePrepareJobWorker(BaseJobWorker):
                 {},
             ),
         }
+
+
+class GenerateUnitJobWorker(BaseJobWorker):
+
+    resource_requirement = ResourceRequirement(
+        profile_id="gpu_generate_unit",
+        cpu_threads=1,
+        ram_mb=2048,
+        disk_free_mb=512,
+        requires_gpu=True,
+        gpu_count=1,
+        vram_mb=2048,
+        allow_cpu_fallback=False,
+        notes="Generate một unit qua GPT-SoVITS runtime thật; không tạo audio giả.",
+    )
+
+    def execute(
+        self,
+        job,
+        context,
+    ):
+
+        service = job.payload.get(
+            "generate_session_service",
+        )
+
+        if service is not None and not hasattr(
+            service,
+            "execute_unit_with_provider",
+        ):
+
+            service = None
+
+        if service is None and context.app_context is not None:
+
+            service = getattr(
+                context.app_context,
+                "generate_session_service",
+                None,
+            )
+
+        if service is None:
+
+            raise ValueError(
+                "generate_session_service_missing"
+            )
+
+        provider = job.payload.get(
+            "provider",
+        )
+
+        if provider is not None and not callable(
+            provider
+        ):
+
+            provider = None
+
+        if provider is None and context.app_context is not None:
+
+            provider = getattr(
+                context.app_context,
+                "gpt_sovits_generate_provider",
+                None,
+            )
+
+        if provider is None:
+
+            raise ValueError(
+                "generate_provider_unavailable"
+            )
+
+        session_id = job.payload.get(
+            "session_id",
+            "",
+        )
+
+        unit_id = job.payload.get(
+            "unit_id",
+            "",
+        )
+
+        if not session_id or not unit_id:
+
+            raise ValueError(
+                "generate_unit_job_missing_scope"
+            )
+
+        started = time.time()
+
+        self.report_progress(
+            job,
+            context,
+            1,
+            3,
+            "generate_unit_validate",
+            "Đang kiểm tra unit Generate.",
+            item_name=unit_id,
+            started_at=started,
+        )
+
+        self.check_control(
+            job,
+            context,
+        )
+
+        self.report_progress(
+            job,
+            context,
+            2,
+            3,
+            "generate_unit_synthesize",
+            "Đang gọi GPT-SoVITS runtime.",
+            item_name=unit_id,
+            started_at=started,
+        )
+
+        result = service.execute_unit_with_provider(
+            session_id,
+            unit_id,
+            provider=provider,
+        )
+
+        if not result.get(
+            "ok",
+            False,
+        ):
+
+            raise RuntimeError(
+                result.get(
+                    "code",
+                    "generate_unit_failed",
+                )
+            )
+
+        self.report_progress(
+            job,
+            context,
+            3,
+            3,
+            "generate_unit_done",
+            "Generate unit đã tạo WAV hợp lệ.",
+            item_name=unit_id,
+            started_at=started,
+        )
+
+        return {
+            "ok": True,
+            "session_id": session_id,
+            "unit_id": unit_id,
+            "artifact": result.get(
+                "artifact",
+                {},
+            ),
+        }

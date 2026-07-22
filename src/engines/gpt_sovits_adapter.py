@@ -423,6 +423,7 @@ class GPTSoVITSAdapter:
         similarity=1.0,
         voice_id="",
         variant="original",
+        timeout=3600,
     ):
 
         self.validate_generate(
@@ -492,7 +493,8 @@ class GPTSoVITSAdapter:
             )
 
             self.run(
-                args
+                args,
+                timeout=timeout,
             )
 
         generated = output_dir / "output.wav"

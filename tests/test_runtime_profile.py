@@ -102,7 +102,102 @@ def test_switch_default_runtime_does_not_touch_voice_model():
     assert "voices/0001/model" in profiles["old"].compatibility_notes
 
 
+def test_runtime_profile_missing_is_not_ready_for_generate():
+
+    root = ROOT / "cache" / "test_runtime_profile_missing"
+
+    service = RuntimeProfileService(
+        config_file=root / "runtime_profiles.json",
+        app_root=root,
+    )
+
+    report = service.validate(
+        RuntimeProfile(
+            profile_id="missing",
+            display_name="Missing Runtime",
+        ),
+        require_generate=True,
+    )
+
+    assert report["doctor_status"] == "UNAVAILABLE"
+    assert any(
+        item["code"] == "runtime_missing"
+        for item in report["causes"]
+    )
+
+
+def test_runtime_profile_generate_doctor_detects_scripts_and_pretrained():
+
+    root = ROOT / "cache" / "test_runtime_profile_doctor"
+
+    runtime = root / "runtime_root"
+
+    paths = [
+        runtime / "webui.py",
+        runtime / "GPT_SoVITS" / "inference_cli.py",
+        runtime / "GPT_SoVITS" / "inference_webui.py",
+        runtime / "tools" / "slice_audio.py",
+        runtime / "tools" / "asr" / "fasterwhisper_asr.py",
+        runtime / "GPT_SoVITS" / "prepare_datasets" / "1-get-text.py",
+        runtime / "GPT_SoVITS" / "prepare_datasets" / "2-get-hubert-wav32k.py",
+        runtime / "GPT_SoVITS" / "prepare_datasets" / "2-get-sv.py",
+        runtime / "GPT_SoVITS" / "prepare_datasets" / "3-get-semantic.py",
+        runtime / "GPT_SoVITS" / "s1_train.py",
+        runtime / "GPT_SoVITS" / "s2_train.py",
+        runtime / "GPT_SoVITS" / "pretrained_models" / "s1v3.ckpt",
+        runtime / "GPT_SoVITS" / "pretrained_models" / "v2Pro" / "s2Gv2Pro.pth",
+        runtime / "GPT_SoVITS" / "pretrained_models" / "v2Pro" / "s2Dv2Pro.pth",
+        runtime / "GPT_SoVITS" / "pretrained_models" / "chinese-roberta-wwm-ext-large" / "marker.txt",
+        runtime / "GPT_SoVITS" / "pretrained_models" / "chinese-hubert-base" / "marker.txt",
+        runtime / "GPT_SoVITS" / "configs" / "s2v2Pro.json",
+    ]
+
+    for path in paths:
+
+        path.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        path.write_text(
+            "mock",
+            encoding="utf-8",
+        )
+
+    service = RuntimeProfileService(
+        config_file=root / "runtime_profiles.json",
+        app_root=root,
+    )
+
+    profile = RuntimeProfile(
+        profile_id="doctor",
+        display_name="Doctor",
+        runtime_path=str(
+            runtime
+        ),
+        python_path=sys.executable,
+        pretrained_model_path=str(
+            runtime / "GPT_SoVITS" / "pretrained_models"
+        ),
+    )
+
+    report = service.validate(
+        profile,
+        require_generate=True,
+    )
+
+    assert report["checks"]["gpt_sovits_scripts"]["inference_cli"]["exists"]
+    assert report["checks"]["pretrained_models"]["gpt"]["exists"]
+    assert report["doctor_status"] in {
+        "READY",
+        "MISCONFIGURED",
+    }
+    assert "ffmpeg" in report["checks"]
+
+
 test_runtime_profile_serialization_and_relative_path()
 test_switch_default_runtime_does_not_touch_voice_model()
+test_runtime_profile_missing_is_not_ready_for_generate()
+test_runtime_profile_generate_doctor_detects_scripts_and_pretrained()
 
 print("RUNTIME_PROFILE_TEST_OK")

@@ -26,7 +26,7 @@ class VoiceCard(QFrame):
         )
 
         self.name = QLabel(
-            voice.name
+            voice.display_name
         )
 
         self.engine = QLabel(

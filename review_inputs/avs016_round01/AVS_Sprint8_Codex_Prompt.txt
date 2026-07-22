@@ -1,0 +1,65 @@
+# START NEW TASK
+
+Task: AVS-016 Sprint 8 — Integrate Round01 Deep Review & Prepare Round02
+
+Đọc AGENTS.md và tài liệu Sprint hiện tại. Dùng các artifact review sau làm evidence:
+- AVS_Round01_Deep_Review.xlsx
+- AVS_Round01_review_sheet_filled.csv
+- AVS_Round01_Analysis_Report.md
+
+Mục tiêu:
+
+1. Xử lý blocker pair_002:
+   - Reference ~5,8s nhưng transcript 233 ký tự; preview ~12s.
+   - Xác minh root cause alignment/metadata.
+   - Loại pair_002 khỏi frozen Top20/holdout và thay bằng candidate kế tiếp hợp lệ từ Top50.
+   - Không tự sửa audio/text gốc.
+
+2. Normalize transcript trước preview:
+   - pair_005, pair_010, pair_012, pair_017 có leading whitespace/unmatched quotes.
+   - Normalize ở preview-input layer, giữ provenance text gốc.
+   - Regenerate chỉ các pair bị ảnh hưởng.
+
+3. Evaluation quality:
+   - Flag/penalize câu boundary-fragment hoặc kết thúc bằng ellipsis (đặc biệt pair_007, pair_011).
+   - Ưu tiên câu hoàn chỉnh cho holdout/preview review.
+
+4. Thêm preflight integrity:
+   - chars/s hoặc syllables/s plausibility.
+   - preview/reference duration ratio.
+   - Outlier nghiêm trọng phải BLOCK/REVIEW, không fail-open.
+
+5. Bổ sung auditability vào pair_manifest:
+   - conditioning_reference_id/path/checksum
+   - benchmark voice/profile
+   - model revision
+   - seed
+   - inference parameters (speed, temperature/top-k/top-p nếu có)
+   - lý do AI và Benchmark khác nhau.
+
+6. Dùng ranking trong workbook:
+   - Strong/giữ ưu tiên: pair_018 Benchmark, pair_020 AI, pair_009 (near tie), pair_016 Benchmark.
+   - Borderline cần human review: pair_015, pair_003, pair_019, pair_001, pair_006, pair_004.
+   - Low/replacement priority: pair_008, pair_013, pair_011, pair_014, pair_007; pair_012 chỉ quyết định sau normalize.
+   - Không coi điểm tín hiệu là human approval tuyệt đối.
+
+7. Sinh Round02 chỉ sau khi:
+   - blocker đã sửa,
+   - transcript normalize PASS,
+   - manifest provenance đầy đủ.
+   - Không Train, không LoRA, không Runtime Binding.
+
+Validation scoped only:
+- tests liên quan
+- compileall file task
+- artifact validation Round02
+- git diff --check scoped
+- git status --short scoped
+
+Báo cáo ngắn:
+- Root cause
+- File sửa
+- Pair giữ/thay/regenerate
+- Round02 outputs
+- Validation
+- Final Status

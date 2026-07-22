@@ -28,8 +28,98 @@ Trước khi sửa code:
 - Nếu phát hiện kiến trúc hiện tại có vấn đề, báo trước khi sửa.
 
 AGENTS.md là quy tắc làm việc cao nhất của dự án. Nếu cần thêm bối cảnh, hãy đọc PROJECT_STATUS.md, CURRENT_SPRINT.md, ROADMAP.md và các tài liệu liên quan trước khi bắt đầu.
+
 ---
 
+# Skill Framework V2
+
+Dự án sử dụng Skill Framework V2. Trước khi thực hiện task, AI phải ưu tiên chọn và áp dụng Skill phù hợp; đọc Rules và Memory Bank; sau đó kiểm tra source hiện tại trước khi sửa.
+
+- Phải dùng workflow, checklist, validation và định dạng báo cáo của Skill tương ứng.
+- Không được bỏ qua validation hoặc sửa ngoài phạm vi yêu cầu.
+- Không được tạo Cline implementation prompt ngay lập tức; phải phân loại task trước.
+- Chỉ được tạo Cline implementation prompt sau khi người dùng phê duyệt.
+- Nếu task ảnh hưởng kiến trúc, workflow, dataset, training, semantics Voice/Variant hoặc resource policy, phải báo rõ tác động và yêu cầu người dùng xác nhận trước khi triển khai.
+
+---
+## Skill Selection
+
+AI must select the most appropriate Skill before starting work.
+
+If multiple Skills are applicable, use the most specific one.
+
+The selected Skill governs:
+- workflow
+- checklist
+- validation
+- reporting
+
+Rules and Memory Bank must always be read before applying a Skill.
+
+If no Skill clearly applies, use safe-project-implementation as the default.
+---
+
+# Progressive Context Expansion
+
+Bắt đầu với ít file nhất có thể.
+Chỉ mở thêm file khi implementation chứng minh là cần dependency.
+Không đọc tài liệu kiến trúc lớn theo mặc định.
+Ưu tiên hoàn thành task với ngữ cảnh nhỏ nhất đủ để đảm bảo tính đúng đắn.
+Nếu phải mở rộng ngữ cảnh, ghi rõ lý do và phạm vi.
+---
+# Quy tắc Verification
+
+Khi kết thúc task:
+
+- Chỉ kiểm tra các file thuộc phạm vi task hiện tại.
+- Không chạy repository-wide verification nếu repository đã có nhiều thay đổi ngoài phạm vi task.
+
+Ưu tiên:
+
+- git diff --check -- <task files>
+- git status --short -- <task files>
+
+Không dùng:
+
+- git diff --check
+- git status
+- git diff
+
+trên toàn bộ repository, trừ khi task yêu cầu rõ ràng.
+
+Nếu repository đã dirty từ trước:
+
+- Không coi các thay đổi ngoài phạm vi task là lỗi.
+- Không restore, clean hoặc chỉnh sửa các file ngoài phạm vi task.
+- Chỉ báo cáo trạng thái của các file thuộc task.
+
+Nếu verification scoped PASS thì kết thúc task và tạo báo cáo, không tiếp tục chạy repository-wide checks.
+---
+# Verification Completion Policy
+
+Khi terminal đã trở về shell prompt và tất cả lệnh verification đã hoàn tất:
+
+- Không mở terminal mới chỉ để xác nhận trạng thái.
+- Không chạy lại cùng một verification.
+- Không retry verification nếu kết quả trước đã PASS.
+- Không coi terminal exit code sau khi workflow kết thúc là lỗi implementation.
+
+Nếu:
+
+- targeted validation PASS;
+- compile PASS;
+- scoped git diff --check PASS;
+
+thì đánh dấu bước Verification hoàn thành và chuyển sang bước Report.
+
+Chỉ được chạy lại verification nếu phát hiện implementation đã thay đổi sau lần verification gần nhất.
+
+Nếu scoped Git verification chỉ còn bị giữ bởi pager hoặc interactive terminal sau khi đã thu được đầy đủ kết quả cần thiết:
+
+- Cho phép dừng lệnh.
+- Không coi đây là lỗi implementation.
+- Tiếp tục bước Report.
+---
 # Quy tắc Code
 
 - Không tự refactor.

@@ -104,7 +104,7 @@ class AppStatusBar(QWidget):
     def on_voice_changed(self, voice):
 
         self.set_voice(
-            voice.name
+            voice.display_name
         )
 
     def on_engine_changed(self, engine):

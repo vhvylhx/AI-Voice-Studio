@@ -31,10 +31,10 @@ class ProjectBackupService:
             project.path
         )
 
-        target = (
-            root
-            / self.backup_root
-            / f"{project.id}_{timestamp}"
+        target = self.unique_backup_path(
+            root,
+            project.id,
+            timestamp,
         )
 
         target.mkdir(
@@ -97,6 +97,39 @@ class ProjectBackupService:
             ),
             "manifest": manifest,
         }
+
+    def unique_backup_path(
+        self,
+        project_root,
+        project_id,
+        timestamp,
+    ):
+
+        base = (
+            Path(
+                project_root
+            )
+            / self.backup_root
+            / f"{project_id}_{timestamp}"
+        )
+
+        if not base.exists():
+
+            return base
+
+        index = 1
+
+        while True:
+
+            candidate = base.with_name(
+                f"{base.name}_{index:02d}"
+            )
+
+            if not candidate.exists():
+
+                return candidate
+
+            index += 1
 
     def restore_project(
         self,

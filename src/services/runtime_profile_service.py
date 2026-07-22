@@ -1,6 +1,7 @@
-from pathlib import Path
 import json
+import shutil
 import subprocess
+from pathlib import Path
 
 from models.runtime_profile import RuntimeProfile
 
@@ -262,7 +263,12 @@ class RuntimeProfileService:
                 "exists",
                 False,
             )
-            for item in scripts.values()
+            for key, item in scripts.items()
+            if key
+            not in {
+                "inference_cli",
+                "inference_webui",
+            }
         ) and all(
             item.get(
                 "exists",
@@ -434,6 +440,7 @@ class RuntimeProfileService:
         self,
         profile,
         smoke_test=False,
+        require_generate=False,
     ):
 
         profile = RuntimeProfile.from_dict(
@@ -473,9 +480,21 @@ class RuntimeProfileService:
             "restart_required": False,
             "checks": {},
             "compatibility_notes": profile.compatibility_notes,
+            "generate_ready": False,
+            "doctor_status": "READY",
         }
 
-        if profile.runtime_path and not runtime_path.exists():
+        if not str(
+            profile.runtime_path
+        ).strip():
+
+            self.add_issue(
+                result,
+                "runtime_missing",
+                "Chua cau hinh thu muc runtime.",
+            )
+
+        elif not runtime_path.exists():
 
             self.add_issue(
                 result,
@@ -483,7 +502,9 @@ class RuntimeProfileService:
                 "Khong tim thay thu muc runtime.",
             )
 
-        if not python_path.exists():
+        if not str(
+            profile.python_path
+        ).strip() or not python_path.exists():
 
             self.add_issue(
                 result,
@@ -552,6 +573,22 @@ class RuntimeProfileService:
 
         result["checks"]["gpt_sovits_scripts"] = scripts
 
+        result["checks"]["ffmpeg"] = self.command_check(
+            "ffmpeg",
+            [
+                "ffmpeg",
+                "-version",
+            ],
+        )
+
+        result["checks"]["ffprobe"] = self.command_check(
+            "ffprobe",
+            [
+                "ffprobe",
+                "-version",
+            ],
+        )
+
         pretrained_models = self.detect_pretrained_models(
             runtime_path
         )
@@ -560,13 +597,76 @@ class RuntimeProfileService:
 
         if profile.runtime_path and not all(
             item["exists"]
-            for item in scripts.values()
+            for key, item in scripts.items()
+            if key
+            not in {
+                "inference_cli",
+                "inference_webui",
+            }
         ):
 
             self.add_issue(
                 result,
                 "gpt_sovits_scripts_missing",
                 "Thieu script GPT-SoVITS can thiet.",
+            )
+
+        inference_cli_ready = scripts.get(
+            "inference_cli",
+            {},
+        ).get(
+            "exists",
+            False,
+        )
+
+        result["generate_ready"] = (
+            result.get(
+                "status",
+            )
+            == "ready"
+            and inference_cli_ready
+            and result["checks"]["ffmpeg"].get(
+                "ok",
+                False,
+            )
+            and result["checks"]["ffprobe"].get(
+                "ok",
+                False,
+            )
+        )
+
+        if require_generate and not inference_cli_ready:
+
+            self.add_issue(
+                result,
+                "gpt_sovits_inference_cli_missing",
+                "Khong tim thay inference_cli.py de chay Generate theo CLI.",
+            )
+
+        if require_generate and not result["checks"]["ffmpeg"].get(
+            "ok",
+            False,
+        ):
+
+            self.add_issue(
+                result,
+                "ffmpeg_missing",
+                "Khong tim thay FFmpeg cho pipeline audio output.",
+            )
+
+            result["commands"].extend(
+                self.guidance()["ffmpeg_missing"]["commands"]
+            )
+
+        if require_generate and not result["checks"]["ffprobe"].get(
+            "ok",
+            False,
+        ):
+
+            self.add_issue(
+                result,
+                "ffprobe_missing",
+                "Khong tim thay FFprobe de validate output audio.",
             )
 
         if profile.pretrained_model_path and not all(
@@ -592,8 +692,12 @@ class RuntimeProfileService:
                 self.add_issue(
                     result,
                     "smoke_test_failed",
-                    "Smoke test runtime that bai.",
-                )
+                "Smoke test runtime that bai.",
+            )
+
+        result["doctor_status"] = self.doctor_status(
+            result
+        )
 
         return result
 
@@ -620,11 +724,13 @@ class RuntimeProfileService:
 
         scripts = {
             "webui": runtime_path / "webui.py",
-            "inference_cli": runtime_path / "GPT_SoVITS" / "inference_webui.py",
+            "inference_cli": runtime_path / "GPT_SoVITS" / "inference_cli.py",
+            "inference_webui": runtime_path / "GPT_SoVITS" / "inference_webui.py",
             "slice_audio": runtime_path / "tools" / "slice_audio.py",
             "asr_fasterwhisper": runtime_path / "tools" / "asr" / "fasterwhisper_asr.py",
             "prepare_text": runtime_path / "GPT_SoVITS" / "prepare_datasets" / "1-get-text.py",
             "prepare_hubert": runtime_path / "GPT_SoVITS" / "prepare_datasets" / "2-get-hubert-wav32k.py",
+            "prepare_sv": runtime_path / "GPT_SoVITS" / "prepare_datasets" / "2-get-sv.py",
             "prepare_semantic": runtime_path / "GPT_SoVITS" / "prepare_datasets" / "3-get-semantic.py",
             "train_gpt": runtime_path / "GPT_SoVITS" / "s1_train.py",
             "train_sovits": runtime_path / "GPT_SoVITS" / "s2_train.py",
@@ -639,6 +745,93 @@ class RuntimeProfileService:
             }
             for key, path in scripts.items()
         }
+
+    def command_check(
+        self,
+        executable,
+        command,
+    ):
+
+        path = shutil.which(
+            executable
+        )
+
+        if not path:
+
+            return {
+                "ok": False,
+                "path": "",
+                "stdout": "",
+                "stderr": "command_missing",
+            }
+
+        try:
+
+            result = subprocess.run(
+                command,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=10,
+            )
+
+        except Exception as e:
+
+            return {
+                "ok": False,
+                "path": path,
+                "stdout": "",
+                "stderr": str(
+                    e
+                ),
+            }
+
+        return {
+            "ok": result.returncode == 0,
+            "path": path,
+            "stdout": result.stdout.strip(),
+            "stderr": result.stderr.strip(),
+        }
+
+    def doctor_status(
+        self,
+        result,
+    ):
+
+        if not result.get(
+            "causes"
+        ):
+
+            return "READY"
+
+        codes = {
+            item.get(
+                "code",
+                "",
+            )
+            for item in result.get(
+                "causes",
+                []
+            )
+        }
+
+        if "runtime_missing" in codes or "python_missing" in codes:
+
+            return "UNAVAILABLE"
+
+        if (
+            "package_missing" in codes
+            or "pretrained_model_missing" in codes
+            or "gpt_sovits_scripts_missing" in codes
+            or "gpt_sovits_inference_cli_missing" in codes
+            or "ffmpeg_missing" in codes
+            or "ffprobe_missing" in codes
+        ):
+
+            return "MISCONFIGURED"
+
+        return "INCOMPATIBLE"
 
     def run_python(
         self,

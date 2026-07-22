@@ -63,6 +63,7 @@ class GenerateSessionService:
         repository=None,
         text_structure=None,
         settings=None,
+        language_router=None,
     ):
 
         self.repository = (
@@ -79,6 +80,8 @@ class GenerateSessionService:
             settings
             or GenerateSettings()
         )
+
+        self.language_router = language_router
 
     def stable_checksum(
         self,
@@ -521,6 +524,7 @@ class GenerateSessionService:
             plan, document = self.build_plan(
                 session,
                 source_text,
+                request.selection.language,
             )
 
             normalized_text = Path(
@@ -866,6 +870,7 @@ class GenerateSessionService:
         self,
         session,
         text,
+        explicit_language="",
     ):
 
         document, chapters, units, normalized = (
@@ -908,7 +913,91 @@ class GenerateSessionService:
             settings_snapshot=self.settings.to_dict(),
         )
 
+        self.apply_language_routes(
+            plan,
+            session.voice_id,
+            explicit_language=explicit_language,
+        )
+
         return plan, document
+
+    def apply_language_routes(
+        self,
+        plan,
+        voice_id,
+        explicit_language="",
+    ):
+
+        router = self.language_router
+
+        if router is None:
+
+            try:
+
+                from core.app_context import AppContext
+
+                router = AppContext.engine_capability_router
+
+            except Exception:
+
+                router = None
+
+        if router is None:
+
+            try:
+
+                from services.engine_capability_router import (
+                    EngineCapabilityRouter,
+                )
+
+                router = EngineCapabilityRouter()
+
+            except Exception:
+
+                router = None
+
+        if router is None:
+
+            for unit in plan.units:
+
+                unit.route_status = "BLOCKED"
+                unit.route_blockers = [
+                    "language_router_unavailable",
+                ]
+
+            return
+
+        voice = router.voice_service.find_by_id(
+            voice_id
+        )
+
+        for unit in plan.units:
+
+            detected = router.language_detector.detect(
+                unit.text,
+                explicit_language=explicit_language,
+            )
+
+            unit.language_code = detected.language_code
+
+            if voice is None:
+
+                unit.route_status = "BLOCKED"
+                unit.route_blockers = [
+                    "voice_not_found",
+                ]
+
+                continue
+
+            route = router.route_language(
+                voice,
+                detected.language_code,
+            )
+
+            unit.engine_id = route.engine_id
+            unit.route_status = route.status
+            unit.route_fingerprint = route.fingerprint
+            unit.route_blockers = route.blockers
 
     def build_manifest(
         self,
@@ -1707,12 +1796,27 @@ class GenerateSessionService:
             exist_ok=True,
         )
 
-        provider(
-            artifact,
-            Path(
-                artifact.temp_path
-            ),
-        )
+        try:
+
+            provider(
+                artifact,
+                Path(
+                    artifact.temp_path
+                ),
+            )
+
+        except Exception as exc:
+
+            return self.fail_attempt_with_artifact(
+                session_id=session_id,
+                unit_id=unit_id,
+                attempt_id=attempt.attempt_id,
+                artifact=artifact,
+                code=exc.__class__.__name__,
+                message=str(
+                    exc
+                ),
+            )
 
         promoted = self.promote_artifact(
             artifact,
@@ -1735,6 +1839,69 @@ class GenerateSessionService:
         )
 
         return promoted
+
+    def fail_attempt_with_artifact(
+        self,
+        session_id,
+        unit_id,
+        attempt_id,
+        artifact,
+        code,
+        message,
+    ):
+
+        artifact = GenerateArtifactRecord.from_dict(
+            artifact
+        )
+
+        artifact.status = "failed"
+
+        artifact.validation_status = "failed"
+
+        artifact.validation_errors = [
+            code,
+        ]
+
+        artifact.updated_at = now_iso()
+
+        self.repository.upsert_artifact(
+            artifact
+        )
+
+        plan = self.repository.load_plan(
+            session_id
+        )
+
+        if plan:
+
+            for attempt in plan.attempts:
+
+                if attempt.attempt_id == attempt_id:
+
+                    attempt.status = "failed"
+
+                    attempt.error_code = code
+
+                    attempt.error_message = message
+
+                    attempt.finished_at = now_iso()
+
+            for unit in plan.units:
+
+                if unit.unit_id == unit_id:
+
+                    unit.status = "failed"
+
+            self.repository.save_plan(
+                plan
+            )
+
+        return {
+            "ok": False,
+            "code": code,
+            "message": message,
+            "artifact": artifact.to_dict(),
+        }
 
     def list_sessions(
         self,

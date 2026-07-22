@@ -14,6 +14,8 @@ from services.dataset_service import DatasetService
 from services.dataset_review_service import DatasetReviewService
 from services.log_service import LogService
 from services.runtime_profile_service import RuntimeProfileService
+from services.training_preprocessing_service import TrainingPreprocessingService
+from services.voice_preview_benchmark_service import VoicePreviewBenchmarkService
 from services.app_events import AppEvents
 
 
@@ -28,6 +30,8 @@ class TrainingService:
         self.log = LogService()
 
         self.runtime_profiles = RuntimeProfileService()
+
+        self.benchmark = VoicePreviewBenchmarkService()
 
         self.progress_events = []
 
@@ -181,6 +185,22 @@ class TrainingService:
             errors,
         )
 
+        preprocessing_status = self.validate_preprocessing(
+            config,
+            metadata,
+            runtime,
+            errors,
+        )
+
+        benchmark_status = self.validate_benchmark(
+            config,
+            errors,
+            enforce_lock=(
+                not config.validation_only
+                and not config.smoke_test
+            ),
+        )
+
         self.emit_progress(
             "parameters",
             5,
@@ -242,6 +262,8 @@ class TrainingService:
             elapsed,
             state,
             review_status,
+            preprocessing_status,
+            benchmark_status,
             warnings,
             errors,
         )
@@ -450,6 +472,7 @@ class TrainingService:
             "path": str(
                 metadata_path or ""
             ),
+            "sha256": "",
             "clip_count": 0,
             "total_duration": 0.0,
             "items": [],
@@ -489,6 +512,10 @@ class TrainingService:
             )
 
             return result
+
+        result["sha256"] = self.sha256_file(
+            file
+        )
 
         lines = [
             line.strip()
@@ -908,6 +935,64 @@ class TrainingService:
                     ),
                 )
             )
+
+    def validate_preprocessing(
+        self,
+        config,
+        metadata,
+        runtime,
+        errors,
+    ):
+
+        manifest_path = getattr(
+            config,
+            "preprocessing_manifest_path",
+            "",
+        )
+
+        if not manifest_path:
+
+            return {
+                "status": "MISSING",
+                "training_ready": False,
+                "manifest_path": "",
+                "blockers": [],
+            }
+
+        service = TrainingPreprocessingService(
+            runtime_profiles=self.runtime_profiles,
+        )
+
+        status = service.preprocessing_status_for_training(
+            manifest_path,
+            expected_dataset_fingerprint=metadata.get(
+                "sha256",
+                "",
+            ),
+            expected_runtime_fingerprint=runtime.get(
+                "runtime_fingerprint",
+                "",
+            ),
+        )
+
+        status[
+            "manifest_path"
+        ] = manifest_path
+
+        if status.get(
+            "status"
+        ) != "READY":
+
+            errors.append(
+                self.issue(
+                    "preprocessing_not_ready",
+                    "Preprocessing artifacts chua san sang cho Training.",
+                    detected_path=manifest_path,
+                    suggestion="Chay AVS-014.19A preprocessing va dam bao manifest training_ready=true.",
+                )
+            )
+
+        return status
 
     def run_smoke_test(
         self,
@@ -1361,6 +1446,25 @@ print("GPT-SoVITS smoke OK")
 
         return model_output
 
+    def validate_benchmark(
+        self,
+        config,
+        errors,
+        enforce_lock=True,
+    ):
+
+        status = self.benchmark.training_status(
+            config.benchmark_manifest_path
+        )
+
+        if enforce_lock and not status["training_allowed"]:
+            errors.append(
+                "Training bị khóa: cần ít nhất một Benchmark "
+                "Pair có trạng thái APPROVED."
+            )
+
+        return status
+
     def create_train_report(
         self,
         voice_info,
@@ -1373,6 +1477,8 @@ print("GPT-SoVITS smoke OK")
         elapsed,
         state,
         review_status,
+        preprocessing_status,
+        benchmark_status,
         warnings,
         errors,
     ):
@@ -1440,6 +1546,8 @@ print("GPT-SoVITS smoke OK")
                 model_output
             ),
             "dataset_review": review_status,
+            "preprocessing": preprocessing_status,
+            "voice_preview_benchmark": benchmark_status,
             "warnings": warnings,
             "errors": errors,
             "progress": self.progress_events,
@@ -1714,3 +1822,30 @@ print("GPT-SoVITS smoke OK")
                 indent=4,
                 ensure_ascii=False,
             )
+
+    def sha256_file(
+        self,
+        file,
+    ):
+
+        import hashlib
+
+        h = hashlib.sha256()
+
+        with open(
+            file,
+            "rb",
+        ) as f:
+
+            for chunk in iter(
+                lambda: f.read(
+                    1024 * 1024
+                ),
+                b"",
+            ):
+
+                h.update(
+                    chunk
+                )
+
+        return h.hexdigest()

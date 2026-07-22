@@ -1,8 +1,12 @@
 import json
+from datetime import datetime
 from pathlib import Path
 import unicodedata
 
 from models.voice_config import VoiceConfig
+from models.voice_config import normalize_enabled_languages
+from models.voice_config import normalize_engine_bindings
+from models.voice_config import normalize_language_code
 from models.voice_model import VoiceModel
 
 
@@ -54,6 +58,9 @@ class VoiceService:
         config = VoiceConfig()
 
         config.voice_id = self.next_id()
+        config.display_name = name
+        config.created_at = datetime.now().isoformat()
+        config.updated_at = config.created_at
 
         self.ensure_folders(
             voice
@@ -86,6 +93,10 @@ class VoiceService:
             config = VoiceConfig.from_dict(
                 data
             )
+
+        if not config.display_name:
+
+            config.display_name = name
 
         migrated = False
 
@@ -163,8 +174,19 @@ class VoiceService:
         config,
     ):
 
+        file = folder / "voice.json"
+
+        file.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        temp = file.with_suffix(
+            file.suffix + ".tmp"
+        )
+
         with open(
-            folder / "voice.json",
+            temp,
             "w",
             encoding="utf-8"
         ) as f:
@@ -175,6 +197,12 @@ class VoiceService:
                 indent=4,
                 ensure_ascii=False
             )
+
+            f.flush()
+
+        temp.replace(
+            file
+        )
 
     def list(self):
 
@@ -310,6 +338,99 @@ class VoiceService:
             old
         )
 
+    def find_by_id(
+        self,
+        voice_id,
+    ):
+
+        voice_id = str(
+            voice_id or ""
+        ).strip()
+
+        if not voice_id:
+
+            return None
+
+        for name in self.list():
+
+            try:
+
+                voice = self.load(
+                    name
+                )
+
+            except Exception:
+
+                continue
+
+            if voice.id == voice_id:
+
+                return voice
+
+        return None
+
+    def rename_display_name(
+        self,
+        voice_id,
+        new_display_name,
+    ):
+
+        display_name = self.normalize_display_name(
+            new_display_name
+        )
+
+        errors = self.validate_display_name(
+            display_name
+        )
+
+        if errors:
+
+            raise ValueError(
+                ",".join(
+                    errors
+                )
+            )
+
+        voice = self.find_by_id(
+            voice_id
+        )
+
+        if voice is None:
+
+            raise FileNotFoundError(
+                str(
+                    voice_id
+                )
+            )
+
+        old_id = voice.id
+        old_folder = voice.path
+
+        voice.config.display_name = display_name
+        voice.config.updated_at = datetime.now().isoformat()
+
+        self.save(
+            voice
+        )
+
+        reloaded = self.load(
+            old_folder.name
+        )
+
+        if reloaded.id != old_id:
+
+            raise RuntimeError(
+                "voice_id_changed_after_rename"
+            )
+
+        if reloaded.path != old_folder:
+
+            raise RuntimeError(
+                "voice_folder_changed_after_display_rename"
+            )
+
+        return reloaded
+
     def normalize_display_name(
         self,
         name,
@@ -418,6 +539,160 @@ class VoiceService:
 
         return voice
 
+    def set_enabled_languages(
+        self,
+        voice_id,
+        language_codes,
+        allow_all=False,
+    ):
+
+        voice = self.find_by_id(
+            voice_id
+        )
+
+        if voice is None:
+
+            raise FileNotFoundError(
+                str(
+                    voice_id
+                )
+            )
+
+        if allow_all:
+
+            language_codes = [
+                "vi",
+                "zh",
+                "en",
+                "ja",
+                "ko",
+                "yue",
+            ]
+
+        enabled = normalize_enabled_languages(
+            language_codes,
+            default_to_vi=False,
+        )
+
+        if not enabled:
+
+            raise ValueError(
+                "enabled_languages_required"
+            )
+
+        voice.config.enabled_languages = enabled
+        voice.config.language_selection_mode = (
+            "all"
+            if allow_all
+            or set(
+                enabled
+            )
+            == {
+                "vi",
+                "zh",
+                "en",
+                "ja",
+                "ko",
+                "yue",
+            }
+            else "selected"
+        )
+
+        bindings = normalize_engine_bindings(
+            voice.config.engine_bindings
+        )
+
+        for code in enabled:
+
+            bindings.setdefault(
+                code,
+                {
+                    "language_code": code,
+                    "engine_id": "",
+                    "status": "unconfigured",
+                    "active": True,
+                    "model_binding": {},
+                    "reference_binding": {},
+                    "inference_verified": False,
+                    "smoke_fingerprint": "",
+                    "compatibility_notes": [],
+                    "updated_at": "",
+                },
+            )
+
+        voice.config.engine_bindings = normalize_engine_bindings(
+            bindings
+        )
+
+        voice.config.updated_at = datetime.now().isoformat()
+
+        self.save(
+            voice
+        )
+
+        return voice
+
+    def update_engine_binding(
+        self,
+        voice_id,
+        language_code,
+        binding,
+    ):
+
+        voice = self.find_by_id(
+            voice_id
+        )
+
+        if voice is None:
+
+            raise FileNotFoundError(
+                str(
+                    voice_id
+                )
+            )
+
+        code = normalize_language_code(
+            language_code
+        )
+
+        bindings = normalize_engine_bindings(
+            voice.config.engine_bindings
+        )
+
+        data = dict(
+            binding or {}
+        )
+
+        data[
+            "language_code"
+        ] = code
+
+        bindings[
+            code
+        ] = data
+
+        voice.config.engine_bindings = normalize_engine_bindings(
+            bindings
+        )
+
+        if code not in voice.config.enabled_languages:
+
+            voice.config.enabled_languages.append(
+                code
+            )
+
+        voice.config.enabled_languages = normalize_enabled_languages(
+            voice.config.enabled_languages
+        )
+
+        voice.config.updated_at = datetime.now().isoformat()
+
+        self.save(
+            voice
+        )
+
+        return voice
+
     def link_gpt_sovits(
         self,
         voice,
@@ -502,10 +777,16 @@ class VoiceService:
 
         return {
             "voice_id": voice.id,
-            "voice_name": voice.name,
+            "voice_name": voice.display_name,
+            "folder_name": voice.name,
             "engine": config.engine,
             "ready": not missing,
             "missing": missing,
+            "publish_validation_status": getattr(
+                config,
+                "publish_validation_status",
+                "unpublished",
+            ),
         }
 
     def next_id(

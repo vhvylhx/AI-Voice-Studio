@@ -49,7 +49,17 @@ class AppContext(metaclass=AppContextMeta):
         "log_service",
         "dataset_service",
         "training_service",
+        "training_preprocessing_service",
         "runtime_service",
+        "runtime_profile_service",
+        "generate_runtime_validation_service",
+        "language_catalog_service",
+        "language_detection_service",
+        "engine_capability_router",
+        "vietnamese_engine_evaluation_service",
+        "voice_publish_service",
+        "gpt_sovits_generate_provider",
+        "generate_ui_orchestration_service",
         "style_profile_service",
         "training_reference_service",
         "reference_vault_service",
@@ -101,7 +111,33 @@ class AppContext(metaclass=AppContextMeta):
         from services.log_service import LogService
         from services.dataset_service import DatasetService
         from services.training_service import TrainingService
+        from services.training_preprocessing_service import (
+            TrainingPreprocessingService,
+        )
         from services.runtime_service import RuntimeService
+        from services.runtime_profile_service import RuntimeProfileService
+        from services.generate_runtime_validation_service import (
+            GenerateRuntimeValidationService,
+        )
+        from services.language_catalog_service import LanguageCatalogService
+        from services.language_detection_service import LanguageDetectionService
+        from services.engine_capability_router import EngineCapabilityRouter
+        from services.vietnamese_engine_evaluation_service import (
+            VietnameseEngineEvaluationService,
+        )
+        from services.gpt_sovits_generate_provider import (
+            GPTSoVITSGenerateProvider,
+        )
+        from services.generate_ui_orchestration_service import (
+            GenerateUiOrchestrationService,
+        )
+        from services.production_reference_binding_service import (
+            ProductionReferenceBindingService,
+        )
+        from services.production_reference_binding_snapshot_service import (
+            ProductionReferenceBindingSnapshotService,
+        )
+        from services.voice_publish_service import VoicePublishService
         from services.style_profile_service import StyleProfileService
         from services.training_reference_service import TrainingReferenceService
         from services.reference_registry_service import ReferenceRegistryService
@@ -203,6 +239,48 @@ class AppContext(metaclass=AppContextMeta):
 
         cls.runtime_service = RuntimeService()
 
+        cls.runtime_profile_service = RuntimeProfileService()
+
+        cls.training_preprocessing_service = TrainingPreprocessingService(
+            runtime_profiles=cls.runtime_profile_service,
+            lease_manager=cls.resource_lease_manager,
+        )
+
+        cls.generate_runtime_validation_service = GenerateRuntimeValidationService(
+            runtime_profiles=cls.runtime_profile_service,
+            voice_service=cls.voice_service,
+        )
+
+        cls.production_reference_binding_service = (
+            ProductionReferenceBindingService()
+        )
+
+        cls.production_reference_binding_snapshot_service = (
+            ProductionReferenceBindingSnapshotService(
+                binding_service=cls.production_reference_binding_service
+            )
+        )
+
+        cls.language_catalog_service = LanguageCatalogService()
+
+        cls.language_detection_service = LanguageDetectionService(
+            cls.language_catalog_service
+        )
+
+        cls.engine_capability_router = EngineCapabilityRouter(
+            voice_service=cls.voice_service,
+            language_catalog=cls.language_catalog_service,
+            language_detector=cls.language_detection_service,
+        )
+
+        cls.vietnamese_engine_evaluation_service = (
+            VietnameseEngineEvaluationService()
+        )
+
+        cls.voice_publish_service = VoicePublishService(
+            voice_service=cls.voice_service
+        )
+
         cls.style_profile_service = StyleProfileService(
             voice_service=cls.voice_service
         )
@@ -234,6 +312,28 @@ class AppContext(metaclass=AppContextMeta):
 
         cls.engine_manager.register(
             gpt
+        )
+
+        cls.gpt_sovits_generate_provider = GPTSoVITSGenerateProvider(
+            generate_session_service=cls.generate_session_service,
+            engine_manager=cls.engine_manager,
+            voice_service=cls.voice_service,
+            current_voice=cls.current_voice,
+            runtime_profiles=cls.runtime_profile_service,
+            reference_binding_snapshot_service=(
+                cls.production_reference_binding_snapshot_service
+            ),
+        )
+
+        cls.generate_ui_orchestration_service = (
+            GenerateUiOrchestrationService(
+                generate_session_service=cls.generate_session_service,
+                job_queue_service=cls.job_queue_service,
+                runtime_validation_service=(
+                    cls.generate_runtime_validation_service
+                ),
+                legacy_compatibility_enabled=False,
+            )
         )
 
         cls._initialized = True

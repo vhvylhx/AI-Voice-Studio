@@ -89,6 +89,14 @@ class VoiceModel:
         return self.config.voice_id
 
     @property
+    def display_name(self):
+
+        return (
+            self.config.display_name
+            or self.name
+        )
+
+    @property
     def variants(self):
 
         return self.config.variants

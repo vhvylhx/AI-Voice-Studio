@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from dataclasses import field
 from dataclasses import fields
 
+from models.language_capability import VoiceEngineBinding
 from models.training_reference_config import TrainingReferenceConfig
 
 
@@ -97,6 +98,133 @@ def default_speaker_reference():
     }
 
 
+def default_engine_bindings():
+
+    return {
+        "vi": VoiceEngineBinding(
+            language_code="vi",
+            engine_id="vietnamese_engine",
+            status="blocked_unconfigured_engine",
+            active=True,
+            compatibility_notes=[
+                "Tiếng Việt cần engine tiếng Việt riêng; không tự fallback sang GPT-SoVITS.",
+            ],
+        ).to_dict()
+    }
+
+
+def normalize_language_code(
+    value,
+):
+
+    aliases = {
+        "vn": "vi",
+        "vie": "vi",
+        "zh-cn": "zh",
+        "cn": "zh",
+        "jp": "ja",
+        "jpn": "ja",
+        "kr": "ko",
+        "kor": "ko",
+    }
+
+    code = str(
+        value or "vi"
+    ).strip().lower().replace(
+        "_",
+        "-",
+    )
+
+    return aliases.get(
+        code,
+        code or "vi",
+    )
+
+
+def normalize_enabled_languages(
+    values,
+    default_to_vi=True,
+):
+
+    supported = {
+        "vi",
+        "zh",
+        "en",
+        "ja",
+        "ko",
+        "yue",
+    }
+
+    result = []
+
+    for item in values or []:
+
+        code = normalize_language_code(
+            item
+        )
+
+        if code in supported and code not in result:
+
+            result.append(
+                code
+            )
+
+    if result:
+
+        return result
+
+    return [
+        "vi",
+    ] if default_to_vi else []
+
+
+def normalize_engine_bindings(
+    bindings,
+):
+
+    result = {}
+
+    for code, data in dict(
+        bindings or {}
+    ).items():
+
+        language_code = normalize_language_code(
+            data.get(
+                "language_code",
+                code,
+            )
+            if isinstance(
+                data,
+                dict,
+            )
+            else code
+        )
+
+        binding = VoiceEngineBinding.from_dict(
+            data
+            if isinstance(
+                data,
+                dict,
+            )
+            else {}
+        )
+
+        binding.language_code = language_code
+
+        result[
+            language_code
+        ] = binding.to_dict()
+
+    for code, data in default_engine_bindings().items():
+
+        result.setdefault(
+            code,
+            data,
+        )
+
+    return result
+
+
 def normalize_variant_style(
     variant,
 ):
@@ -156,7 +284,21 @@ class VoiceConfig:
     # Display
     #
 
+    display_name: str = ""
+
     language: str = "vi"
+
+    default_language: str = "vi"
+
+    preferred_language: str = "vi"
+
+    language_selection_mode: str = "selected"
+
+    enabled_languages: list[str] = field(
+        default_factory=lambda: [
+            "vi",
+        ]
+    )
 
     model: str = ""
 
@@ -169,6 +311,10 @@ class VoiceConfig:
     engine: str = "gpt_sovits"
 
     engine_path: str = ""
+
+    engine_bindings: dict = field(
+        default_factory=default_engine_bindings
+    )
 
     #
     # Model
@@ -185,6 +331,32 @@ class VoiceConfig:
     prompt_language: str = "vi"
 
     text_language: str = "vi"
+
+    #
+    # Publish
+    #
+
+    publish_id: str = ""
+
+    published_training_run_id: str = ""
+
+    published_at: str = ""
+
+    publish_validation_status: str = "unpublished"
+
+    publish_blockers: list[str] = field(
+        default_factory=list
+    )
+
+    publish_warnings: list[str] = field(
+        default_factory=list
+    )
+
+    publish_fingerprint: str = ""
+
+    model_run_id: str = ""
+
+    runtime_profile_id: str = ""
 
     #
     # Audio
@@ -447,6 +619,61 @@ class VoiceConfig:
                 {},
             )
         ).to_dict()
+
+        migrated["language"] = normalize_language_code(
+            migrated.get(
+                "language",
+                "vi",
+            )
+        )
+
+        migrated["default_language"] = normalize_language_code(
+            migrated.get(
+                "default_language",
+                migrated.get(
+                    "language",
+                    "vi",
+                ),
+            )
+        )
+
+        migrated["preferred_language"] = normalize_language_code(
+            migrated.get(
+                "preferred_language",
+                migrated.get(
+                    "default_language",
+                    "vi",
+                ),
+            )
+        )
+
+        migrated["enabled_languages"] = normalize_enabled_languages(
+            migrated.get(
+                "enabled_languages",
+                [
+                    migrated.get(
+                        "default_language",
+                        "vi",
+                    )
+                ],
+            )
+        )
+
+        if migrated.get(
+            "language_selection_mode"
+        ) not in {
+            "selected",
+            "all",
+        }:
+
+            migrated["language_selection_mode"] = "selected"
+
+        migrated["engine_bindings"] = normalize_engine_bindings(
+            migrated.get(
+                "engine_bindings",
+                {},
+            )
+        )
 
         return cls(
             **migrated

@@ -90,6 +90,10 @@ class VoicePage(QWidget):
             self.select_voice
         )
 
+        self.detail.language_selection_changed.connect(
+            self.change_enabled_languages
+        )
+
         bus.subscribe(
             Events.WORKSPACE_CHANGED,
             self.on_project_changed
@@ -123,11 +127,26 @@ class VoicePage(QWidget):
 
         project = AppContext.current_project.get()
 
-        if project.config.voice:
+        if (
+            getattr(
+                project.config,
+                "active_voice_id",
+                "",
+            )
+            or project.config.voice
+        ):
 
             for voice in voices:
 
-                if voice.name == project.config.voice:
+                if (
+                    getattr(
+                        project.config,
+                        "active_voice_id",
+                        "",
+                    )
+                    and voice.id
+                    == project.config.active_voice_id
+                ) or voice.name == project.config.voice:
 
                     self.select_voice(
                         voice
@@ -190,7 +209,7 @@ class VoicePage(QWidget):
             self,
             "Đổi tên Voice",
             "Tên mới",
-            text=self.current_voice.name
+            text=self.current_voice.display_name
         )
 
         if not ok:
@@ -216,24 +235,13 @@ class VoicePage(QWidget):
 
             return
 
-        if name == self.current_voice.name:
+        if name == self.current_voice.display_name:
             return
 
-        if self.service.exists(name):
-
-            QMessageBox.warning(
-                self,
-                "Tên Voice đã tồn tại",
-                "Hãy chọn tên khác.",
-            )
-
-            return
-
-        old_name = self.current_voice.name
         old_id = self.current_voice.id
 
-        self.service.rename(
-            old_name,
+        self.service.rename_display_name(
+            old_id,
             name
         )
 
@@ -241,13 +249,20 @@ class VoicePage(QWidget):
 
             project = AppContext.current_project.get()
 
-            if project.config.voice == old_name:
+            if hasattr(
+                project.config,
+                "active_voice_id",
+            ):
 
-                project.config.voice = name
+                project.config.active_voice_id = old_id
 
-                AppContext.project_service.save(
-                    project
-                )
+            if not project.config.voice:
+
+                project.config.voice = self.current_voice.name
+
+            AppContext.project_service.save(
+                project
+            )
 
         self.refresh()
 
@@ -321,7 +336,7 @@ class VoicePage(QWidget):
         result = QMessageBox.question(
             self,
             "Xóa Voice",
-            f'Xóa "{self.current_voice.name}" ?'
+            f'Xóa "{self.current_voice.display_name}" ?'
         )
 
         if result != QMessageBox.Yes:
@@ -347,16 +362,78 @@ class VoicePage(QWidget):
 
             project.config.voice = voice.name
 
+            if hasattr(
+                project.config,
+                "active_voice_id",
+            ):
+
+                project.config.active_voice_id = voice.id
+
             AppContext.project_service.save(
                 project
             )
 
         self.detail.load(
-            voice
+            voice,
+            AppContext.engine_capability_router.voice_language_capabilities(
+                voice.id
+            ),
         )
 
         AppEvents.voice_changed(
             voice
+        )
+
+    def change_enabled_languages(
+        self,
+        language_codes,
+        allow_all,
+    ):
+
+        if self.current_voice is None:
+
+            return
+
+        try:
+
+            self.current_voice = self.service.set_enabled_languages(
+                self.current_voice.id,
+                language_codes,
+                allow_all=allow_all,
+            )
+
+        except Exception as exc:
+
+            QMessageBox.warning(
+                self,
+                "Ngôn ngữ không hợp lệ",
+                str(
+                    exc
+                ),
+            )
+
+            self.detail.load(
+                self.current_voice,
+                AppContext.engine_capability_router.voice_language_capabilities(
+                    self.current_voice.id
+                ),
+            )
+
+            return
+
+        AppContext.current_voice.set(
+            self.current_voice
+        )
+
+        self.detail.load(
+            self.current_voice,
+            AppContext.engine_capability_router.voice_language_capabilities(
+                self.current_voice.id
+            ),
+        )
+
+        AppEvents.voice_changed(
+            self.current_voice
         )
 
     def on_project_changed(

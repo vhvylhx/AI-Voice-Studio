@@ -36,6 +36,7 @@ from services.job_queue_service import JobQueueService  # noqa: E402
 from services.job_repository import JobRepository  # noqa: E402
 from services.job_runner import JobRunner  # noqa: E402
 from services.local_api_service import LocalApiService  # noqa: E402
+from services.runtime_profile_service import RuntimeProfileService  # noqa: E402
 from models.local_api_config import LocalApiConfig  # noqa: E402
 
 
@@ -866,6 +867,146 @@ def test_job_queue_generate_prepare_worker():
     assert not requirement.requires_gpu
 
 
+def test_generate_unit_worker_executes_controlled_provider():
+
+    root, service = build_service(
+        "test_generate_unit_worker"
+    )
+
+    result = service.create_session(
+        sample_request(
+            root
+        )
+    )
+
+    session_id = result["session"]["session_id"]
+
+    plan = service.repository.load_plan(
+        session_id
+    )
+
+    unit_id = plan.units[
+        0
+    ].unit_id
+
+    job_repository = JobRepository(
+        root / "jobs"
+    )
+
+    registry = JobHandlerRegistry()
+
+    queue = JobQueueService(
+        job_repository,
+        handler_registry=registry,
+    )
+
+    logs = JobLogService(
+        job_repository
+    )
+
+    def provider(
+        artifact,
+        temp_path,
+    ):
+
+        write_valid_wav(
+            temp_path
+        )
+
+    runner = JobRunner(
+        repository=job_repository,
+        queue_service=queue,
+        handler_registry=registry,
+        log_service=logs,
+        app_context=SimpleNamespace(
+            generate_session_service=service,
+            gpt_sovits_generate_provider=provider,
+        ),
+    )
+
+    job = queue.enqueue_new(
+        "generate_unit",
+        voice_id="0001",
+        project_id="project_000001",
+        payload={
+            "session_id": session_id,
+            "unit_id": unit_id,
+        },
+    )
+
+    result = runner.run_next()
+
+    assert result.job_id == job.job_id
+    assert result.state == "completed"
+    assert result.result["ok"]
+
+    artifact = result.result["artifact"]
+
+    assert artifact["status"] == "valid"
+    assert Path(
+        artifact["final_path"]
+    ).exists()
+
+    requirement = registry.resource_requirement(
+        "generate_unit"
+    )
+
+    assert requirement.requires_gpu
+    assert not requirement.allow_cpu_fallback
+
+
+def test_generate_unit_provider_failure_marks_unit_failed():
+
+    root, service = build_service(
+        "test_generate_unit_failure"
+    )
+
+    result = service.create_session(
+        sample_request(
+            root
+        )
+    )
+
+    session_id = result["session"]["session_id"]
+
+    plan = service.repository.load_plan(
+        session_id
+    )
+
+    unit_id = plan.units[
+        0
+    ].unit_id
+
+    def provider(
+        artifact,
+        temp_path,
+    ):
+
+        raise RuntimeError(
+            "controlled_failure"
+        )
+
+    output = service.execute_unit_with_provider(
+        session_id,
+        unit_id,
+        provider=provider,
+    )
+
+    assert not output["ok"]
+    assert output["code"] == "RuntimeError"
+
+    plan = service.repository.load_plan(
+        session_id
+    )
+
+    assert plan.units[
+        0
+    ].status == "failed"
+    assert plan.attempts[
+        0
+    ].status == "failed"
+
+
 def test_local_api_generate_foundation_endpoints():
 
     root, service = build_service(
@@ -878,6 +1019,10 @@ def test_local_api_generate_foundation_endpoints():
             local_api_token="secret-token",
         ),
         generate_session_service=service,
+        runtime_profile_service=RuntimeProfileService(
+            config_file=root / "runtime_profiles.json",
+            app_root=root,
+        ),
     )
 
     readiness = api.route(
@@ -886,8 +1031,19 @@ def test_local_api_generate_foundation_endpoints():
         {},
     )
 
-    assert readiness["body"]["status"] == "planning_ready_execution_unavailable"
+    assert readiness["body"]["status"] == "planning_ready_execution_blocked"
     assert readiness["body"]["capabilities"]["generate_execution"] == "UNAVAILABLE"
+    assert readiness["body"]["runtime_doctor"]["doctor_status"] == "UNAVAILABLE"
+    assert readiness["body"]["runtime_doctor"]["environment"]["status"] == "UNAVAILABLE"
+    assert readiness["body"]["runtime_doctor"]["selected_assets"]["status"] == "BLOCKED"
+
+    doctor = api.route(
+        "GET",
+        "/api/v1/generate/runtime/doctor",
+        {},
+    )
+
+    assert doctor["body"]["doctor_status"] == "UNAVAILABLE"
 
     created = api.route(
         "POST",
@@ -960,6 +1116,15 @@ def test_local_api_generate_foundation_endpoints():
 
     assert resume_action["status_code"] == 503
     assert resume_action["body"]["status"] == "UNAVAILABLE"
+
+    execute_action = api.route(
+        "POST",
+        f"/api/v1/generate/sessions/{session_id}/units/{units['body']['items'][0]['unit_id']}/execute",
+        {},
+    )
+
+    assert execute_action["status_code"] == 503
+    assert execute_action["body"]["code"] == "runtime_doctor_not_ready"
 
     recovery = api.route(
         "GET",

@@ -614,6 +614,7 @@ def test_runtime_profile_default_and_detection():
         runtime_root / "tools" / "asr" / "fasterwhisper_asr.py",
         runtime_root / "GPT_SoVITS" / "prepare_datasets" / "1-get-text.py",
         runtime_root / "GPT_SoVITS" / "prepare_datasets" / "2-get-hubert-wav32k.py",
+        runtime_root / "GPT_SoVITS" / "prepare_datasets" / "2-get-sv.py",
         runtime_root / "GPT_SoVITS" / "prepare_datasets" / "3-get-semantic.py",
         runtime_root / "GPT_SoVITS" / "s1_train.py",
         runtime_root / "GPT_SoVITS" / "s2_train.py",

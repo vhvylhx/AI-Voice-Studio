@@ -1,4 +1,408 @@
 # Changelog
+## AVS-016 Sprint 8: Round01 Deep Review Integration & Round02
+
+### Added
+
+- Added Sprint 8 reference manifest adjustment from Round01 deep review evidence.
+- Added preflight integrity for reference transcript plausibility: chars/s, syllables/s and preview/reference duration ratio.
+- Added preview-input transcript normalization with source text provenance and normalized text checksum.
+- Added pair manifest audit fields for conditioning reference, benchmark voice/profile, model revision, seed, inference parameters and AI/Benchmark comparison reason.
+- Added boundary-fragment/ellipsis flags and scoring penalty in Reference Selection.
+- Added subset preview generation support so unaffected Round02 previews can carry forward while affected pairs regenerate only.
+
+### Validation
+
+- `pair_002` old reference `000070_005_002` removed due 5.8s reference vs 233-char transcript outlier.
+- Replacement candidate: `000015_022_001` from Top50.
+- Round02 output: `cache/avs016_sprint6_preview_generation_voice_0001/Round02/`, status READY, 20 Pair / 40 WAV.
+- Regenerated affected pairs: `pair_002`, `pair_005`, `pair_010`, `pair_012`, `pair_017`; 30 previews carried forward with audit.
+
+### Notes
+
+- No Train, LoRA, Runtime Binding, Production Inference, commit or push was performed.
+- Ranking/review evidence is not human approval for Training.
+## AVS-016 Sprint 4: Reference Selection Engine
+
+### Added
+
+- Added `ReferenceSelectionService` for metadata-list authority scanning instead of using candidate cache as authority.
+- Added alignment manifest/report and dataset-health evidence filtering for duplicate, suspicious, invalid, AI-generated, music-heavy and multi-speaker clips.
+- Added quality ranking with audio metrics, transcript quality, pitch distribution and AVS-014.24 calibration-aware weighting.
+- Added Top50 ranking and diversified frozen Top20 selection by source/chapter coverage.
+- Added `evaluation_holdout_manifest.json` with `exclude_from_future_training=true` for frozen holdout references.
+- Added regression coverage in `tests/test_reference_selection_service.py` for authority scan, filtering, ranking, diversification, frozen Top20 and holdout manifest output.
+
+### Notes
+
+- This is a Reference Selection Engine foundation. It does not bind production Generate/Engine/Runtime and does not change production inference readiness.
+- No implementation or test changes were made during documentation recovery.
+## AVS-016 Sprint 3: Voice Preview Generation
+
+### Added
+
+- Added isolated diagnostic preview orchestration to `VoicePreviewBenchmarkService` for versioned `Round01`, `Round02`, ... output.
+- Each valid benchmark Pair receives `same_preview_v1.wav` and `new_preview_v1.wav` through an explicitly injected diagnostic generator; no source-audio copy or post-processing is performed by the service.
+- Added fail-closed WAV validation: parseable PCM16, mono, runtime sample rate, positive duration, and non-silent samples.
+- Added manifest evidence only after successful validation: preview path, SHA-256 checksum, duration, generation timestamp, runtime profile, and generation status.
+- Added regression coverage for 20 same previews, 20 new previews, round versioning, no-overwrite, manifest update, and invalid WAV rejection.
+
+### Notes
+
+- This is an isolated diagnostic benchmark foundation only. It does not bind Production Generate, Engine, Adapter, or Runtime and does not change production readiness.
+- No training, fine-tuning, preprocessing, inference-algorithm change, scoring, similarity metric, blind review, UI review, auto approval, commit, or push was performed.
+- A real 40-preview Round was not run: no approved frozen benchmark manifest exists for exactly 20 immutable reference Pairs and their benchmark transcripts. The service remains fail-closed and does not infer or substitute benchmark inputs.
+- `ROADMAP.md` currently identifies Voice Preview under a different Sprint code; the historical roadmap identifier was not changed without explicit approval.
+
+## AVS-014.24 Sprint C5: Production Binding Foundation
+
+### Added
+
+- Added `ProductionReferenceBindingService` as the sole Service-level resolution path for an approved production reference winner.
+- Added fail-closed readiness gates requiring `READY` Reference Selection, Generalization, and Production Readiness before a `ProductionReferenceWinnerBinding` is returned.
+- Added validation for registered consumers, direct-artifact-access bypass attempts, winner/available-variant consistency, artifact integrity, and immutable winner identity.
+- Added regression tests for all readiness gates, invalid/missing winners, inconsistent artifacts, and consumer bypass rejection.
+
+### Notes
+
+- C5 does not bind a Generate, Engine, Adapter, Runtime, or other production consumer.
+- No production inference, WAV/MP3 generation, preview, publish, training, fine-tune, commit, or push was performed.
+- Existing production generation behavior and Generate/WAV/MP3 readiness remain unchanged.
+
+## AVS-014.24 Sprint C2.5: Reference Selection Manual Review Workflow
+
+### Added
+
+- Hoan thien diagnostic Reference Selection review artifact voi `reviewer`, `review_date` va `notes`.
+- Review chi `REVIEW_COMPLETED` khi `review_completed=true`, co dung mot `winner_reference_variant` ton tai trong `available_reference_variants`.
+- Loader fail-closed voi `ReferenceSelectionPendingError` cho review pending hoac invalid.
+- Them regression coverage cho completed-status literal, metadata bat buoc, winner null/khong ton tai/ngoai available variants va multiple winners.
+
+### Notes
+
+- Khong production Voice binding, production inference, training, fine-tune, WAV/MP3 artifact, commit hay push.
+- Manual-review utility READY; production readiness khong thay doi.
+
+## AVS-014.23: GPT-SoVITS Voice 0001 Training Readiness
+
+### Added
+
+- Added a fresh AVS-014.23 preprocessing readiness plan artifact under `cache/training/voice_0001/gpt_sovits/`.
+- Added a fresh validation-only train report under `cache/train_validation/avs01423_validation_only_0001/`.
+
+### Validation
+
+- Resolved Voice `0001` through the current Voice service contract without using display name as identity.
+- Verified final training metadata `cache/avs0145_full_dataset_thu_minh/alignment/metadata.list`: 2329 rows, 2329 unique WAV files, 13232.40 seconds, all language `vi`, no duplicate path, no missing WAV, no empty transcript.
+- Audited local GPT-SoVITS v2Pro source: `prepare_datasets/1-get-text.py`, `text/cleaner.py`, `s1_train.py`, `s2_train.py`, `s1longer.yaml`, `s2v2Pro.json`.
+- Confirmed current upstream preprocessing supports `en`, `ja`, `jp`, `ko`, `yue`, `zh`, not `vi`.
+- Confirmed machine baseline for audit: available RAM above 10 GB, disk F above 60 GB, Quadro P1000 free VRAM above 3 GB, no GPU compute process.
+- `TrainingService.prepare_train(validation_only=True)` returned `validation_failed` with `preprocessing_not_ready`.
+
+### Notes
+
+- No preprocessing stage, SoVITS train, GPT train, checkpoint creation, canary generation, production Generate, Publish, commit or push was performed.
+- Full GPT-SoVITS Training remains `BLOCKED_PENDING_USER_APPROVAL` and technically blocked by Vietnamese frontend compatibility.
+- Status: `GPT_SOVITS_TRAINING_READINESS_BLOCKED`.
+
+## AVS-014.22 Update: VieNeu Codec Import & Safe CPU Canary
+
+### Added
+
+- Added codec selection and low-resource safety profile contracts for VieNeu diagnostics.
+- Added codec completeness and RAM threshold helpers.
+- Added tests for codec contract, partial/size-mismatch codec readiness and low-resource RAM decisions.
+- Added manual listening package for `vieneu_cpu_canary_20260719_012122`.
+
+### Changed
+
+- VieNeu canary gate now tracks model and codec separately.
+- Documentation now records technical canary PASS while keeping production integration BLOCKED pending manual review.
+
+### Validation
+
+- Audited `vieneu==3.2.3` source contract for codec repo, required files, loader path, ONNX providers and sample rate.
+- Verified codec repo `OpenMOSS-Team/MOSS-Audio-Tokenizer-Nano-ONNX`, immutable commit `ceff0d0749bfb3fa2d61149794ec6feef0d1e1ae`, license `apache-2.0`.
+- Downloaded/promoted 7 codec files atomically under `cache/engines/vieneu_tts/75ff82a/codecs/`.
+- Validated codec ONNX files load with `CPUExecutionProvider`.
+- Offline resolution test PASS with local model/codec paths and blocked implicit Hugging Face fetch.
+- Resource preflight PASS: available RAM above 8 GB and no GPU compute process.
+- Safe CPU canary PASS with three real WAV outputs in diagnostics, 48 kHz mono pcm_s16le.
+
+### Notes
+
+- No Train, production Generate, Publish, production Voice binding, GPU use, commit or push was performed.
+- A first diagnostic attempt `vieneu_cpu_canary_20260719_011817` is superseded because PowerShell codepage corrupted Vietnamese input text; final PASS run is `vieneu_cpu_canary_20260719_012122`.
+
+## AVS-014.22 Update: Fix Hugging Face SSL Gate Safely
+
+### Added
+
+- Added `truststore==0.10.4` to the isolated VieNeu runtime install plan so Hugging Face HTTPS can use the Windows certificate trust bridge without disabling SSL verification.
+- Added managed model manifest for the downloaded VieNeu model files.
+
+### Changed
+
+- SSL gate now uses a verified `truststore` SSL context for Hugging Face metadata/download calls instead of relying on the isolated runtime certifi bundle.
+
+### Validation
+
+- Confirmed system time: `2026-07-19T01:02:33+07:00`.
+- Confirmed isolated runtime OpenSSL: `OpenSSL 3.0.16 11 Feb 2025`.
+- Confirmed certifi: `2026.6.17`, path inside isolated runtime.
+- Confirmed Python/certifi HTTPS failed with `CERTIFICATE_VERIFY_FAILED`.
+- Confirmed Python/truststore HTTPS passed for `https://huggingface.co`.
+- Resolved `pnnbao-ump/VieNeu-TTS-v3-Turbo` revision `75ff82a` to immutable commit `75ff82a72f54d55ed389e1eeb12041d3c4bac7d4`.
+- Verified model license metadata: `apache-2.0`.
+- Downloaded and atomically promoted 11 required VieNeu model files, total expected size `236470190` bytes.
+
+### Notes
+
+- No `verify=False`, `--trusted-host`, `HF_HUB_DISABLE_SSL_VERIFY`, `CURL_CA_BUNDLE=""`, global Windows certificate store change, Train, production Generate, canary WAV, commit or push was performed.
+- VieNeu package source also requires the MOSS ONNX codec repo for inference; this update did not download that separate dependency without explicit scope.
+
+## AVS-014.22 Update: VieNeu Isolated CPU Runtime with CPU Torch Frontend
+
+### Added
+
+- Added runtime manifest contract for isolated VieNeu CPU runtime.
+- Added CPU-only runtime policy helpers for torch CUDA, ONNX providers and forbidden GPU package checks.
+- Added experimental canary-only adapter capability report; it is not registered as a production provider.
+- Added tests for CPU-only torch install plan, GPU hard block, CPU runtime manifest and canary-only adapter scope.
+
+### Changed
+
+- Corrected VieNeu source contract to `CPU_ONNX_REF_AUDIO_SUPPORTED_WITH_CPU_TORCH_FRONTEND`.
+- Replaced the old absolute blocker `cpu_onnx_ref_audio_requires_torchaudio_frontend_in_vieneu_3_2_3` with requirement `cpu_torch_frontend_required_for_fresh_reference_enrollment`.
+- The managed install plan now uses CPU-only `torch==2.8.0` and `torchaudio==2.8.0` from the PyTorch CPU index and blocks GPU runtime requests.
+
+### Validation
+
+- Created isolated runtime under `cache/engines/vieneu_tts/75ff82a/runtime/.venv/`.
+- Installed `torch==2.8.0+cpu`, `torchaudio==2.8.0+cpu`, `onnxruntime==1.27.0`, `vieneu==3.2.3`.
+- Verified `torch.cuda.is_available()==False` and ONNX providers do not include `CUDAExecutionProvider`.
+- Reference Thu Minh Voice 0001 candidate validates as 6.50s, mono, pcm_s16le, 32000 Hz; VieNeu canary requires diagnostics resample copy.
+- Hugging Face model revision/license/file validation is BLOCKED by SSL `CERTIFICATE_VERIFY_FAILED`; no model download or WAV canary was executed.
+
+### Notes
+
+- No Train, production Generate, Publish, GPT-SoVITS runtime modification, commit or push was performed.
+- Production Vietnamese engine integration and real Generate remain BLOCKED until model validation/download and CPU canary WAV pass.
+
+## AVS-014.22: VieNeu-TTS Controlled Import & Vietnamese Local Canary Gate
+
+### Added
+
+- Added controlled VieNeu-TTS import/canary contracts and service for a single locked candidate: `pnnbao-ump/VieNeu-TTS-v3-Turbo`, package `vieneu==3.2.3`.
+- Added managed target plan under `cache/engines/vieneu_tts/<revision>/` and diagnostics output under `diagnostics/vietnamese_engine_evaluation/<run_id>/`.
+- Added reference validation for the Thu Minh Voice 0001 canary candidate without editing source audio/text.
+- Added blocked canary report generation that does not unlock production readiness.
+- Added tests for managed cache path, explicit download gate, CPU/ONNX cloning blocker, reference validation, blocked readiness effect and diagnostics report write safety.
+- Added source-level contract audit for `vieneu==3.2.3` CPU/ONNX `ref_audio` behavior.
+- Added regression tests proving the old GPU-required blocker is removed while strict torch-free fresh reference cloning remains blocked.
+
+### Changed
+
+- Updated Vietnamese engine static download plan target from `models/vietnamese/...` to `cache/engines/vieneu_tts/<revision>/`.
+- Corrected VieNeu local canary gate: CPU/ONNX `ref_audio` is supported and GPU is not required, but `vieneu==3.2.3` fresh reference enrollment imports `torch` through the speaker fbank frontend, so strict torch-free canary is still blocked.
+
+### Validation
+
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m compileall src tests`: passed.
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m pytest tests\test_avs01422_vieneu_controlled_import.py tests\test_avs01421_vietnamese_engine_evaluation.py -q`: 31 passed.
+
+### Notes
+
+- No VieNeu package/model download was performed.
+- No Train, Generate, Publish, Real Smoke or GPT-SoVITS runtime modification was performed.
+- VieNeu package wheel `vieneu==3.2.3` was downloaded into `cache/audit/vieneu_3_2_3/` for source audit only; no model was downloaded.
+- Local canary is BLOCKED in the strict CPU/ONNX torch-free profile because fresh `ref_audio` enrollment imports `torch` via `speaker/onnx_extractor.py` and `speaker/fbank.py`.
+- Production Vietnamese engine integration and Generate readiness remain BLOCKED until a local model, explicit runtime profile and local canary/Real Smoke PASS exist.
+
+## AVS-014.21: Vietnamese Engine Evaluation & Language Selection
+
+### Added
+
+- Added real Voice language checkbox UI for `vi`, `zh`, `en`, `ja`, `ko`, `yue` with `Tat ca` scope behavior and per-language readiness labels.
+- Added empty-language guard in VoiceService while keeping legacy Voice migration default to `vi`.
+- Added Generate language mode foundation: auto detect, fixed language and multilingual route preview.
+- Added VietnameseEngineEvaluationService and evaluation records for VieNeu-TTS, F5-TTS Vietnamese and viXTTS.
+- Added license audit, download plan, low-resource safety profile, local canary plan and static scorecard contracts.
+- Added Local API endpoints for Vietnamese engine evaluation, download plans and low-resource profile.
+- Added AVS-014.21 tests for UI language behavior, routing preview, license/download/canary gates, API endpoints and no-readiness-unlock rules.
+
+### Changed
+
+- Voice Detail now saves language selection by `voice_id`, not display name/folder name.
+- Generate Options Panel now carries selected language into GenerateSelectionConfig foundation payload.
+- VieNeu-TTS is documented as the primary Vietnamese candidate proposal; F5-TTS Vietnamese and viXTTS remain non-default due license/review blockers.
+
+### Validation
+
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m compileall src tests`: passed.
+- Targeted pytest for AVS-014.21 and language/API foundation: 41 passed.
+
+### Notes
+
+- No Train, Generate, Real Smoke, model download or GPT-SoVITS upstream modification was performed.
+- Vietnamese production integration remains BLOCKED until local model, user-approved download/import and local canary/Real Smoke PASS exist.
+- Generate production readiness was not raised.
+
+## AVS-014.20: Multi-Engine Language Capability & Routing Foundation
+
+### Added
+
+- Added Language Catalog foundation for `vi`, `zh`, `en`, `ja`, `ko`, `yue`.
+- Added migration-safe Voice language fields: `default_language`, `preferred_language`, `language_selection_mode`, `enabled_languages` and `engine_bindings`.
+- Added heuristic LanguageDetectionService and mixed-language segment planning foundation.
+- Added EngineCapabilityRouter with per-language readiness, blockers and fingerprint isolation.
+- Added Generate Unit language route snapshot fields for future production routing.
+- Added Local API foundation endpoints for languages, language detection, language plan, enabled languages, engine bindings and voice language capabilities.
+- Added tests for catalog, migration, all checkbox behavior, Vietnamese no-fallback, GPT-SoVITS mapping, detection, router, fingerprint, API and frozen Generate route fields.
+
+### Changed
+
+- Voice Catalog now exposes safe enabled-language metadata and language capabilities URL.
+- StyleProfile compatibility now includes supported/preferred/unsupported languages and language-specific instructions.
+- Voice Detail UI shows enabled language foundation fields.
+
+### Validation
+
+- Targeted AVS-014.20 tests passed.
+
+### Notes
+
+- No Train, Generate, Real Smoke, model download or GPT-SoVITS upstream modification was performed.
+- Vietnamese Engine remains `BLOCKED_PENDING_ENGINE_SELECTION`.
+- GPT-SoVITS Multilingual remains `BLOCKED_PENDING_TRAINED_ASSETS_AND_SMOKE`.
+- Real Generate remains `BLOCKED`.
+
+## AVS-014.19A1: Vietnamese Text Frontend Compatibility
+
+### Validation
+
+- Audited real GPT-SoVITS v2Pro runtime language path: `prepare_datasets/1-get-text.py`, `text/cleaner.py`, `text/symbols*.py`, GPT `AR/data/dataset.py` and inference language handling.
+- Confirmed current runtime supports preprocessing/inference language contracts for zh/ja/en/ko/yue style paths, not `vi`.
+- Kept preprocessing blocked by `PREPROCESS_CONFIG_INVALID`; no fake `vi` alias and no canary preprocessing was run.
+
+### Notes
+
+- No Train, Generate, Publish, Real Smoke or upstream GPT-SoVITS modification was performed.
+- Status: VI_UNSUPPORTED_BY_CURRENT_RUNTIME until a real Vietnamese frontend/runtime patch is supplied.
+
+## AVS-014.19A: GPT-SoVITS Dataset Preprocessing Pipeline
+
+### Added
+
+- Added preprocessing run/plan/stage domain model for GPT-SoVITS training artifacts.
+- Added TrainingPreprocessingService with run-owned cache output, frozen plan fingerprint, normalized metadata copy, subprocess command construction, stdout/stderr logs, artifact validation, resource lease support and manifest generation.
+- Added TrainingConfig `preprocessing_manifest_path` and TrainingService read-only gate for preprocessing manifest READY/BLOCKED/STALE/MISSING.
+- Added RuntimeProfileService detection for GPT-SoVITS v2Pro speaker-vector preprocessing script `2-get-sv.py`.
+- Added preprocessing tests for voice_id/run-owned output, metadata fingerprint, unsupported language gate, duplicate metadata, mock stage artifacts, training manifest gate, stale state, missing scripts and CUDA OOM failure code.
+
+### Validation
+
+- Real pre-flight for Voice `0001` / metadata `cache/avs0145_full_dataset_thu_minh/alignment/metadata.list`: dataset validation passed with 2329 clips and 13232.40 seconds.
+- Real runtime script audit found upstream `1-get-text.py` supports only en/ja/jp/ko/yue/zh language keys for preprocessing; metadata language is `vi`.
+- Real preprocessing was not started because `PREPROCESS_CONFIG_INVALID` blocks before artifact generation.
+
+### Notes
+
+- No Train, Generate, Publish or Real Smoke was run.
+- No GPT-SoVITS upstream file was modified.
+- No production Voice/checkpoint/reference file was edited.
+- Preprocessing status is `PREPROCESSING_BLOCKED` until a GPT-SoVITS runtime/script with valid Vietnamese text cleaner/phoneme support is selected or explicitly provided.
+
+## AVS-014.18: Voice Publish Automation & Post-Training Style Variants
+
+### Added
+
+- VoiceConfig `display_name` va publish metadata migration-safe.
+- VoiceService resolver theo `voice_id` va `rename_display_name()` khong rename folder.
+- VoicePublishService de validate/discover/publish existing GPT/SoVITS/reference assets vao Voice khi co explicit confirmation.
+- StyleProfile schema cho post-training style profile: intended use, classification, parameters, prompt instructions, reference requirements, compatibility, readiness, blockers va warnings.
+- Variant binding service voi Style Profile theo huong generate profile, khong tao model/checkpoint rieng.
+- Local API routes cho Voice display rename va Voice publish validation/publish/discovery.
+- Tests AVS-014.18 cho identity, rename safety, legacy folder, publish confirmation, checkpoint discovery, fingerprint, style profile, variant binding va API.
+
+### Changed
+
+- Voice Catalog hien `display_name` theo config va giu `folder_name` de tuong thich legacy.
+- Audio/Voice UI hien display name nhung van giu folder name cho path legacy.
+- Generate Runtime Validation resolve Voice qua `voice_id` khi service ho tro resolver.
+
+### Validation
+
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m compileall src tests`: dat.
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m pytest tests\test_avs01418_voice_publish.py -q`: 9 passed.
+- Targeted pytest Voice/Style/API/Runtime validation: 42 passed.
+
+### Notes
+
+- Khong Train that.
+- Khong Generate that.
+- Khong chay Real GPT-SoVITS Smoke.
+- Khong sua GPT-SoVITS runtime hoac du lieu that trong `voices/`, `projects/`, `workspace/`, `outputs`.
+- Generate production readiness van khong READY neu chua publish assets hop le va chua co Real Smoke PASS.
+
+## AVS-014.17B: Runtime Validation & Real Smoke Guard
+
+### Added
+
+- Generate Runtime Validation Service tach 3 lop readiness: Environment, Selected Voice/Variant/Reference assets va Real Inference verification.
+- Fingerprint cho Real GPT-SoVITS Smoke dua tren Runtime Profile, inference CLI, Voice, Variant va model/reference asset snapshot.
+- Stale smoke handling: smoke report khong khop fingerprint hoac output WAV khong hop le se khong mo production readiness.
+- Tests cho environment-only false-positive, missing selection, matching fingerprint PASS, stale smoke va Local API readiness.
+
+### Changed
+
+- Local API `/api/v1/generate/runtime/doctor` tra ve 3 lop readiness va van giu top-level `doctor_status/profile/report/guidance` de tuong thich.
+- Local API `/api/v1/generate/readiness` khong con bao `generate_execution`/`wav_output` READY khi chi co Runtime Doctor READY.
+- Endpoint enqueue Generate Unit production bi chan theo capability `generate_execution`, khong chi theo environment doctor.
+
+### Validation
+
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m compileall src tests`: dat.
+- Targeted pytest: `tests\test_generate_runtime_validation.py`, `tests\test_generate_pipeline_foundation.py`, `tests\test_runtime_profile.py`: 26 passed.
+- Full pytest: 176 passed.
+- Bootstrap: target main_application, limited mode dung voi capability blocked.
+- API smoke Generate readiness: Environment READY, Selected Assets BLOCKED, Real Inference BLOCKED, `generate_execution` BLOCKED.
+
+### Notes
+
+- Khong Train that.
+- Khong Generate that.
+- Real GPT-SoVITS Smoke chua chay vi Voice Thu Minh `0001` thieu `gpt_model`, `sovits_model`, `reference_audio`, `reference_text` va chua co explicit enable.
+- Real Smoke end-to-end voi Voice Thu Minh `0001` / Variant `default` da dung o asset gate; khong tao Session/Job inference, khong goi runtime va khong nang readiness.
+
+## AVS-014.17: GPT-SoVITS Runtime Integration for Generate
+
+### Added
+
+- Runtime Doctor cho Generate dựa trên Runtime Profile hiện tại: kiểm tra runtime root, Python runtime, torch, faster-whisper, GPT-SoVITS scripts, pretrained models, FFmpeg và FFprobe.
+- Local API endpoint `GET /api/v1/generate/runtime/doctor`.
+- Production provider `GPTSoVITSGenerateProvider` nối Generate Session/Unit với EngineManager và GPT-SoVITS Engine/Adapter.
+- Job Queue worker `generate_unit` với ResourceRequirement GPU, không CPU fallback mặc định.
+- Local API endpoint `POST /api/v1/generate/sessions/{session_id}/units/{unit_id}/execute` để enqueue Generate Unit qua Job Queue.
+- Failure hardening cho `GenerateSessionService.execute_unit_with_provider()`: provider/engine lỗi sẽ ghi attempt, unit và artifact thành `failed` để Retry/Resume không kẹt state.
+- Timeout subprocess cho `GPTSoVITSAdapter.generate()` mặc định 3600 giây.
+
+### Changed
+
+- Generate readiness không còn báo thiếu production handler tuyệt đối; trạng thái hiện là runtime-gated: READY chỉ khi Runtime Doctor đạt và Voice model hợp lệ.
+- Capability table chuyển Generate execution/WAV output sang DEGRADED khi có handler nhưng chưa có runtime/voice/smoke test đạt.
+- Runtime Profile detection tách `inference_cli.py` khỏi `inference_webui.py`; Generate production chỉ chạy khi CLI script xác minh tồn tại.
+
+### Validation
+
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m compileall src tests`: đạt.
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m pytest tests\test_generate_pipeline_foundation.py tests\test_runtime_profile.py tests\test_local_api.py`: 29 passed.
+
+### Notes
+
+- Không Train thật.
+- Không Generate thật trong validation mặc định.
+- Không sửa GPT-SoVITS runtime.
+- MP3 production qua Generate foundation vẫn UNAVAILABLE.
 
 ## AVS-014.16A: Foundation Cleanup & Consistency
 
@@ -829,3 +1233,58 @@
 - No Train, Generate, analyzer or GPT-SoVITS runtime mutation was performed.
 
 ---
+
+# AVS-014.19
+
+- Audited real GPT-SoVITS training readiness for Voice `0001`.
+- Verified current dataset metadata gate: 2329 trainable clips, 13232.40 seconds, no duplicate audio path, WAV readable as mono/pcm_s16le/32000 Hz, transcript non-empty, language `vi`.
+- Verified Runtime Profile `gpt_sovits_v2pro_default`: GPT-SoVITS v2Pro scripts and pretrained models exist; runtime Python torch CUDA works.
+- Verified light hardware preflight: Quadro P1000 4 GB detected, controlled CUDA allocation OK, F: drive has about 121 GB free.
+- Did not start real train because config/orchestration gates are not ready.
+- Blockers: missing GPT-SoVITS preprocessing artifacts (`2-name2text.txt`, `3-bert`, `4-cnhubert`, `6-name2semantic.tsv`), missing mapping for required `s1_train.py` config keys, and no production Training Job Worker/Frozen Training Plan lifecycle for real s1/s2 training.
+- No source code, runtime upstream, Voice config, dataset source, Generate, Publish, commit or push was performed.
+
+## AVS-016 Sprint 5: Production Reference Selection Execution
+
+### Added
+
+- Ran `ReferenceSelectionService` on the production Voice `0001` dataset using `cache/avs0145_full_dataset_thu_minh/alignment/metadata.list` as the authority.
+- Added production output artifacts under `cache/avs016_sprint5_reference_selection_voice_0001/`: `reference_selection_manifest.json`, `evaluation_holdout_manifest.json`, and `selection_report.json`.
+- Added selection report statistics for accepted/rejected clips, Top50, frozen Top20, diversity summary, score summary, duration summary, and calibration summary.
+- Added regression coverage for production-style `cache/...` metadata paths and selection report output.
+
+### Changed
+
+- `ReferenceSelectionService` now resolves production cache-relative audio paths from the app root when metadata-relative resolution does not exist.
+- Diversity now uses alignment provenance `source_audio` when available, so production Top20 coverage is based on source MP3/chapter rather than the shared clip cache folder.
+- Audio metric analysis was optimized to run the complete 2329-clip production selection without changing the public selection output contract.
+
+### Validation
+
+- Production run scanned 2329 clips, accepted 2329, rejected 0, produced Top50 50 and frozen Top20 20.
+- Top20 diversity: 20 source MP3 and 20 chapter.
+- All Top20 and evaluation holdout items have `exclude_from_future_training=true`.
+
+### Notes
+
+- No Preview, 40 WAV generation, fine-tune, LoRA, training, runtime inference binding, production voice generation, commit or push was performed.
+- Generate/Preview/Train production readiness is unchanged.
+## AVS-016 Sprint 6: Preview Generation
+
+### Added
+
+- Added AVS-016 Sprint 6 Top20 preview generation flow to `VoicePreviewBenchmarkService`.
+- Added versioned Round creation from the frozen Sprint 5 Top20 manifest without changing Top20.
+- Added exact 20 `ai_preview` WAV and 20 `benchmark_preview` WAV generation with matching transcript hash per Pair.
+- Added `preview_manifest.json`, per-pair manifests and `preview_report.json`.
+- Added regression coverage for Sprint 6 manifest/report generation and transcript identity validation.
+
+### Validation
+
+- Real output generated under `cache/avs016_sprint6_preview_generation_voice_0001/Round01/`.
+- Artifact validation PASS: 20 Pair, 40 WAV, 20 AI Preview, 20 Benchmark Preview, mono PCM16 48 kHz, transcript identity PASS.
+
+### Notes
+
+- No Top20 mutation, Train, LoRA, Runtime Binding or Production Inference was performed.
+- Preview generation used isolated VieNeu CPU/ONNX diagnostic runtime only; production Generate readiness is unchanged.

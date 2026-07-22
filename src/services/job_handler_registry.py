@@ -2,6 +2,7 @@ from services.job_worker import (
     BaseJobWorker,
     DemoProgressJobWorker,
     GeneratePrepareJobWorker,
+    GenerateUnitJobWorker,
     ProjectBackupJobWorker,
     ProjectValidateJobWorker,
     ReferenceVerifyJobWorker,
@@ -39,6 +40,11 @@ class JobHandlerRegistry:
         self.register(
             "generate_prepare",
             GeneratePrepareJobWorker,
+        )
+
+        self.register(
+            "generate_unit",
+            GenerateUnitJobWorker,
         )
 
     def register(

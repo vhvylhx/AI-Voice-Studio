@@ -9,11 +9,18 @@ from core import App
 from models.local_api_config import LocalApiConfig
 from services.feature_readiness_service import FeatureReadinessService
 from services.generation_job_service import GenerationJobService
+from services.engine_capability_router import EngineCapabilityRouter
 from services.generate_session_service import GenerateSessionService
+from services.language_catalog_service import LanguageCatalogService
+from services.language_detection_service import LanguageDetectionService
 from services.current_project_service import CurrentProjectService
 from services.project_service import ProjectService
 from services.style_profile_service import StyleProfileService
 from services.voice_catalog_service import VoiceCatalogService
+from services.voice_publish_service import VoicePublishService
+from services.vietnamese_engine_evaluation_service import (
+    VietnameseEngineEvaluationService,
+)
 
 
 class LocalApiService:
@@ -31,6 +38,13 @@ class LocalApiService:
         job_log_service=None,
         resource_monitor_service=None,
         generate_session_service=None,
+        runtime_profile_service=None,
+        generate_runtime_validation_service=None,
+        voice_publish_service=None,
+        language_catalog_service=None,
+        language_detection_service=None,
+        engine_capability_router=None,
+        vietnamese_engine_evaluation_service=None,
     ):
 
         self.config = LocalApiConfig.from_dict(
@@ -77,6 +91,40 @@ class LocalApiService:
         self.resource_monitor_service = resource_monitor_service
 
         self.generate_session_service = generate_session_service
+
+        self.runtime_profile_service = runtime_profile_service
+
+        self.generate_runtime_validation_service = (
+            generate_runtime_validation_service
+        )
+
+        self.voice_publish_service = voice_publish_service
+
+        self.language_catalog_service = (
+            language_catalog_service
+            or LanguageCatalogService()
+        )
+
+        self.language_detection_service = (
+            language_detection_service
+            or LanguageDetectionService(
+                self.language_catalog_service
+            )
+        )
+
+        self.engine_capability_router = (
+            engine_capability_router
+            or EngineCapabilityRouter(
+                voice_service=self.voice_catalog.voice_service,
+                language_catalog=self.language_catalog_service,
+                language_detector=self.language_detection_service,
+            )
+        )
+
+        self.vietnamese_engine_evaluation_service = (
+            vietnamese_engine_evaluation_service
+            or VietnameseEngineEvaluationService()
+        )
 
         self.server = None
 
@@ -322,6 +370,15 @@ class LocalApiService:
                     "POST",
                 )
 
+            def do_PATCH(
+                self,
+            ):
+
+                service.handle(
+                    self,
+                    "PATCH",
+                )
+
             def log_message(
                 self,
                 format,
@@ -498,6 +555,85 @@ class LocalApiService:
                 self.generate_readiness()
             )
 
+        if method == "GET" and path == "/api/v1/generate/runtime/doctor":
+
+            return self.response(
+                self.generate_runtime_doctor()
+            )
+
+        if method == "GET" and path == "/api/v1/languages":
+
+            return self.response(
+                self.language_catalog_service.catalog()
+            )
+
+        if method == "GET" and path == "/api/v1/vietnamese-engines/evaluation":
+
+            return self.response(
+                self.vietnamese_engine_evaluation_service.summary()
+            )
+
+        if method == "GET" and path == "/api/v1/vietnamese-engines/download-plans":
+
+            return self.response(
+                self.vietnamese_engine_evaluation_service.download_plans()
+            )
+
+        if method == "GET" and path == "/api/v1/vietnamese-engines/low-resource-profile":
+
+            return self.response(
+                self.vietnamese_engine_evaluation_service.low_resource_profile()
+            )
+
+        if method == "POST" and path == "/api/v1/languages/detect":
+
+            return self.response(
+                {
+                    "result": self.language_detection_service.detect(
+                        body.get(
+                            "text",
+                            "",
+                        ),
+                        explicit_language=body.get(
+                            "language",
+                            "",
+                        ),
+                    ).to_dict(),
+                    "segments": [
+                        item.to_dict()
+                        for item in self.language_detection_service.segment_text(
+                            body.get(
+                                "text",
+                                "",
+                            ),
+                            explicit_language=body.get(
+                                "language",
+                                "",
+                            ),
+                        )
+                    ],
+                }
+            )
+
+        if method == "POST" and path == "/api/v1/generate/language-plan":
+
+            return self.response(
+                self.engine_capability_router.route_text(
+                    body.get(
+                        "voice_id",
+                        "",
+                    ),
+                    body.get(
+                        "text",
+                        "",
+                    ),
+                    explicit_language=body.get(
+                        "language",
+                        "",
+                    ),
+                )
+            )
+
         if method == "GET" and path == "/api/v1/generate/sessions":
 
             return self.response(
@@ -549,6 +685,29 @@ class LocalApiService:
 
             return self.response(
                 self.style_profile_list()
+            )
+
+        if method == "POST" and path == "/api/v1/voice-publish/validate":
+
+            return self.response(
+                self.resolve_voice_publish()
+                .validate_publish(
+                    body
+                )
+                .to_dict()
+            )
+
+        if method == "POST" and path == "/api/v1/voice-publish":
+
+            result = self.resolve_voice_publish().publish(
+                body
+            )
+
+            return self.response(
+                result.to_dict(),
+                status_code=200
+                if result.status == "published"
+                else 409,
             )
 
         parts = [
@@ -812,6 +971,36 @@ class LocalApiService:
             ]
             and parts[3] == "sessions"
             and parts[5] == "units"
+            and parts[7] == "execute"
+            and method == "POST"
+        ):
+
+            result = self.enqueue_generate_unit(
+                parts[4],
+                parts[6],
+                body,
+            )
+
+            return self.response(
+                result,
+                status_code=202
+                if result.get(
+                    "ok",
+                    False,
+                )
+                else 503,
+            )
+
+        if (
+            len(parts) == 8
+            and parts[:3]
+            == [
+                "api",
+                "v1",
+                "generate",
+            ]
+            and parts[3] == "sessions"
+            and parts[5] == "units"
             and parts[7] == "retry"
             and method == "POST"
         ):
@@ -981,6 +1170,78 @@ class LocalApiService:
             )
 
         if (
+            len(parts) == 5
+            and parts[:3]
+            == [
+                "api",
+                "v1",
+                "voices",
+            ]
+            and parts[4] == "display-name"
+            and method == "PATCH"
+        ):
+
+            voice_service = self.voice_catalog.voice_service
+
+            try:
+
+                voice = voice_service.rename_display_name(
+                    parts[3],
+                    body.get(
+                        "display_name",
+                        "",
+                    ),
+                )
+
+            except FileNotFoundError:
+
+                return self.response(
+                    {
+                        "error": "voice_not_found",
+                    },
+                    status_code=404,
+                )
+
+            except ValueError as exc:
+
+                return self.response(
+                    {
+                        "error": "invalid_display_name",
+                        "codes": str(
+                            exc
+                        ).split(
+                            ","
+                        ),
+                    },
+                    status_code=400,
+                )
+
+            return self.response(
+                self.voice_catalog.voice_summary(
+                    voice
+                )
+            )
+
+        if (
+            len(parts) == 6
+            and parts[:3]
+            == [
+                "api",
+                "v1",
+                "voices",
+            ]
+            and parts[4] == "publish"
+            and parts[5] == "discover"
+            and method == "GET"
+        ):
+
+            return self.response(
+                self.resolve_voice_publish().discover_checkpoints(
+                    parts[3]
+                )
+            )
+
+        if (
             len(parts) == 4
             and parts[:3]
             == [
@@ -1061,6 +1322,120 @@ class LocalApiService:
             return self.response_or_404(
                 variants,
                 "voice_not_found",
+            )
+
+        if (
+            len(parts) == 5
+            and parts[:3]
+            == [
+                "api",
+                "v1",
+                "voices",
+            ]
+            and parts[4] == "language-capabilities"
+            and method == "GET"
+        ):
+
+            return self.response_or_404(
+                self.engine_capability_router.voice_language_capabilities(
+                    parts[3]
+                ),
+                "voice_not_found",
+            )
+
+        if (
+            len(parts) == 5
+            and parts[:3]
+            == [
+                "api",
+                "v1",
+                "voices",
+            ]
+            and parts[4] == "enabled-languages"
+            and method in {
+                "POST",
+                "PATCH",
+            }
+        ):
+
+            try:
+
+                voice = self.voice_catalog.voice_service.set_enabled_languages(
+                    parts[3],
+                    body.get(
+                        "language_codes",
+                        [],
+                    ),
+                    allow_all=bool(
+                        body.get(
+                            "allow_all",
+                            False,
+                        )
+                    ),
+                )
+
+            except FileNotFoundError:
+
+                return self.response(
+                    {
+                        "error": "voice_not_found",
+                    },
+                    status_code=404,
+                )
+
+            except ValueError as exc:
+
+                return self.response(
+                    {
+                        "error": str(
+                            exc
+                        ),
+                    },
+                    status_code=400,
+                )
+
+            return self.response(
+                self.engine_capability_router.voice_language_capabilities(
+                    voice.id
+                )
+            )
+
+        if (
+            len(parts) == 6
+            and parts[:3]
+            == [
+                "api",
+                "v1",
+                "voices",
+            ]
+            and parts[4] == "engine-bindings"
+            and method in {
+                "POST",
+                "PATCH",
+            }
+        ):
+
+            try:
+
+                voice = self.voice_catalog.voice_service.update_engine_binding(
+                    parts[3],
+                    parts[5],
+                    body,
+                )
+
+            except FileNotFoundError:
+
+                return self.response(
+                    {
+                        "error": "voice_not_found",
+                    },
+                    status_code=404,
+                )
+
+            return self.response(
+                self.engine_capability_router.voice_language_capabilities(
+                    voice.id
+                )
             )
 
         if (
@@ -1212,7 +1587,7 @@ class LocalApiService:
             ),
             "timestamp": __import__(
                 "datetime"
-            ).datetime.datetime.now().isoformat(),
+            ).datetime.now().isoformat(),
         }
 
     def capabilities(
@@ -1220,9 +1595,10 @@ class LocalApiService:
     ):
 
         return {
-            "supported_languages": [
-                "vi",
-            ],
+            "supported_languages": self.language_catalog_service.supported_codes(),
+            "language_catalog_url": "/api/v1/languages",
+            "language_detection": "heuristic_foundation",
+            "multi_engine_language_routing": "foundation",
             "supported_formats": [
                 "wav",
                 "mp3",
@@ -1399,14 +1775,191 @@ class LocalApiService:
 
             return GenerateSessionService()
 
+    def resolve_runtime_profiles(
+        self,
+    ):
+
+        if self.runtime_profile_service is not None:
+
+            return self.runtime_profile_service
+
+        try:
+
+            from core.app_context import AppContext
+
+            return AppContext.runtime_profile_service
+
+        except Exception:
+
+            from services.runtime_profile_service import RuntimeProfileService
+
+            return RuntimeProfileService()
+
+    def resolve_generate_runtime_validation(
+        self,
+    ):
+
+        if self.generate_runtime_validation_service is not None:
+
+            return self.generate_runtime_validation_service
+
+        if self.runtime_profile_service is not None:
+
+            from services.generate_runtime_validation_service import (
+                GenerateRuntimeValidationService,
+            )
+
+            return GenerateRuntimeValidationService(
+                runtime_profiles=self.runtime_profile_service
+            )
+
+        try:
+
+            from core.app_context import AppContext
+
+            return AppContext.generate_runtime_validation_service
+
+        except Exception:
+
+            from services.generate_runtime_validation_service import (
+                GenerateRuntimeValidationService,
+            )
+
+            return GenerateRuntimeValidationService(
+                runtime_profiles=self.resolve_runtime_profiles()
+            )
+
+    def resolve_voice_publish(
+        self,
+    ):
+
+        if self.voice_publish_service is not None:
+
+            return self.voice_publish_service
+
+        return VoicePublishService(
+            voice_service=self.voice_catalog.voice_service
+        )
+
+    def generate_runtime_doctor(
+        self,
+    ):
+
+        validation = self.resolve_generate_runtime_validation().readiness()
+
+        environment = validation.get(
+            "environment",
+            {},
+        )
+
+        validation["doctor_status"] = environment.get(
+            "status",
+            "UNKNOWN",
+        )
+
+        validation["profile"] = environment.get(
+            "profile",
+        )
+
+        validation["report"] = environment.get(
+            "report",
+        )
+
+        validation["guidance"] = environment.get(
+            "guidance",
+            {},
+        )
+
+        return validation
+
+    def enqueue_generate_unit(
+        self,
+        session_id,
+        unit_id,
+        body,
+    ):
+
+        queue = self.resolve_job_queue()
+
+        if queue is None:
+
+            return {
+                "ok": False,
+                "code": "job_queue_unavailable",
+            }
+
+        doctor = self.generate_runtime_doctor()
+
+        if doctor.get(
+            "capabilities",
+            {},
+        ).get(
+            "generate_execution"
+        ) != "READY" and not body.get(
+            "allow_controlled_provider",
+            False,
+        ):
+
+            return {
+                "ok": False,
+                "code": "runtime_doctor_not_ready",
+                "doctor": doctor,
+            }
+
+        job = queue.enqueue_new(
+            "generate_unit",
+            display_name="Generate Unit",
+            scope="project",
+            payload={
+                "session_id": session_id,
+                "unit_id": unit_id,
+            },
+            resumable=True,
+            cancellable=True,
+            pausable=True,
+            max_retries=1,
+            idempotency_key=f"generate_unit:{session_id}:{unit_id}",
+        )
+
+        return {
+            "ok": True,
+            "job_id": job.job_id,
+            "status": job.state,
+            "status_url": f"/api/v1/jobs/{job.job_id}",
+        }
+
     def generate_readiness(
         self,
     ):
 
+        doctor = self.generate_runtime_doctor()
+
+        runtime_ready = doctor.get(
+            "doctor_status"
+        ) == "READY"
+
+        execution_status = doctor.get(
+            "capabilities",
+            {},
+        ).get(
+            "generate_execution",
+            "UNAVAILABLE",
+        )
+
+        wav_output_status = doctor.get(
+            "capabilities",
+            {},
+        ).get(
+            "wav_output",
+            execution_status,
+        )
+
         return {
             "available": True,
-            "status": "planning_ready_execution_unavailable",
-            "message_vi": "Generate Pipeline foundation đã sẵn sàng lập request/session/plan/manifest. Chưa chạy Generate thật qua endpoint này.",
+            "status": "real_inference_ready"
+            if execution_status == "READY"
+            else "planning_ready_execution_blocked",
+            "message_vi": "Generate Pipeline có production handler; Generate thật chỉ READY khi Environment, Voice/Variant/Reference và Real Smoke đều đạt.",
             "capabilities": {
                 "planning": "READY",
                 "source_snapshot": "READY",
@@ -1416,17 +1969,21 @@ class LocalApiService:
                 "frozen_plan": "READY",
                 "manifest": "READY",
                 "artifact_lifecycle": "READY",
-                "generate_execution": "UNAVAILABLE",
+                "generate_execution": execution_status,
                 "preview_plan": "READY",
                 "preview_audio": "UNAVAILABLE",
                 "resume_inspection": "READY",
-                "resume_execution": "UNAVAILABLE",
+                "resume_execution": "DEGRADED"
+                if runtime_ready
+                else "UNAVAILABLE",
                 "retry_inspection": "READY",
-                "retry_execution": "UNAVAILABLE",
+                "retry_execution": "DEGRADED"
+                if runtime_ready
+                else "UNAVAILABLE",
                 "recovery": "READY",
                 "basic_wav_validation": "READY",
                 "full_audio_validation": "DEGRADED",
-                "wav_output": "UNAVAILABLE",
+                "wav_output": wav_output_status,
                 "mp3_output": "UNAVAILABLE",
                 "local_api": "READY",
                 "generate_ui": "DEGRADED",
@@ -1446,15 +2003,24 @@ class LocalApiService:
                 "recovery_inspection",
                 "job_queue_prepare",
                 "basic_wav_validation",
+                "runtime_doctor",
+                "generate_unit_job_worker",
             ],
             "blocked_actions": [
-                "real_inference",
-                "engine_synthesis",
-                "resume_execution",
-                "retry_execution",
-                "wav_output",
                 "mp3_output",
-            ],
+            ]
+            + (
+                []
+                if execution_status == "READY"
+                else [
+                    "real_inference",
+                    "engine_synthesis",
+                    "resume_execution",
+                    "retry_execution",
+                    "wav_output",
+                ]
+            ),
+            "runtime_doctor": doctor,
         }
 
     def safe_generate_session_result(
@@ -1952,6 +2518,41 @@ class LocalApiService:
             "language": profile.language,
             "status": profile.status,
             "source_type": profile.source_type,
+            "intended_use": getattr(
+                profile,
+                "intended_use",
+                "generate_style_profile",
+            ),
+            "style_classification": getattr(
+                profile,
+                "style_classification",
+                "style_only",
+            ),
+            "parameters": getattr(
+                profile,
+                "parameters",
+                {},
+            ),
+            "prompt_instructions": getattr(
+                profile,
+                "prompt_instructions",
+                {},
+            ),
+            "reference_requirements": getattr(
+                profile,
+                "reference_requirements",
+                {},
+            ),
+            "compatibility": getattr(
+                profile,
+                "compatibility",
+                {},
+            ),
+            "readiness": getattr(
+                profile,
+                "readiness",
+                {},
+            ),
             "capabilities": profile.capabilities,
             "default_tags": profile.default_tags,
             "created_at": profile.created_at,

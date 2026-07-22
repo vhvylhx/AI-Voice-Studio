@@ -132,6 +132,8 @@ class GenerateSelectionConfig:
 
     mp3_bitrate_kbps: int = 192
 
+    language: str = ""
+
 
 @dataclass
 class GenerateRequest:

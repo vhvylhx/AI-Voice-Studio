@@ -56,6 +56,66 @@ class StyleProfile:
 
     language: str = "vi"
 
+    intended_use: str = "generate_style_profile"
+
+    style_classification: str = "style_only"
+
+    parameters: dict = field(
+        default_factory=dict
+    )
+
+    prompt_instructions: dict = field(
+        default_factory=lambda: {
+            "system_prompt": "",
+            "positive_prompt": "",
+            "negative_prompt": "",
+        }
+    )
+
+    reference_requirements: dict = field(
+        default_factory=lambda: {
+            "requires_reference_audio": False,
+            "requires_reference_text": False,
+            "allow_voice_default_reference": True,
+        }
+    )
+
+    compatibility: dict = field(
+        default_factory=lambda: {
+            "voice_model_required": True,
+            "separate_checkpoint_required": False,
+            "supported_engines": [
+                "gpt_sovits",
+            ],
+            "supported_languages": [
+                "vi",
+                "zh",
+                "en",
+                "ja",
+                "ko",
+                "yue",
+            ],
+            "preferred_languages": [],
+            "unsupported_languages": [],
+            "language_specific_instructions": {},
+        }
+    )
+
+    readiness: dict = field(
+        default_factory=lambda: {
+            "status": "DEGRADED",
+            "reason": "prosody_analyzer_unavailable",
+        }
+    )
+
+    blockers: list[str] = field(
+        default_factory=list
+    )
+
+    warnings: list[str] = field(
+        default_factory=list
+    )
+
     source_type: str = STYLE_SOURCE_ALIGNED_DATASET
 
     status: str = STYLE_STATUS_DRAFT
@@ -167,6 +227,56 @@ class StyleProfile:
                 profile.capabilities or {}
             ),
         }
+
+        compatibility = dict(
+            profile.compatibility or {}
+        )
+
+        compatibility.setdefault(
+            "voice_model_required",
+            True,
+        )
+
+        compatibility.setdefault(
+            "separate_checkpoint_required",
+            False,
+        )
+
+        compatibility.setdefault(
+            "supported_engines",
+            [
+                "gpt_sovits",
+            ],
+        )
+
+        compatibility.setdefault(
+            "supported_languages",
+            [
+                "vi",
+                "zh",
+                "en",
+                "ja",
+                "ko",
+                "yue",
+            ],
+        )
+
+        compatibility.setdefault(
+            "preferred_languages",
+            [],
+        )
+
+        compatibility.setdefault(
+            "unsupported_languages",
+            [],
+        )
+
+        compatibility.setdefault(
+            "language_specific_instructions",
+            {},
+        )
+
+        profile.compatibility = compatibility
 
         return profile
 

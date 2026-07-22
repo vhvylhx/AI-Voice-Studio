@@ -17,6 +17,9 @@ class TrainConfig:
 
     review_report_path: str = ""
 
+    preprocessing_manifest_path: str = ""
+
+    benchmark_manifest_path: str = ""
     runtime_profile_id: str = ""
 
     sample_rate: int = 32000

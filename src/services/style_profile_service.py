@@ -45,6 +45,12 @@ class StyleProfileService:
         source_type=STYLE_SOURCE_ALIGNED_DATASET,
         dataset_reference=None,
         default_tags=None,
+        intended_use="generate_style_profile",
+        style_classification="style_only",
+        parameters=None,
+        prompt_instructions=None,
+        reference_requirements=None,
+        compatibility=None,
     ):
 
         now = datetime.now().isoformat()
@@ -84,6 +90,28 @@ class StyleProfileService:
             updated_at=now,
             dataset_reference=dataset_reference or {},
             default_tags=default_tags or [],
+            intended_use=intended_use
+            or "generate_style_profile",
+            style_classification=style_classification
+            or "style_only",
+            parameters=parameters or {},
+            prompt_instructions=prompt_instructions or {
+                "system_prompt": "",
+                "positive_prompt": "",
+                "negative_prompt": "",
+            },
+            reference_requirements=reference_requirements or {
+                "requires_reference_audio": False,
+                "requires_reference_text": False,
+                "allow_voice_default_reference": True,
+            },
+            compatibility=compatibility or {
+                "voice_model_required": True,
+                "separate_checkpoint_required": False,
+                "supported_engines": [
+                    "gpt_sovits",
+                ],
+            },
         )
 
         return self.repository.create(
@@ -370,6 +398,109 @@ class StyleProfileService:
         )
 
         return voice
+
+    def bind_variant_style(
+        self,
+        voice,
+        variant_id,
+        style_profile_id,
+        style_mode=STYLE_MODE_EXPLICIT,
+        style_strength=1.0,
+        reference_override=None,
+    ):
+
+        profile = self.repository.load(
+            style_profile_id
+        )
+
+        found = False
+
+        for variant in voice.config.variants:
+
+            if variant.get(
+                "id",
+                "",
+            ) != variant_id:
+
+                continue
+
+            variant["style_profile_id"] = profile.style_profile_id
+            variant["style_mode"] = style_mode
+            variant["style_strength"] = float(
+                style_strength
+            )
+            variant["reference_override"] = reference_override or {}
+            variant["separate_model_required"] = False
+            variant["readiness"] = {
+                "status": "DEGRADED",
+                "reason": "style_profile_generate_usage_degraded",
+            }
+            found = True
+
+        if not found:
+
+            raise ValueError(
+                "variant_not_found"
+            )
+
+        self.voice_service.save(
+            voice
+        )
+
+        return voice
+
+    def variant_readiness(
+        self,
+        voice,
+        variant_id,
+    ):
+
+        for variant in voice.config.variants:
+
+            if variant.get(
+                "id",
+                "",
+            ) != variant_id:
+
+                continue
+
+            style_profile_id = variant.get(
+                "style_profile_id",
+                "",
+            )
+
+            if not style_profile_id:
+
+                return {
+                    "status": "READY",
+                    "reason": "voice_default_style",
+                    "separate_model_required": False,
+                }
+
+            style = self.readiness(
+                style_profile_id
+            )
+
+            return {
+                "status": "DEGRADED"
+                if style.get(
+                    "degraded",
+                    False,
+                )
+                else "READY",
+                "reason": style.get(
+                    "generation_usage",
+                    "",
+                ),
+                "style_profile_id": style_profile_id,
+                "separate_model_required": False,
+            }
+
+        return {
+            "status": "MISSING",
+            "reason": "variant_not_found",
+            "separate_model_required": False,
+        }
 
     def unlink_voice_default(
         self,

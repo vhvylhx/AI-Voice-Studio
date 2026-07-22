@@ -654,6 +654,18 @@ class GenerateUnitRecord:
 
     separator_after: str = ""
 
+    language_code: str = ""
+
+    engine_id: str = ""
+
+    route_status: str = ""
+
+    route_fingerprint: str = ""
+
+    route_blockers: list[str] = dc_field(
+        default_factory=list
+    )
+
     status: str = "pending"
 
     attempt_ids: list[str] = dc_field(
@@ -811,6 +823,11 @@ class GeneratePlanRecord:
                     "normalized_text": unit.normalized_text,
                     "boundary": unit.boundary,
                     "separator_after": unit.separator_after,
+                    "language_code": unit.language_code,
+                    "engine_id": unit.engine_id,
+                    "route_status": unit.route_status,
+                    "route_fingerprint": unit.route_fingerprint,
+                    "route_blockers": unit.route_blockers,
                     "estimated_characters": unit.estimated_characters,
                 }
                 for unit in self.units

@@ -1,4 +1,7 @@
-from PySide6.QtCore import QThread
+from PySide6.QtCore import (
+    QThread,
+    QTimer,
+)
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -46,6 +49,20 @@ class AudioPage(QWidget):
         self.thread = None
 
         self.worker = None
+
+        self.generate_workflow = None
+
+        self.generate_workflow_timer = QTimer(
+            self
+        )
+
+        self.generate_workflow_timer.setInterval(
+            500
+        )
+
+        self.generate_workflow_timer.timeout.connect(
+            self.refresh_generate_workflow
+        )
 
         root = QVBoxLayout(self)
 
@@ -175,7 +192,7 @@ class AudioPage(QWidget):
         )
 
         self.toolbar.generate_button.clicked.connect(
-            self.generate_queue
+            self.generate_current
         )
 
         self.toolbar.stop_button.clicked.connect(
@@ -284,8 +301,14 @@ class AudioPage(QWidget):
                 voice
             )
 
+            self.generate_options.load_language_capabilities(
+                AppContext.engine_capability_router.voice_language_capabilities(
+                    voice.id
+                )
+            )
+
             self.detail.voice.setText(
-                voice.name
+                voice.display_name
             )
 
             self.detail.engine.setText(
@@ -434,7 +457,7 @@ class AudioPage(QWidget):
 
         if not AppContext.current_voice.has_voice():
 
-            self.detail.set_status(
+            self.show_generate_blocked(
                 "Chưa chọn Voice"
             )
 
@@ -447,6 +470,269 @@ class AudioPage(QWidget):
         request = self.generate_options.build_request(
             project_id=project.id,
             voice_id=voice.id,
+        )
+
+        self.detail.set_progress(
+            0
+        )
+
+        self.detail.set_current(
+            "PREPARING"
+        )
+
+        self.detail.set_status(
+            "PREPARING: Đang chuẩn bị Generate"
+        )
+
+        session_result = (
+            AppContext.generate_ui_orchestration_service.start(
+                self.foundation_payload()
+            )
+        )
+
+        if not session_result.get(
+            "ok",
+            False,
+        ):
+
+            self.show_generate_blocked(
+                session_result.get(
+                    "blocker",
+                    "generate_session_blocked",
+                )
+            )
+
+            return
+
+        AppContext.project_service.save_generate_selection(
+            project,
+            request.selection,
+        )
+
+        self.generate_workflow = session_result.get(
+            "workflow",
+        )
+
+        self.detail.set_queue(
+            len(
+                session_result.get(
+                    "job_ids",
+                    [],
+                )
+            )
+        )
+
+        self.set_generate_controls_enabled(
+            False
+        )
+
+        self.render_generate_workflow(
+            {
+                "session_id": session_result[
+                    "session"
+                ].get(
+                    "session_id",
+                    "",
+                ),
+                "job_ids": session_result.get(
+                    "job_ids",
+                    [],
+                ),
+                "artifact_ids": [],
+                "pipeline": session_result.get(
+                    "pipeline",
+                    "",
+                ),
+                "runtime": session_result.get(
+                    "runtime",
+                    {},
+                ),
+                "status": "QUEUED",
+                "terminal": False,
+            }
+        )
+
+        self.generate_workflow_timer.start()
+
+    def refresh_generate_workflow(self):
+
+        if self.generate_workflow is None:
+
+            self.generate_workflow_timer.stop()
+
+            return
+
+        snapshot = (
+            AppContext.generate_ui_orchestration_service
+            .get_workflow_snapshot(
+                self.generate_workflow
+            )
+        )
+
+        self.render_generate_workflow(
+            snapshot
+        )
+
+        if snapshot.get(
+            "terminal",
+            False,
+        ):
+
+            self.generate_workflow_timer.stop()
+
+            self.generate_workflow = None
+
+            self.set_generate_controls_enabled(
+                True
+            )
+
+    def render_generate_workflow(
+        self,
+        snapshot,
+    ):
+
+        status = snapshot.get(
+            "status",
+            "FAILED",
+        )
+
+        session_id = snapshot.get(
+            "session_id",
+            "",
+        )
+
+        job_ids = snapshot.get(
+            "job_ids",
+            [],
+        )
+
+        artifact_ids = snapshot.get(
+            "artifact_ids",
+            [],
+        )
+
+        pipeline = snapshot.get(
+            "pipeline",
+            "-",
+        )
+
+        runtime = snapshot.get(
+            "runtime",
+            {},
+        )
+
+        self.foundation_session.setText(
+            "Session: " + (
+                session_id or "-"
+            )
+        )
+
+        self.foundation_plan.setText(
+            "Job: "
+            + ", ".join(job_ids)
+            + " | Artifact: "
+            + ", ".join(artifact_ids or ["-"])
+        )
+
+        self.foundation_status.setText(
+            "Pipeline: "
+            + pipeline
+            + " | Runtime: "
+            + runtime.get(
+                "status",
+                "-",
+            )
+        )
+
+        self.detail.set_current(
+            status
+        )
+
+        self.detail.set_status(
+            status
+            + ": Session "
+            + (session_id or "-")
+        )
+
+        if status == "COMPLETED":
+
+            self.detail.set_progress(
+                100
+            )
+
+        elif status in {
+            "QUEUED",
+            "RUNNING",
+        }:
+
+            total = len(job_ids)
+
+            completed = sum(
+                1
+                for job in snapshot.get(
+                    "jobs",
+                    [],
+                )
+                if job.state == "completed"
+            )
+
+            self.detail.set_progress(
+                int(
+                    completed * 100 / total
+                ) if total else 0
+            )
+
+    def show_generate_blocked(
+        self,
+        blocker,
+    ):
+
+        self.detail.set_current(
+            "BLOCKED"
+        )
+
+        self.detail.set_status(
+            "BLOCKED: " + blocker
+        )
+
+    def set_generate_controls_enabled(
+        self,
+        enabled,
+    ):
+
+        self.toolbar.generate_button.setEnabled(
+            enabled
+        )
+
+        self.toolbar.add_queue_button.setEnabled(
+            enabled
+        )
+
+        self.toolbar.clear_queue_button.setEnabled(
+            enabled
+        )
+
+        self.toolbar.voice_combo.setEnabled(
+            enabled
+        )
+
+        self.generate_options.setEnabled(
+            enabled
+        )
+
+    def run_legacy_compatibility(
+        self,
+        request,
+        voice,
+        project,
+    ):
+
+        self.detail.set_current(
+            "LEGACY_COMPATIBILITY"
+        )
+
+        self.detail.set_status(
+            "LEGACY_COMPATIBILITY: Runtime Session chưa sẵn sàng"
         )
 
         result = self.generate_service.generate_request(
@@ -463,7 +749,7 @@ class AudioPage(QWidget):
         if result.ok:
 
             self.detail.set_status(
-                "Hoàn thành tạo Audio"
+                "LEGACY_COMPATIBILITY: Hoàn thành tạo Audio"
             )
 
             self.detail.set_progress(
@@ -473,7 +759,7 @@ class AudioPage(QWidget):
             return
 
         self.detail.set_status(
-            "Generate lỗi: "
+            "LEGACY_COMPATIBILITY: Generate lỗi: "
             + ", ".join(
                 result.errors
             )
@@ -509,10 +795,17 @@ class AudioPage(QWidget):
             "output_name": request.selection.output_name,
             "output_format": request.selection.output_format,
             "mp3_bitrate_kbps": request.selection.mp3_bitrate_kbps,
-            "language": "vi",
+            "language": request.selection.language or "",
         }
 
     def validate_foundation_request(self):
+
+        if AppContext.current_voice.has_voice():
+
+            self.generate_options.preview_language_routes(
+                AppContext.engine_capability_router,
+                AppContext.current_voice.get().id,
+            )
 
         report = AppContext.generate_session_service.validate_request(
             self.foundation_payload()
@@ -531,6 +824,13 @@ class AudioPage(QWidget):
         )
 
     def plan_foundation_request(self):
+
+        if AppContext.current_voice.has_voice():
+
+            self.generate_options.preview_language_routes(
+                AppContext.engine_capability_router,
+                AppContext.current_voice.get().id,
+            )
 
         result = AppContext.generate_session_service.create_session(
             self.foundation_payload()
@@ -782,12 +1082,19 @@ class AudioPage(QWidget):
 
         project.config.voice = name
 
+        if hasattr(
+            project.config,
+            "active_voice_id",
+        ):
+
+            project.config.active_voice_id = voice.id
+
         AppContext.project_service.save(
             project
         )
 
         self.detail.voice.setText(
-            voice.name
+            voice.display_name
         )
 
         self.detail.engine.setText(
@@ -796,6 +1103,16 @@ class AudioPage(QWidget):
 
         AppEvents.voice_changed(
             voice
+        )
+
+        self.generate_options.load_voice(
+            voice
+        )
+
+        self.generate_options.load_language_capabilities(
+            AppContext.engine_capability_router.voice_language_capabilities(
+                voice.id
+            )
         )
 
     def change_engine(

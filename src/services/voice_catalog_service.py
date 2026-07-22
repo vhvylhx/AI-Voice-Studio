@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from services.engine_capability_router import EngineCapabilityRouter
 from services.style_profile_service import StyleProfileService
 from services.voice_service import VoiceService
 
@@ -22,6 +23,10 @@ class VoiceCatalogService:
             or StyleProfileService(
                 voice_service=self.voice_service
             )
+        )
+
+        self.language_router = EngineCapabilityRouter(
+            voice_service=self.voice_service
         )
 
     def list_voices(
@@ -149,6 +154,15 @@ class VoiceCatalogService:
         voice_id,
     ):
 
+        if hasattr(
+            self.voice_service,
+            "find_by_id",
+        ):
+
+            return self.voice_service.find_by_id(
+                voice_id
+            )
+
         for name in self.voice_service.list():
 
             try:
@@ -198,9 +212,30 @@ class VoiceCatalogService:
 
         return {
             "voice_id": voice.id,
-            "display_name": voice.name,
+            "display_name": voice.display_name,
+            "folder_name": voice.name,
             "description": voice.description,
             "language": config.language,
+            "default_language": getattr(
+                config,
+                "default_language",
+                config.language,
+            ),
+            "enabled_languages": getattr(
+                config,
+                "enabled_languages",
+                [
+                    config.language,
+                ],
+            ),
+            "language_selection_mode": getattr(
+                config,
+                "language_selection_mode",
+                "selected",
+            ),
+            "language_capabilities_url": (
+                f"/api/v1/voices/{voice.id}/language-capabilities"
+            ),
             "model_status": (
                 "ready"
                 if validation.get(
@@ -252,7 +287,43 @@ class VoiceCatalogService:
                 "missing",
                 [],
             ),
+            "publish": {
+                "publish_id": getattr(
+                    config,
+                    "publish_id",
+                    "",
+                ),
+                "training_run_id": getattr(
+                    config,
+                    "published_training_run_id",
+                    "",
+                ),
+                "validation_status": getattr(
+                    config,
+                    "publish_validation_status",
+                    "unpublished",
+                ),
+                "published_at": getattr(
+                    config,
+                    "published_at",
+                    "",
+                ),
+                "fingerprint": getattr(
+                    config,
+                    "publish_fingerprint",
+                    "",
+                ),
+            },
         }
+
+    def language_capabilities(
+        self,
+        voice_id,
+    ):
+
+        return self.language_router.voice_language_capabilities(
+            voice_id
+        )
 
     def variant_summary(
         self,
@@ -391,6 +462,21 @@ class VoiceCatalogService:
             "display_name": profile.display_name,
             "language": profile.language,
             "status": profile.status,
+            "intended_use": getattr(
+                profile,
+                "intended_use",
+                "generate_style_profile",
+            ),
+            "style_classification": getattr(
+                profile,
+                "style_classification",
+                "style_only",
+            ),
+            "compatibility": getattr(
+                profile,
+                "compatibility",
+                {},
+            ),
             "capabilities": profile.capabilities,
             "default_tags": profile.default_tags,
             "updated_at": profile.updated_at,

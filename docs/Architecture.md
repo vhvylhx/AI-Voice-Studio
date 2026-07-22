@@ -85,6 +85,9 @@ Hiện có:
 - GenerateService
 - GeneratePlanningService
 - GeneratePipelineService
+- LanguageCatalogService
+- LanguageDetectionService
+- EngineCapabilityRouter
 - ContextAnalysisService
 - AudioMergeService
 - TempWorkspaceService
@@ -310,6 +313,10 @@ Metadata
 
 ↓
 
+GPT-SoVITS Preprocessing
+
+↓
+
 Train Validation
 
 ↓
@@ -387,6 +394,34 @@ Mặc định MVP:
 metadata.list dùng format GPT-SoVITS:
 
 audio_path|speaker|vi|text
+
+GPT-SoVITS Preprocessing:
+
+- Là bước tách riêng giữa Alignment Metadata và Train Validation.
+- Đầu vào là metadata.list valid-only đã qua Alignment.
+- File metadata gốc không được sửa; nếu runtime cần format khác thì tạo normalized metadata trong cache run-owned.
+- Mỗi preprocessing run có immutable `preprocessing_run_id`, `voice_id`, display name snapshot, dataset fingerprint, runtime/profile fingerprint, frozen plan và manifest riêng.
+- Output nằm trong `cache/training_preprocessing/<preprocessing_run_id>/`.
+- Artifact bắt buộc trước Train:
+  - `2-name2text.txt`.
+  - `3-bert/`.
+  - `4-cnhubert/`.
+  - `6-name2semantic.tsv`.
+- GPT-SoVITS v2Pro runtime hiện tại còn tạo/dùng thêm `5-wav32k/` và `7-sv_cn/`; đây là artifact phụ cho compatibility v2Pro, không thay thế 4 artifact bắt buộc.
+- Stage runner phải dùng Runtime Profile python/script/pretrained đã validate, command list an toàn, cwd/env rõ ràng và stdout/stderr log trong run root.
+- Stage GPU phải có ResourceRequirement/lease; lease phải release khi success/fail/timeout/cancel.
+- TrainingService chỉ đọc preprocessing manifest ở preflight và phân biệt READY/BLOCKED/STALE/MISSING.
+- `training_ready=true` chỉ khi toàn bộ artifact thật pass validator; file tồn tại hoặc test mock không được nâng production readiness.
+- Nếu runtime upstream không hỗ trợ language metadata, preprocessing phải dừng ở config gate, không tạo artifact rỗng.
+
+AVS-014.23 Training Readiness:
+
+- Dataset final cua Voice `0001` co the PASS o metadata/audio gate nhung Training van phai BLOCKED neu GPT-SoVITS preprocessing khong ho tro language thuc te cua metadata.
+- Readiness plan duoc phep ghi trong `cache/training/voice_<voice_id>/gpt_sovits/<run_id>/`, nhung khong duoc goi upstream training script khi preprocessing plan co blocker.
+- Runtime source audit la bat buoc truoc smoke train: `1-get-text.py`, cleaner, train config va train entry point phai khop language/sample rate/artifact contract.
+- Smoke Train chi duoc bat dau sau khi Dataset Review, metadata, preprocessing manifest, runtime, pretrained, resource safety va power/process preflight deu PASS.
+- Checkpoint smoke khong duoc bind vao Voice production va khong duoc coi la Full Training.
+- Voi runtime hien tai, language `vi` van BLOCKED vi upstream chi detect `en`, `ja`, `jp`, `ko`, `yue`, `zh`; khong fake map `vi` sang language khac.
 
 AVS-013.6 Quality-First Alignment:
 
@@ -1196,3 +1231,278 @@ Thanh phan:
 Resource Manager khong train, generate, stress test, kill process, cai driver, tai model hoac sua GPT-SoVITS runtime.
 
 ---
+
+## AVS-014.17 GPT-SoVITS Runtime Integration for Generate
+
+Generate production path sau AVS-014.17:
+
+Generate Session/Plan
+
+↓
+
+Generate Unit Job (`generate_unit`)
+
+↓
+
+Resource Manager / GPU lease
+
+↓
+
+GPTSoVITSGenerateProvider
+
+↓
+
+EngineManager
+
+↓
+
+GPTSoVITSEngine
+
+↓
+
+GPTSoVITSAdapter
+
+↓
+
+GPT-SoVITS runtime CLI
+
+↓
+
+Temp WAV
+
+↓
+
+Artifact reservation / WAV validation / promotion
+
+Nguyen tac:
+
+- Runtime Doctor phai dat truoc khi API/UI cho start Generate Unit production.
+- Runtime Doctor dung Runtime Profile hien tai, khong hard-code o dia hoac ten thu muc runtime.
+- Generate production chi chay khi `inference_cli.py` ton tai that; `inference_webui.py` chi duoc report rieng, khong duoc gia dinh la CLI tuong duong.
+- Voice phai co `gpt_model`, `sovits_model`, `reference_audio` va `reference_text` hop le.
+- Provider khong quan ly Voice/Variant/Style/Project; provider chi resolve context can thiet de goi Engine theo Generate Unit da freeze.
+- Engine/Adapter chi synthesize audio vao temp path do Artifact lifecycle cap.
+- Temp output khong duoc coi la thanh cong cho den khi WAV validation va promotion pass.
+- Neu runtime/provider loi, Attempt/Unit/Artifact phai ghi `failed`, khong de ket `running` hoac `reserved`.
+- Test-only provider chi dung trong tests; readiness production khong duoc dua vao provider gia.
+- MP3 output qua Generate foundation chua READY trong AVS-014.17.
+
+---
+
+## AVS-014.20 Multi-Engine Language Capability & Routing
+
+Multi-engine language foundation nam giua Generate Plan va Engine Manager.
+
+Luồng routing:
+
+Text / Unit
+
+-> LanguageDetectionService
+
+-> EngineCapabilityRouter
+
+-> LanguageRoute snapshot tren GenerateUnitRecord
+
+-> Job Queue / Resource Manager
+
+-> Engine Manager / Engine Adapter o sprint runtime sau
+
+Language Catalog:
+
+- `vi`: primary language, can Vietnamese-capable engine rieng.
+- `zh`: GPT-SoVITS mode `all_zh`.
+- `en`: GPT-SoVITS mode `en`.
+- `ja`: GPT-SoVITS mode `all_ja`.
+- `ko`: GPT-SoVITS mode `all_ko`.
+- `yue`: GPT-SoVITS mode `all_yue`.
+
+Voice language contract:
+
+- Voice ID van la identity bat bien.
+- `enabled_languages` la danh sach language nguoi dung cho phep.
+- `language_selection_mode` la `selected` hoac `all`.
+- `engine_bindings` map language_code -> engine/runtime/model/reference binding.
+- Voice cu migration mac dinh chi bat `vi`.
+- `vi` khong duoc fallback sang GPT-SoVITS. Neu chua co Vietnamese engine, route phai BLOCKED.
+
+Readiness:
+
+- Readiness duoc tinh theo tung language, khong dung mot boolean chung.
+- File ton tai khong tuong duong inference READY.
+- GPT-SoVITS language chi READY sau khi co trained assets hop le va Real Smoke PASS theo fingerprint hien tai.
+- Fingerprint phai gom `voice_id`, language, engine_id, runtime_profile_id, model binding, reference binding, text frontend version va adapter version; khong phu thuoc display_name.
+
+Style compatibility:
+
+- Style Profile co compatibility theo language: supported, preferred, unsupported va language-specific instructions.
+- Style khong duoc ap dung ngam neu language hien tai nam trong unsupported scope.
+
+API/UI:
+
+- Local API phoi language catalog, detection, voice language capabilities va enabled language selection.
+- UI Voice hien foundation enabled languages/readiness; UI checkbox day du thuoc sprint polish sau.
+- Sprint nay khong Train, khong Generate that, khong chon Vietnamese engine final.
+
+---
+
+## AVS-014.21 Vietnamese Engine Evaluation & Language Selection
+
+AVS-014.21 hoan thien lop chon ngon ngu va danh gia engine tieng Viet o muc foundation/evaluation, khong mo production inference.
+
+Voice language UI:
+
+- Voice Detail hien checkbox that cho 6 language trong Language Catalog: `vi`, `zh`, `en`, `ja`, `ko`, `yue`.
+- `Tat ca` chi la scope selector cho cac language da cau hinh; khong tu dich text, khong them engine binding va khong unlock readiness.
+- Empty language selection bi chan o service. Legacy Voice migration mac dinh chi bat `vi`.
+- Trang Voice thao tac theo `voice_id`, khong theo display name hoac folder name.
+
+Generate language UI foundation:
+
+- Generate Options co ba mode: auto detect, fixed language va multilingual.
+- Fixed language chi cho chon language dang enable tren Voice; route co blocker van duoc hien va phai chan Generate that.
+- Auto/multilingual chi tao route preview/snapshot theo EngineCapabilityRouter; khong goi engine trong sprint nay.
+
+Vietnamese engine evaluation:
+
+- `VietnameseEngineEvaluationService` luu scorecard/audit cho VieNeu-TTS, F5-TTS Vietnamese va viXTTS.
+- Evidence state phan biet `CLAIMED_BY_UPSTREAM`, `VERIFIED_LOCALLY`, `NOT_VERIFIED`, `UNSUPPORTED`.
+- License gate tach source/model/dataset/commercial/attribution/redistribution.
+- Subjective quality chi duoc ghi `MANUAL_REVIEW_REQUIRED` hoac `NOT_TESTED` neu chua co canary/manual listening; khong tao diem ao.
+- Download Plan la object rieng, mac dinh yeu cau user permission va khong tu download model.
+- Local Canary chi duoc chay khi local model/license/runtime/disk/low-resource gates PASS; sprint nay mac dinh SKIPPED.
+
+Low-resource safety:
+
+- Quadro P1000/VRAM thap dung policy an toan: 1 inference process, GPU concurrency 1, batch size 1, lazy load, khong chay background benchmark va khong chay hai GPU engine cung luc.
+- Resource Manager/Job Queue sau nay phai giu lease va cleanup khi canary/generate fail, timeout hoac cancel.
+
+Readiness:
+
+- VieNeu-TTS la primary candidate de xuat cho Vietnamese engine, nhung production integration van BLOCKED cho den khi co model local va local canary/Real Smoke PASS.
+- F5-TTS Vietnamese public checkpoint dang non-commercial nen khong chon lam production default.
+- viXTTS chi giu lam comparison va can license/model review rieng.
+- Generate production execution/WAV output khong thay doi trong sprint nay.
+
+---
+
+## AVS-014.22 VieNeu-TTS Controlled Import & Local Canary Gate
+
+VieNeu-TTS integration bat dau bang controlled import/canary gate, chua phai production Generate engine.
+
+Luon di theo chuoi an toan:
+
+Delta Audit
+
+-> License / Revision / Model Gate
+
+-> Download Plan
+
+-> Managed Engine Cache
+
+-> Reference Validation
+
+-> Isolated Runtime
+
+-> Controlled Canary
+
+-> Manual Listening Review
+
+-> Production Binding / Real Smoke o sprint sau
+
+Nguyen tac:
+
+- Moi sprint chi download/import toi da mot candidate VieNeu da duoc gate.
+- Target import nam trong `cache/engines/vieneu_tts/<revision>/`, khong nam trong GPT-SoVITS runtime, Voice, Project, Workspace hay source root.
+- Diagnostics/canary output nam trong `diagnostics/vietnamese_engine_evaluation/<canary_run_id>/`.
+- Khong download model am tham; service phai co explicit gate va blockers ro.
+- Low-resource default uu tien CPU/ONNX, concurrency 1, batch size 1, khong background benchmark va khong dung GPU/CUDA fallback.
+- VieNeu duoc tach thanh hai lop: inference backend = ONNX CPU; fresh reference enrollment frontend = CPU-only `torch`/`torchaudio` speaker fbank. GPU/CUDA khong duoc phep trong AVS-014.22 canary.
+- Source audit `vieneu==3.2.3` cho thay CPU/ONNX co nhan `ref_audio` va GPU khong bat buoc; requirement dung la `cpu_torch_frontend_required_for_fresh_reference_enrollment`, khong phai GPU-required.
+- Runtime/model/canary gate phai fail-closed neu khong verify duoc license/revision/file list hoac tai model that.
+- Codec dependency duoc quan ly rieng voi model: `OpenMOSS-Team/MOSS-Audio-Tokenizer-Nano-ONNX` nam trong `cache/engines/vieneu_tts/<revision>/codecs/`, co license/revision/file/hash manifest rieng.
+- Offline resolution test phai dung local `checkpoint_path`, `onnx_dir` va `codec_dir`; neu loader co gang fetch ngam tu Hugging Face thi gate FAIL.
+- Neu canary bi chan boi source/package contract, khong duoc fake PASS bang preset voice hoac built-in voice.
+- Reference audio/text cua Voice 0001 chi duoc doc/validate; neu can resample cho VieNeu 48 kHz thi tao ban copy trong diagnostics run temp, khong ghi de clip goc.
+- Local canary PASS chi co nghia la engine candidate co audio de nghe thu; khong tu nang Generate production readiness.
+- Vietnamese engine production integration chi READY sau khi co local model, binding theo language, Real Smoke qua production pipeline va manual/quality gate dat.
+
+---
+
+## AVS-014.18 Voice Publish Automation
+
+Voice identity:
+
+- `voice_id` la identity bat bien.
+- `display_name` chi la ten hien thi va co the doi.
+- Folder legacy nhu `voices/Thu Minh/` duoc giu nguyen; resolver phai tim Voice bang `voice_id`, khong dung display name lam khoa.
+- Rename display name khong duoc doi folder, model, checkpoint, reference, Project, Generate Session, Artifact hoac train history.
+
+Publish workflow:
+
+Dataset / Train output
+
+↓
+
+Training Run artifacts
+
+↓
+
+VoicePublishService validation
+
+↓
+
+Explicit confirmation
+
+↓
+
+Atomic update `voice.json`
+
+↓
+
+Runtime Doctor selected asset readiness
+
+Nguyen tac:
+
+- Publish khong phai Train va khong Generate.
+- Service chi link existing `gpt_model`, `sovits_model`, `reference_audio`, `reference_text`, language va Runtime Profile vao Voice.
+- GPT checkpoint phai la `.ckpt`; SoVITS checkpoint phai la `.pth`; file phai ton tai va khong rong.
+- Neu co nhieu checkpoint candidate, service chi liet ke va yeu cau chon thu cong, khong blind pick.
+- Publish fingerprint dua tren immutable asset/runtime/language data, khong dua tren `display_name`.
+- Real Inference chi VERIFIED sau Real GPT-SoVITS Smoke PASS voi fingerprint hien tai.
+
+Style/Variant:
+
+- Style Profile la post-training generate profile/prompt/parameter metadata, khong phai Voice va khong chua checkpoint.
+- Variant binding la quan he `voice_id + style_profile_id` va optional reference override.
+- Variant khong tao model rieng mac dinh; separate model variant van UNAVAILABLE neu khong co artifact that.
+
+---
+
+## AVS-014.19A1 Vietnamese Text Frontend Compatibility
+
+GPT-SoVITS training preprocessing phu thuoc truc tiep vao frontend language cua runtime:
+
+Metadata `audio|speaker|language|text`
+
+-> `prepare_datasets/1-get-text.py`
+
+-> `text.cleaner.clean_text(language)`
+
+-> `2-name2text.txt` gom phones / word2ph / normalized text
+
+-> `3-bert`, GPT `AR/data/dataset.py`, SoVITS/GPT train.
+
+Audit runtime v2Pro hien tai:
+
+- `1-get-text.py` chi chap nhan/map `zh`, `ja`, `jp`, `en`, `ko`, `yue`.
+- `text/cleaner.py` chi co module cleaner cho `zh`, `ja`, `en`, `ko`, `yue`.
+- `symbols*.py` khong dinh nghia Vietnamese phoneme inventory duoc runtime train/inference validate.
+- GPT `AR/data/dataset.py` doc phones tu `2-name2text.txt` va convert bang vocab runtime; phone token sai se bi skip/loi hoac train sai.
+- Inference language path khong expose `vi`; chi co cac mode zh/ja/ko/yue/en/auto tuong ung.
+
+Quyet dinh kien truc:
+
+- Khong tao fake Vietnamese frontend neu chi la alias `vi` sang `zh`, `en`, `auto`, `all_zh` hoac `yue`.
+- Khong chay canary preprocessing khi runtime compatibility chua duoc chung minh.
+- `PREPROCESS_CONFIG_INVALID` la blocker dung cho runtime hien tai.
+- De mo lai preprocessing tieng Viet can runtime/upstream patch co day du cleaner, phoneme mapping, train preprocessing va inference language `vi` duoc validate.

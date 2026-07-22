@@ -114,6 +114,48 @@ class GenerateOptionsPanel(QWidget):
             self.mode_combo,
         )
 
+        self.language_mode_combo = QComboBox()
+
+        self.language_mode_combo.addItem(
+            "Tự động phát hiện",
+            "auto",
+        )
+
+        self.language_mode_combo.addItem(
+            "Chọn ngôn ngữ cố định",
+            "fixed",
+        )
+
+        self.language_mode_combo.addItem(
+            "Văn bản đa ngôn ngữ",
+            "multilingual",
+        )
+
+        form.addRow(
+            "Ngôn ngữ",
+            self.language_mode_combo,
+        )
+
+        self.fixed_language_combo = QComboBox()
+
+        form.addRow(
+            "Ngôn ngữ cố định",
+            self.fixed_language_combo,
+        )
+
+        self.language_preview = QLabel(
+            "Language route: -"
+        )
+
+        self.language_preview.setWordWrap(
+            True
+        )
+
+        form.addRow(
+            "Preview route",
+            self.language_preview,
+        )
+
         self.variant_combo = QComboBox()
 
         form.addRow(
@@ -350,6 +392,10 @@ class GenerateOptionsPanel(QWidget):
             self.update_mode
         )
 
+        self.language_mode_combo.currentIndexChanged.connect(
+            self.update_language_mode
+        )
+
         self.allow_all_variants.stateChanged.connect(
             self.update_counts
         )
@@ -359,6 +405,8 @@ class GenerateOptionsPanel(QWidget):
         )
 
         self.update_mode()
+
+        self.update_language_mode()
 
     def choose_file(
         self,
@@ -402,7 +450,24 @@ class GenerateOptionsPanel(QWidget):
 
         if not voice:
 
+            self.load_language_capabilities(
+                None
+            )
+
             return
+
+        self.load_language_capabilities(
+            {
+                "enabled_languages": getattr(
+                    voice.config,
+                    "enabled_languages",
+                    [
+                        "vi",
+                    ],
+                ),
+                "languages": [],
+            }
+        )
 
         for variant in voice.variants:
 
@@ -470,6 +535,177 @@ class GenerateOptionsPanel(QWidget):
         )
 
         self.update_counts()
+
+    def load_language_capabilities(
+        self,
+        capabilities,
+    ):
+
+        self.fixed_language_combo.clear()
+
+        languages = []
+
+        if capabilities:
+
+            language_items = capabilities.get(
+                "languages",
+                [],
+            )
+
+            if language_items:
+
+                languages = [
+                    item
+                    for item in language_items
+                    if item.get(
+                        "enabled"
+                    )
+                ]
+
+            else:
+
+                names = {
+                    "vi": "Tiếng Việt",
+                    "zh": "Tiếng Trung",
+                    "en": "Tiếng Anh",
+                    "ja": "Tiếng Nhật",
+                    "ko": "Tiếng Hàn",
+                    "yue": "Tiếng Quảng Đông",
+                }
+
+                languages = [
+                    {
+                        "code": code,
+                        "display_name_vi": names.get(
+                            code,
+                            code,
+                        ),
+                        "route": {
+                            "status": "BLOCKED",
+                            "reason": "NOT_PREVIEWED",
+                        },
+                    }
+                    for code in capabilities.get(
+                        "enabled_languages",
+                        [
+                            "vi",
+                        ],
+                    )
+                ]
+
+        for item in languages:
+
+            route = item.get(
+                "route",
+                {},
+            )
+
+            label = (
+                item.get(
+                    "display_name_vi",
+                    item.get(
+                        "code",
+                        "",
+                    ),
+                )
+                + " - "
+                + route.get(
+                    "status",
+                    "BLOCKED",
+                )
+            )
+
+            if route.get(
+                "reason",
+            ):
+
+                label += (
+                    " / "
+                    + route.get(
+                        "reason",
+                        "",
+                    )
+                )
+
+            self.fixed_language_combo.addItem(
+                label,
+                item.get(
+                    "code",
+                    "",
+                ),
+            )
+
+        self.update_language_mode()
+
+    def update_language_mode(
+        self,
+    ):
+
+        fixed = (
+            self.language_mode_combo.currentData()
+            == "fixed"
+        )
+
+        self.fixed_language_combo.setEnabled(
+            fixed
+        )
+
+    def selected_language(
+        self,
+    ):
+
+        mode = self.language_mode_combo.currentData()
+
+        if mode == "fixed":
+
+            return self.fixed_language_combo.currentData() or ""
+
+        return ""
+
+    def preview_language_routes(
+        self,
+        router,
+        voice_id,
+    ):
+
+        mode = self.language_mode_combo.currentData()
+
+        language = self.selected_language()
+
+        result = router.route_text(
+            voice_id,
+            self.direct_text.toPlainText(),
+            explicit_language=language if mode == "fixed" else "",
+        )
+
+        lines = []
+
+        for item in result.get(
+            "segments",
+            [],
+        ):
+
+            route = item.get(
+                "route",
+                {},
+            )
+
+            lines.append(
+                f"{item.get('segment_id')}: "
+                f"{item.get('language_code')} -> "
+                f"{route.get('engine_id', '-')}"
+                f" [{route.get('status')}] "
+                f"{route.get('reason', '')}"
+            )
+
+        self.language_preview.setText(
+            "\n".join(
+                lines
+            )
+            or "Language route: -"
+        )
+
+        return result
 
     def style_ids(
         self,
@@ -611,6 +847,7 @@ class GenerateOptionsPanel(QWidget):
             output_name=self.output_name.text(),
             output_format=self.output_format.currentData(),
             mp3_bitrate_kbps=self.mp3_bitrate.value(),
+            language=self.selected_language(),
             speed=SpeedProfile(
                 speed=float(
                     self.speed_combo.currentData()

@@ -1,5 +1,25 @@
 # Changelog
 
+## Restore Vietnamese Engine Routing to VieNeu-TTS
+
+### Changed
+
+- Voice tieng Viet mac dinh dung engine `vieneu`.
+- GPT-SoVITS khong con khai bao supported language `vi`.
+- Generate routing cho `vi` resolve sang VieNeu-TTS va bao `vieneu_tts_unavailable` neu engine chua san sang.
+- Voice binding chan gan `gpt_sovits` cho voice `vi`.
+
+### Added
+
+- `VieNeuTTSEngine` unavailable stub de engine registry co ID `vieneu` ro rang, khong sinh audio gia.
+- `EngineLanguageRouter` cho contract `vi -> vieneu`.
+- Tests routing tieng Viet.
+
+### Notes
+
+- Khong sua model/checkpoint/audio/output cu.
+- Khong fallback tu VieNeu-TTS sang GPT-SoVITS.
+
 ## Resource Safety Hardening Phase 9: Production Engine Adapter Registration va Controlled Rollout
 
 ### Added
@@ -20,7 +40,7 @@
 ### Notes
 
 - Khong load model, khong goi GPU, khong internet, khong CPU affinity/process kill.
-- Khong production-ready cho VieNeu vi source hien tai khong co engine integration.
+- VieNeu Thread Budget capability chua production-ready; VieNeu van la engine routing bat buoc cho tieng Viet neu runtime duoc cau hinh.
 
 ## Resource Safety Hardening Phase 8: Production Thread Enforcement Integration
 

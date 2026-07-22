@@ -32,7 +32,6 @@ class GPTSoVITSEngine(BaseEngine):
             description="GPT-SoVITS Voice Cloning",
 
             supported_languages=[
-                "vi",
                 "en",
                 "zh",
                 "ja",

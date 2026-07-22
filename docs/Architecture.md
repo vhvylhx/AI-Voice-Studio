@@ -1492,7 +1492,7 @@ Source evidence:
 
 - Engine production that trong repo: `gpt_sovits` tu `GPTSoVITSEngine.info()`.
 - GPT-SoVITS generate chay subprocess qua `GPTSoVITSAdapter.run()` va truyen `env=env`.
-- Khong co VieNeu engine production trong source hien tai.
+- VieNeu-TTS la engine bat buoc cho tieng Viet; runtime/app integration hien o trang thai UNAVAILABLE neu chua duoc cau hinh.
 - `mock` la demo/test engine; `xtts` la skeleton chua generate/train.
 
 Thanh phan:
@@ -1509,3 +1509,22 @@ Nguyen tac Phase 9:
 - GPT-SoVITS chi duoc apply thread variables vao scoped env truoc subprocess start; khong mutate `os.environ`.
 - Khong load model, khong goi GPU, khong sua inference/training output, khong CPU affinity, khong kill process.
 - Unknown/unavailable/not-production-ready engine deferred voi stable reason codes, khong fail-open.
+
+---
+
+## Vietnamese Engine Routing
+
+Contract routing bat buoc:
+
+```text
+language = vi -> engine = vieneu
+```
+
+Nguyen tac:
+
+- GPT-SoVITS runtime hien tai khong duoc quang ba ho tro `vi`.
+- Voice tieng Viet mac dinh dung `vieneu`.
+- Khong duoc bind voice `vi` sang `gpt_sovits`.
+- Generate tieng Viet resolve engine sang `vieneu`; neu VieNeu-TTS chua san sang thi tra `UNAVAILABLE`/`vieneu_tts_unavailable`.
+- Khong fallback tu VieNeu-TTS sang GPT-SoVITS cho tieng Viet.
+- Cac WAV tieng Viet/benchmark cu duoc xem la VieNeu-TTS provenance, khong phai GPT-SoVITS evidence.

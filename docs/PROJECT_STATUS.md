@@ -15,6 +15,7 @@ Ngay cap nhat: 2026-07-22
 - Resource Safety Phase 7 da co Thread Budget foundation monitor_only/enforce-gated voi workload allocation, oversubscription/nested parallelism detection, environment/runtime plan, restore plan, cooldown/dedup/retry va simulated executor; khong mutate thread/env/runtime production.
 - Resource Safety Phase 8 da co production-safe Thread Budget integration contract voi scoped environment copy, runtime adapter registry, apply-before-workload/restore-after-workload hook trong JobRunner khi duoc inject, rollback audit va primary-error preservation; mac dinh `thread_budget_mode` van monitor_only.
 - Resource Safety Phase 9 da dang ky Thread Budget capability theo source evidence: `gpt_sovits` chi production-ready cho scoped subprocess environment, `mock`/`xtts`/`vieneu` khong production-ready; rollout enforce can allowlist/opt-in va deterministic gate.
+- Engine routing da duoc sua: ngon ngu `vi` chi route sang `vieneu`; GPT-SoVITS runtime hien tai khong duoc quang ba ho tro `vi` va khong duoc fallback cho tieng Viet.
 - Chua tich hop GPT-SoVITS runtime cho Generate production trong phase nay.
 - Chua Train GPT-SoVITS that trong phase nay.
 - Chua Generate Audio that trong phase nay.
@@ -55,6 +56,8 @@ Ngay cap nhat: 2026-07-22
 | Thread Budget production enforcement integration | DEGRADED | Phase 9 co registry/rollout va GPT-SoVITS scoped subprocess environment adapter; default van monitor_only, khong runtime setter/model load/GPU. |
 | Style Profile / Voice DNA foundation | DEGRADED | Quan ly/import/export foundation co; prosody analyzer that chua co. |
 | Runtime GPT-SoVITS integration cho Generate | UNAVAILABLE | La pham vi sprint sau, khong lam trong AVS-014.16A. |
+| VieNeu-TTS Vietnamese routing | UNAVAILABLE | `vieneu` la engine bat buoc cho `vi`, nhung runtime/app integration hien chua san sang; khong fallback sang GPT-SoVITS. |
+| GPT-SoVITS Vietnamese support | NOT_APPLICABLE | Runtime GPT-SoVITS hien tai khong co frontend/ngon ngu `vi` hop le. |
 
 ## Data safety
 

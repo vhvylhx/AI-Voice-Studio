@@ -3,6 +3,7 @@ from pathlib import Path
 import unicodedata
 
 from models.voice_config import VoiceConfig
+from services.engine_language_router import EngineLanguageRouter
 from models.voice_model import VoiceModel
 
 
@@ -403,6 +404,23 @@ class VoiceService:
         engine_id,
         engine_path="",
     ):
+
+        errors = EngineLanguageRouter().validate_binding(
+            getattr(
+                voice.config,
+                "language",
+                "",
+            ),
+            engine_id,
+        )
+
+        if errors:
+
+            raise RuntimeError(
+                ",".join(
+                    errors
+                )
+            )
 
         voice.config.engine = engine_id
 

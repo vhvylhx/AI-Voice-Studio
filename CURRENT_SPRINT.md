@@ -1,11 +1,17 @@
 # Current Sprint
 
+## Cap nhat Restore Vietnamese Engine Routing
+
+- `language=vi` chi route sang `vieneu`.
+- GPT-SoVITS khong duoc chon/fallback/quang ba cho tieng Viet.
+- VieNeu-TTS hien co engine ID ro rang nhung runtime/app integration chua san sang thi bao UNAVAILABLE.
+
 ## Cap nhat Resource Safety Hardening Phase 9
 
 - Phase 9 Production Engine Adapter Registration va Controlled Rollout da hoan thanh o muc source-evidence registration.
 - `thread_budget_mode` mac dinh van `monitor_only`.
 - `gpt_sovits` duoc dang ky production-ready chi cho scoped subprocess environment; khong runtime setter in-process.
-- `mock`, `xtts`, `vieneu` khong production-ready.
+- `mock`, `xtts`, `vieneu` khong production-ready cho Thread Budget; rieng `vieneu` la engine routing bat buoc cho tieng Viet.
 - Enforce can allowlist/opt-in va deterministic rollout; default khong engine nao duoc enforce mac dinh.
 - Chua Phase 10.
 

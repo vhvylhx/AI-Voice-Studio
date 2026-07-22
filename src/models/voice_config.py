@@ -166,7 +166,7 @@ class VoiceConfig:
     # Engine
     #
 
-    engine: str = "gpt_sovits"
+    engine: str = "vieneu"
 
     engine_path: str = ""
 

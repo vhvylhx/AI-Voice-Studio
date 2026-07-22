@@ -117,6 +117,7 @@ class AppContext(metaclass=AppContextMeta):
 
         from engines.mock_engine import MockEngine
         from engines.gpt_sovits_engine import GPTSoVITSEngine
+        from engines.vieneu_tts_engine import VieNeuTTSEngine
 
         cls.project_service = ProjectService()
 
@@ -224,6 +225,14 @@ class AppContext(metaclass=AppContextMeta):
 
         cls.engine_manager.register(
             MockEngine()
+        )
+
+        vieneu = VieNeuTTSEngine()
+
+        vieneu.initialize()
+
+        cls.engine_manager.register(
+            vieneu
         )
 
         gpt = GPTSoVITSEngine()

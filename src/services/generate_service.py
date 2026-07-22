@@ -19,6 +19,7 @@ from services.history_service import (
 from services.generate_pipeline_service import (
     GeneratePipelineService,
 )
+from services.engine_language_router import EngineLanguageRouter
 
 
 class GenerateService:
@@ -44,6 +45,7 @@ class GenerateService:
                 engine_manager=AppContext.engine_manager,
             )
         )
+        self.engine_router = EngineLanguageRouter()
 
     def prepare_text(
         self,
@@ -118,7 +120,14 @@ class GenerateService:
 
         if job.voice:
 
-            engine_id = (
+            config = job.voice.config
+
+            engine_id = self.engine_router.resolve_engine(
+                getattr(
+                    config,
+                    "language",
+                    "",
+                ),
                 job.voice.config.engine
             )
 

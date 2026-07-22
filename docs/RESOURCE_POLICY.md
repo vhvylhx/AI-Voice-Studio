@@ -109,3 +109,5 @@ Source evidence Phase 9:
 
 - `gpt_sovits`: engine_id that trong `GPTSoVITSEngine.info()`, generate chay subprocess qua `GPTSoVITSAdapter.run(..., env=env)`, nen chi dang ky scoped subprocess environment adapter.
 - `mock`, `xtts`, `vieneu`: khong production-ready cho Thread Budget production enforcement.
+
+Luu y engine routing ngoai Thread Budget: `vi` chi duoc route sang `vieneu`; GPT-SoVITS khong phai engine tieng Viet cho runtime hien tai.

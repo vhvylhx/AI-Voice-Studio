@@ -14,6 +14,7 @@ from services.audio_merge_service import AudioMergeService
 from services.context_analysis_service import ContextAnalysisService
 from services.generate_planning_service import GeneratePlanningService
 from services.temp_workspace_service import TempWorkspaceService
+from services.engine_language_router import EngineLanguageRouter
 
 
 class GeneratePipelineService:
@@ -48,6 +49,8 @@ class GeneratePipelineService:
             merge_service
             or AudioMergeService()
         )
+
+        self.engine_router = EngineLanguageRouter()
 
         self.progress_events = []
 
@@ -255,6 +258,51 @@ class GeneratePipelineService:
             )
 
         config = voice.config
+
+        routed_engine = self.engine_router.resolve_engine(
+            getattr(
+                config,
+                "language",
+                "",
+            ),
+            getattr(
+                config,
+                "engine",
+                "",
+            ),
+        )
+
+        if self.engine_router.validate_binding(
+            getattr(
+                config,
+                "language",
+                "",
+            ),
+            routed_engine,
+        ):
+
+            errors.append(
+                "vietnamese_requires_vieneu_tts"
+            )
+
+        if (
+            routed_engine == "vieneu"
+            and self.engine_manager is not None
+            and hasattr(
+                self.engine_manager,
+                "get",
+            )
+        ):
+
+            engine = self.engine_manager.get(
+                "vieneu"
+            )
+
+            if engine is None or not engine.is_available():
+
+                errors.append(
+                    "vieneu_tts_unavailable"
+                )
 
         if (
             not str(
@@ -531,6 +579,10 @@ class GeneratePipelineService:
 
                     else:
 
+                        self.select_routed_engine(
+                            voice
+                        )
+
                         self.engine_manager.generate(
                             text_file=text_file,
                             output_file=output,
@@ -576,6 +628,40 @@ class GeneratePipelineService:
                 )
 
         return chunk_files
+
+    def select_routed_engine(
+        self,
+        voice,
+    ):
+
+        if self.engine_manager is None or not hasattr(
+            self.engine_manager,
+            "select",
+        ):
+
+            return ""
+
+        config = voice.config
+        engine_id = self.engine_router.resolve_engine(
+            getattr(
+                config,
+                "language",
+                "",
+            ),
+            getattr(
+                config,
+                "engine",
+                "",
+            ),
+        )
+
+        if engine_id:
+
+            self.engine_manager.select(
+                engine_id
+            )
+
+        return engine_id
 
     def request_text(
         self,

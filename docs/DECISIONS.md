@@ -698,3 +698,15 @@
 - Ngay cap nhat: 2026-07-22.
 
 ---
+
+# DEC-071: Tieng Viet chi route sang VieNeu-TTS
+
+- Trang thai: Chap nhan.
+- Boi canh: Runtime GPT-SoVITS hien tai khong co frontend/ngon ngu `vi` hop le; cac WAV tieng Viet/benchmark truoc day la tu VieNeu-TTS.
+- Quyet dinh: `language=vi` bat buoc resolve sang engine `vieneu`.
+- Quyet dinh: GPT-SoVITS khong duoc quang ba ho tro `vi`, khong duoc chon cho voice tieng Viet va khong duoc fallback khi VieNeu-TTS unavailable.
+- Quyet dinh: Neu VieNeu-TTS chua san sang, Generate phai tra `UNAVAILABLE` hoac loi ro rang.
+- He qua: Voice default engine cho `vi` la `vieneu`; GPT-SoVITS chi giu cac ngon ngu runtime hien co khong gom `vi`.
+- Ngay cap nhat: 2026-07-22.
+
+---

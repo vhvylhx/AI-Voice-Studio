@@ -257,8 +257,10 @@ def build_default_thread_budget_registry(
 
     registry.register_unsupported(
         "vieneu",
-        engine_name="VieNeu",
-        unavailable_reason="thread_engine_not_registered",
+        engine_name="VieNeu-TTS",
+        unavailable_reason=(
+            "thread_engine_capability_not_production_ready"
+        ),
     )
 
     return registry

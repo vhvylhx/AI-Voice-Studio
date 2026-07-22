@@ -28,3 +28,14 @@ style_profiles/
 
 .DS_Store
 Thumbs.db
+
+# Local pytest artifacts
+.pytest-avs01424-basetemp/
+.pytest-avs016/
+.pytest-basetemp-avs01424-c7/
+.pytest_tmp/
+
+# Local diagnostics
+diagnostics/
+tree.txt
+accumulated_work_inventory.txt

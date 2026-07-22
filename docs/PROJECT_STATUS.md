@@ -4,9 +4,10 @@ Ngay cap nhat: 2026-07-22
 
 ## Trang thai hien tai
 
-- Sprint vua thuc hien: Resource Safety Hardening Phase 1 - Policy v2, Feature Flags va Safe Resolution.
+- Sprint vua thuc hien: Resource Safety Hardening Phase 2 - Snapshot Validation va Shadow Decision monitor-only.
 - Nen Generate Pipeline AVS-014.16 da co o muc request/session/source snapshot/plan/manifest/recovery/API/job prepare.
 - Resource Policy schema v2 da co foundation resolve/migration/fallback/fingerprint o muc monitor-only/disabled.
+- Resource Safety Phase 2 da co snapshot validation/freshness va shadow Resource Decision v2 monitor-only, khong doi scheduling/runtime behavior.
 - Chua tich hop GPT-SoVITS runtime cho Generate production trong phase nay.
 - Chua Train GPT-SoVITS that trong phase nay.
 - Chua Generate Audio that trong phase nay.
@@ -33,7 +34,9 @@ Ngay cap nhat: 2026-07-22
 | Job Queue foundation | READY | Persistent job/queue/worker foundation da co. |
 | Resource Manager foundation | READY | Hardware snapshot/resource decision/lease foundation da co. |
 | Resource Policy v2 foundation | READY | Schema v2, feature modes doc lap, migration v1, safe resolve, backup/fallback va fingerprint deterministic da co. Runtime enforcement moi chua bat. |
-| Resource Policy v2 enforcement | UNAVAILABLE | Phase 1 chi monitor-only/disabled; khong block job moi, khong doi scheduling/thread/batch/runtime action. |
+| Resource Snapshot validation | READY | Phan biet valid/invalid/unknown/stale cho RAM/GPU/VRAM/Disk, co freshness age va TTL tu policy. |
+| Resource Decision v2 shadow observation | READY | Tra structured shadow_observation monitor-only gom actual_decision, shadow_decision, reason_codes, snapshot_status, workload_class va policy_fingerprint. |
+| Resource Policy v2 enforcement | UNAVAILABLE | Phase 2 van chi monitor-only/shadow; khong block job moi, khong doi scheduling/thread/batch/runtime action. |
 | Style Profile / Voice DNA foundation | DEGRADED | Quan ly/import/export foundation co; prosody analyzer that chua co. |
 | Runtime GPT-SoVITS integration cho Generate | UNAVAILABLE | La pham vi sprint sau, khong lam trong AVS-014.16A. |
 
@@ -51,6 +54,7 @@ Ngay cap nhat: 2026-07-22
 - Chua chay Train GPT-SoVITS production.
 - Chua co prosody analyzer that cho Voice DNA.
 - Chua co Process Supervisor enforcement/kill-tree, runtime pressure guard action, thread budget enforcement hoac per-job CPU fallback confirmation workflow.
+- Resource Decision v2 hien chi shadow/monitor-only; chua duoc dung de block Queue, doi job state, cap/release lease, doi CPU fallback, thread, batch hoac runtime guard.
 
 ## Sprint tiep theo du kien
 

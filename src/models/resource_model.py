@@ -65,6 +65,60 @@ DEFAULT_THREAD_LIMITS = {
     "cpu_heavy_preprocessing_threads": 4,
 }
 
+WORKLOAD_CLASS_LIGHT = "light"
+WORKLOAD_CLASS_CPU_HEAVY = "cpu_heavy"
+WORKLOAD_CLASS_GPU_INFERENCE = "gpu_inference"
+WORKLOAD_CLASS_GPU_TRAINING = "gpu_training"
+WORKLOAD_CLASS_IO_HEAVY = "io_heavy"
+
+WORKLOAD_CLASSES = (
+    WORKLOAD_CLASS_LIGHT,
+    WORKLOAD_CLASS_CPU_HEAVY,
+    WORKLOAD_CLASS_GPU_INFERENCE,
+    WORKLOAD_CLASS_GPU_TRAINING,
+    WORKLOAD_CLASS_IO_HEAVY,
+)
+
+SNAPSHOT_STATUS_VALID = "valid"
+SNAPSHOT_STATUS_INVALID = "invalid"
+SNAPSHOT_STATUS_UNKNOWN = "unknown"
+SNAPSHOT_STATUS_STALE = "stale"
+
+SNAPSHOT_STATUSES = (
+    SNAPSHOT_STATUS_VALID,
+    SNAPSHOT_STATUS_INVALID,
+    SNAPSHOT_STATUS_UNKNOWN,
+    SNAPSHOT_STATUS_STALE,
+)
+
+SHADOW_DECISION_WOULD_READY = "WOULD_READY"
+SHADOW_DECISION_WOULD_WAIT = "WOULD_WAIT"
+SHADOW_DECISION_WOULD_BLOCK = "WOULD_BLOCK"
+SHADOW_DECISION_CONFIRMATION_REQUIRED = "CONFIRMATION_REQUIRED"
+
+SHADOW_DECISIONS = (
+    SHADOW_DECISION_WOULD_READY,
+    SHADOW_DECISION_WOULD_WAIT,
+    SHADOW_DECISION_WOULD_BLOCK,
+    SHADOW_DECISION_CONFIRMATION_REQUIRED,
+)
+
+RESOURCE_REASON_RAM_BELOW_RESERVE = "ram_below_reserve"
+RESOURCE_REASON_RAM_SNAPSHOT_UNKNOWN = "ram_snapshot_unknown"
+RESOURCE_REASON_RAM_SNAPSHOT_INVALID = "ram_snapshot_invalid"
+RESOURCE_REASON_SNAPSHOT_STALE = "snapshot_stale"
+RESOURCE_REASON_DISK_BELOW_RESERVE = "disk_below_reserve"
+RESOURCE_REASON_DISK_SNAPSHOT_UNKNOWN = "disk_snapshot_unknown"
+RESOURCE_REASON_DISK_SNAPSHOT_INVALID = "disk_snapshot_invalid"
+RESOURCE_REASON_GPU_UNAVAILABLE = "gpu_unavailable"
+RESOURCE_REASON_VRAM_BELOW_RESERVE = "vram_below_reserve"
+RESOURCE_REASON_GPU_SNAPSHOT_UNKNOWN = "gpu_snapshot_unknown"
+RESOURCE_REASON_GPU_SNAPSHOT_INVALID = "gpu_snapshot_invalid"
+RESOURCE_REASON_CPU_FALLBACK_CONFIRMATION_REQUIRED = (
+    "cpu_fallback_confirmation_required"
+)
+RESOURCE_REASON_HEAVY_JOB_ALREADY_ACTIVE = "heavy_job_already_active"
+
 
 def now_iso():
 
@@ -162,7 +216,7 @@ class GPUDeviceInfo:
             cls,
         ):
 
-            return data
+            data = data.to_dict()
 
         data = data or {}
 
@@ -228,7 +282,7 @@ class HardwareProfile:
             cls,
         ):
 
-            return data
+            data = data.to_dict()
 
         data = dict(
             data or {}
@@ -281,6 +335,18 @@ class ResourceSnapshot:
     captured_at: str = field(
         default_factory=now_iso
     )
+
+    provider_status: dict = field(
+        default_factory=dict
+    )
+
+    validation_status: str = SNAPSHOT_STATUS_UNKNOWN
+
+    validation_reason_codes: list = field(
+        default_factory=list
+    )
+
+    freshness_age_seconds: float = 0.0
 
     schema_version: int = RESOURCE_SCHEMA_VERSION
 
@@ -356,9 +422,148 @@ class ResourceRequirement:
 
     exclusive_gpu: bool = False
 
+    workload_class: str = WORKLOAD_CLASS_LIGHT
+
+    estimated_peak_ram_mb: int = 0
+
+    estimated_peak_vram_mb: int = 0
+
+    estimated_disk_mb: int = 0
+
+    heavy_job: bool = False
+
+    cpu_fallback_supported: bool = True
+
+    cpu_fallback_confirmed: bool = False
+
     notes: str = ""
 
     def to_dict(self):
+
+        return asdict(
+            self
+        )
+
+    @classmethod
+    def from_dict(
+        cls,
+        data,
+    ):
+
+        if isinstance(
+            data,
+            cls,
+        ):
+
+            data = data.to_dict()
+
+        data = data or {}
+
+        requirement = cls(
+            **{
+                key: value
+                for key, value in data.items()
+                if key in cls.__dataclass_fields__
+            }
+        )
+
+        if requirement.workload_class not in WORKLOAD_CLASSES:
+
+            requirement.workload_class = WORKLOAD_CLASS_LIGHT
+
+        if not requirement.estimated_peak_ram_mb:
+
+            requirement.estimated_peak_ram_mb = requirement.ram_mb
+
+        if not requirement.estimated_peak_vram_mb:
+
+            requirement.estimated_peak_vram_mb = requirement.vram_mb
+
+        if not requirement.estimated_disk_mb:
+
+            requirement.estimated_disk_mb = requirement.disk_free_mb
+
+        if (
+            requirement.requires_gpu
+            and requirement.workload_class == WORKLOAD_CLASS_LIGHT
+        ):
+
+            requirement.workload_class = WORKLOAD_CLASS_GPU_INFERENCE
+
+        if requirement.workload_class in (
+            WORKLOAD_CLASS_CPU_HEAVY,
+            WORKLOAD_CLASS_GPU_INFERENCE,
+            WORKLOAD_CLASS_GPU_TRAINING,
+            WORKLOAD_CLASS_IO_HEAVY,
+        ):
+
+            requirement.heavy_job = True
+
+        return requirement
+
+
+@dataclass
+class ResourceSnapshotValidation:
+
+    status: str = SNAPSHOT_STATUS_UNKNOWN
+
+    reason_codes: list = field(
+        default_factory=list
+    )
+
+    ram_status: str = SNAPSHOT_STATUS_UNKNOWN
+
+    gpu_status: str = SNAPSHOT_STATUS_UNKNOWN
+
+    disk_status: str = SNAPSHOT_STATUS_UNKNOWN
+
+    age_seconds: float = 0.0
+
+    validated_at: str = field(
+        default_factory=now_iso
+    )
+
+    def to_dict(
+        self,
+    ):
+
+        return asdict(
+            self
+        )
+
+
+@dataclass
+class ResourceDecisionObservation:
+
+    actual_decision: str = "ready"
+
+    shadow_decision: str = SHADOW_DECISION_WOULD_READY
+
+    reason_codes: list = field(
+        default_factory=list
+    )
+
+    snapshot_status: str = SNAPSHOT_STATUS_UNKNOWN
+
+    workload_class: str = WORKLOAD_CLASS_LIGHT
+
+    policy_fingerprint: str = ""
+
+    observed_at: str = field(
+        default_factory=now_iso
+    )
+
+    would_block: bool = False
+
+    would_wait: bool = False
+
+    confirmation_required: bool = False
+
+    monitor_only: bool = True
+
+    def to_dict(
+        self,
+    ):
 
         return asdict(
             self
@@ -747,6 +952,10 @@ class ResourceDecision:
 
     remediation: list = field(
         default_factory=list
+    )
+
+    shadow_observation: dict = field(
+        default_factory=dict
     )
 
     decided_at: str = field(

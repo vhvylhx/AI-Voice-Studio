@@ -548,3 +548,17 @@ Có thể clone một giọng và tạo Audio bằng GPT-SoVITS.
 - [ ] Process Supervisor enforcement/kill-tree thuoc Phase sau neu duoc phe duyet rieng.
 
 ---
+
+# Cap nhat Resource Safety Hardening Phase 2
+
+- [x] Snapshot validation cho RAM/GPU/VRAM/Disk voi valid/invalid/unknown/stale.
+- [x] Snapshot freshness co captured_at, age va TTL tu Resource Policy.
+- [x] Unknown/invalid provider state khong fail-open trong shadow decision.
+- [x] Workload classification foundation: light, cpu_heavy, gpu_inference, gpu_training, io_heavy.
+- [x] Resource Decision v2 shadow/monitor-only voi structured observation.
+- [x] Stable reason codes Phase 2 co tests deterministic.
+- [x] Actual legacy decision khong doi va Queue scheduling khong doi.
+- [ ] Resource Decision v2 enforcement chua bat, can phe duyet rieng.
+- [ ] Process Supervisor enforcement/kill-tree thuoc Phase sau neu duoc phe duyet rieng.
+
+---

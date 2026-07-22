@@ -1244,3 +1244,34 @@ Ranh gioi:
 - Khong train/generate/goi GPT-SoVITS runtime.
 
 ---
+
+## Resource Safety Hardening Phase 2
+
+Phase 2 chi them snapshot validation va Resource Decision v2 dang shadow/monitor-only.
+
+Thanh phan:
+
+- `ResourceSnapshot` co provider status, validation status, reason codes va freshness age.
+- `ResourceSnapshotValidation` mo ta status tong va status rieng RAM/GPU/Disk.
+- `ResourceRequirement` co workload class va uoc luong peak RAM/VRAM/Disk theo huong additive.
+- `ResourceDecisionObservation` la structured shadow result gan vao `ResourceDecision.shadow_observation`.
+
+Nguyen tac Phase 2:
+
+- Actual Queue decision van la legacy decision tu `ResourceDecision.status`.
+- Shadow decision khong duoc block queue, doi job state, doi scheduling, doi lease, doi CPU fallback, thread, batch, Runtime Guard hoac Process Supervisor.
+- Shadow decision dung `ResourcePolicyService.resolve()` va `ResolvedResourcePolicy`.
+- Actual legacy decision tiep tuc dung `ResourcePolicyService.load()` projection tuong thich.
+- Unknown/invalid/stale snapshot khong duoc coi la du tai nguyen trong shadow result.
+- Light workload khong bi block chi vi GPU unknown neu khong requires_gpu.
+- Heavy workload co the WOULD_BLOCK/WOULD_WAIT/CONFIRMATION_REQUIRED trong shadow observation, nhung job that van chay theo legacy behavior.
+
+Ranh gioi:
+
+- Khong doi Job Queue scheduling.
+- Khong doi ResourceLeaseManager lifecycle.
+- Khong kich hoat enforcement.
+- Khong kill/cancel process.
+- Khong train/generate/goi GPT-SoVITS runtime.
+
+---

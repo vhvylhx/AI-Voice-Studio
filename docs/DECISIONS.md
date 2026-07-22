@@ -591,3 +591,16 @@
 - Ngay cap nhat: 2026-07-22.
 
 ---
+
+# DEC-063: Resource Decision v2 la shadow observation trong Phase 2
+
+- Trang thai: Chap nhan.
+- Boi canh: Can validate snapshot, unknown/invalid/stale state va tinh Resource Decision v2 ma khong pha scheduling hien co.
+- Quyet dinh: Phase 2 gan `shadow_observation` vao `ResourceDecision`, gom actual_decision, shadow_decision, reason_codes, snapshot_status, workload_class, policy_fingerprint va flags would_block/would_wait/confirmation_required.
+- Quyet dinh: Queue va JobRunner van chi dung actual legacy decision/status; shadow decision khong duoc block Queue, doi job state, cap/release lease, doi CPU fallback, thread, batch, Runtime Guard hoac Process Supervisor.
+- Quyet dinh: Shadow decision dung `ResourcePolicyService.resolve()` va `ResolvedResourcePolicy`; actual legacy behavior tiep tuc dung `load()` projection tuong thich.
+- Ly do: Cho phep quan sat deterministic truoc khi enforcement, tranh fail-open voi unknown snapshot nhung cung khong lam doi runtime behavior.
+- He qua: Resource Decision v2 enforcement can phase rieng va tests rieng truoc khi duoc dung de dieu phoi Queue that.
+- Ngay cap nhat: 2026-07-22.
+
+---

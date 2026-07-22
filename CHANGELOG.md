@@ -1,5 +1,35 @@
 # Changelog
 
+## Resource Safety Hardening Phase 2: Snapshot Validation va Shadow Decision
+
+### Added
+
+- Snapshot validation cho RAM/GPU/VRAM/Disk voi status `valid`, `invalid`, `unknown`, `stale`.
+- Snapshot freshness contract co `captured_at`, age calculation va TTL tu Resource Policy.
+- Workload classification foundation: `light`, `cpu_heavy`, `gpu_inference`, `gpu_training`, `io_heavy`.
+- Shadow Resource Decision v2 monitor-only voi structured observation: actual decision, shadow decision, reason codes, snapshot status, workload class, policy fingerprint va flags would_block/would_wait/confirmation_required.
+- Stable reason codes Phase 2 cho RAM, GPU/VRAM, Disk, stale snapshot, CPU fallback confirmation va heavy job active.
+- Tests simulation deterministic cho snapshot validation/freshness, unknown/invalid provider state, workload light/heavy va shadow decision.
+
+### Changed
+
+- `ResourceDecisionService.evaluate()` van tra actual legacy decision cho Queue, nhung gan them `shadow_observation` de quan sat.
+- Actual scheduling/runtime behavior khong doi: khong block queue, khong doi job state, khong doi lease, khong doi CPU fallback/thread/batch/runtime guard/process supervisor.
+- Shadow decision v2 dung `ResourcePolicyService.resolve()` va `ResolvedResourcePolicy`; actual legacy van dung `load()` projection tuong thich.
+
+### Validation
+
+- `.\.venv\Scripts\python.exe -m compileall src\models\resource_model.py src\services\resource_snapshot_service.py src\services\resource_decision_service.py tests\test_resource_safety_phase2.py tests\test_resource_manager.py`: dat.
+- `.\.venv\Scripts\python.exe -m pytest tests\test_resource_safety_phase2.py tests\test_resource_manager.py tests\test_resource_policy_v2.py -q -p no:cacheprovider`: 36 passed.
+
+### Notes
+
+- Phase 2 chi monitor-only/shadow decision, chua enforcement.
+- Chua Process Supervisor enforcement/kill-tree.
+- Chua runtime pressure guard action.
+- Chua thay doi Job Queue scheduling hoac ResourceLeaseManager lifecycle.
+- Chua Train that, chua Generate that, khong tich hop GPT-SoVITS runtime moi.
+
 ## Resource Safety Hardening Phase 1: Policy v2, Feature Flags va Safe Resolution
 
 ### Added

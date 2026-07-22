@@ -608,3 +608,17 @@
 - Phase 1 khong doi scheduling/runtime behavior: consumer cu van dung `load()` projection tuong thich; policy v2 duoc lay qua `resolve()`.
 - Chua co Process Supervisor enforcement, runtime pressure action, CPU fallback confirmation workflow, thread budget enforcement hoac kill-tree.
 - Chua Train that, chua Generate that, chua tich hop GPT-SoVITS runtime moi.
+
+---
+
+## Cap nhat Resource Safety Hardening Phase 2
+
+- Da them Snapshot Validation va Freshness cho ResourceSnapshot.
+- Snapshot phan biet valid, invalid, unknown va stale; reason code on dinh cho RAM, GPU/VRAM, Disk va stale.
+- Workload classification foundation additive: light, cpu_heavy, gpu_inference, gpu_training va io_heavy.
+- ResourceRequirement co estimated peak RAM/VRAM/Disk, heavy_job, cpu_fallback_supported va cpu_fallback_confirmed.
+- ResourceDecisionService tao shadow_observation v2 monitor-only gom actual_decision, shadow_decision, reason_codes, snapshot_status, workload_class, policy_fingerprint va flags would_block/would_wait/confirmation_required.
+- Shadow decision dung ResourcePolicyService.resolve()/ResolvedResourcePolicy; actual legacy decision van dung load() projection tuong thich.
+- Queue scheduling, JobRunner, ResourceLeaseManager, thread/batch/CPU fallback runtime, Runtime Guard va Process Supervisor khong doi.
+- resource_decision_v2_mode van monitor_only; khong enforcement trong Phase 2.
+- Chua Train that, chua Generate that, chua tich hop GPT-SoVITS runtime moi.

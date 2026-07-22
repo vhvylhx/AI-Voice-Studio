@@ -710,3 +710,16 @@
 - Ngay cap nhat: 2026-07-22.
 
 ---
+
+# DEC-072: VieNeu-TTS production binding dung subprocess CPU/ONNX
+
+- Trang thai: Chap nhan.
+- Boi canh: Canary VieNeu CPU/ONNX da PASS voi Python rieng, model/cache local va output WAV 48 kHz mono; routing `vi -> vieneu` da duoc nghiem thu.
+- Quyet dinh: `VieNeuTTSEngine` bind runtime bang `VieNeuTTSAdapter` va `vieneu_runtime_cli.py`, chay subprocess voi scoped env, offline cache va khong mutate global env.
+- Quyet dinh: Runtime readiness dua tren probe that cho Python/model/codec/module; thieu thanh phan nao thi tra UNAVAILABLE, khong fallback sang GPT-SoVITS.
+- Quyet dinh: Generate tieng Viet dung reference audio/text cua Voice, output path do Generate pipeline cung cap va validate WAV sau khi subprocess thanh cong.
+- Ly do: Giu dependency VieNeu tach khoi app process, tranh xung dot runtime va khong tao audio gia trong production.
+- He qua: WAV production cho tieng Viet co the READY khi cache/runtime local hop le; GPT-SoVITS van khong ho tro `vi`, Thread Budget capability cua `vieneu` khong tu dong duoc nang production-ready.
+- Ngay cap nhat: 2026-07-22.
+
+---

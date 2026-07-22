@@ -1,5 +1,24 @@
 # Changelog
 
+## VieNeu Runtime Production Binding & Real Generate Smoke
+
+### Added
+
+- `VieNeuTTSAdapter` cho subprocess production binding, scoped env, runtime probe va output WAV validation.
+- `vieneu_runtime_cli.py` runner cho VieNeu CPU/ONNX local model/cache, dung Python rieng cua runtime.
+- JobRunner handler `generate_execute` de goi `GeneratePipelineService` cho real generate execution.
+- Deterministic tests cho probe, missing runtime/model, command/env, non-zero exit, missing/empty output, missing reference, routing va JobRunner binding.
+
+### Changed
+
+- `VieNeuTTSEngine` bao READY theo probe that, generate WAV bang runtime local va khong tao mock audio.
+- Generate validation khong bat `gpt_model`/`sovits_model` cho routed engine `vieneu`.
+- Existing GPT model missing test duoc scope sang `en`/`gpt_sovits`.
+
+### Notes
+
+- Khong dung GPT-SoVITS cho `vi`, khong fallback, khong train/fine-tune, khong sua model/checkpoint/audio dataset.
+
 ## Restore Vietnamese Engine Routing to VieNeu-TTS
 
 ### Changed

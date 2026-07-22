@@ -3,6 +3,7 @@
 ## Cap nhat gan nhat
 
 - [x] Restore Vietnamese Engine Routing to VieNeu-TTS.
+- [x] VieNeu Runtime Production Binding & Real Generate Smoke.
 - [x] Resource Safety Hardening Phase 8: Production Thread Enforcement Integration foundation.
 - [x] Resource Safety Hardening Phase 9: dang ky adapter production theo source evidence va rollout enforcement co gate.
 - [ ] Resource Safety Hardening Phase 10: rollout/adapter engine-specific production mo rong neu duoc phe duyet.

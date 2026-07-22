@@ -188,6 +188,8 @@ def test_voice_model_missing_blocks_generate():
         root
     )
 
+    voice.config.language = "en"
+    voice.config.engine = "gpt_sovits"
     voice.config.gpt_model = ""
 
     request = make_request(

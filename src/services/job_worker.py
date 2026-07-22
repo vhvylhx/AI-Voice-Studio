@@ -1,8 +1,14 @@
 import time
 from dataclasses import dataclass
+from types import SimpleNamespace
 
 from models.job_model import now_iso
+from models.generate_config import GenerateAudioProfile
+from models.generate_config import GenerateRequest
+from models.generate_config import GenerateSelectionConfig
+from models.generate_config import SpeedProfile
 from models.resource_model import ResourceRequirement
+from models.voice_config import VoiceConfig
 
 
 class JobCancelled(Exception):
@@ -658,3 +664,276 @@ class GeneratePrepareJobWorker(BaseJobWorker):
                 {},
             ),
         }
+
+
+class GenerateExecuteJobWorker(BaseJobWorker):
+
+    thread_budget_engine_id = "vieneu"
+
+    resource_requirement = ResourceRequirement(
+        profile_id="cpu_generate_execute_vieneu",
+        cpu_threads=2,
+        ram_mb=4096,
+        disk_free_mb=512,
+        requires_gpu=False,
+        notes="Generate thật bằng VieNeu-TTS CPU/ONNX subprocess.",
+    )
+
+    def execute(
+        self,
+        job,
+        context,
+    ):
+
+        payload = dict(
+            job.payload
+            or {}
+        )
+
+        request = self.request_from_payload(
+            payload.get(
+                "request",
+                payload,
+            )
+        )
+
+        voice = self.voice_from_payload(
+            payload.get(
+                "voice",
+                {},
+            )
+        )
+
+        service = payload.get(
+            "generate_pipeline_service",
+        )
+
+        if service is None and context.app_context is not None:
+
+            service = getattr(
+                context.app_context,
+                "generate_pipeline_service",
+                None,
+            )
+
+        if service is None:
+
+            from services.generate_pipeline_service import (
+                GeneratePipelineService,
+            )
+
+            engine_manager = None
+
+            if context.app_context is not None:
+
+                engine_manager = getattr(
+                    context.app_context,
+                    "engine_manager",
+                    None,
+                )
+
+            service = GeneratePipelineService(
+                engine_manager=engine_manager,
+            )
+
+        started = time.time()
+
+        self.report_progress(
+            job,
+            context,
+            1,
+            2,
+            "generate_execute",
+            "Đang chạy Generate thật.",
+            started_at=started,
+        )
+
+        result = service.run(
+            request=request,
+            voice=voice,
+        )
+
+        if not result.ok:
+
+            raise RuntimeError(
+                ",".join(
+                    result.errors
+                    or [
+                        "generate_execute_failed"
+                    ]
+                )
+            )
+
+        self.report_progress(
+            job,
+            context,
+            2,
+            2,
+            "generate_done",
+            "Generate thật đã hoàn tất.",
+            item_name=result.output_file,
+            started_at=started,
+        )
+
+        return result.to_dict() if hasattr(
+            result,
+            "to_dict",
+        ) else dict(
+            result
+        )
+
+    def request_from_payload(
+        self,
+        data,
+    ):
+
+        data = dict(
+            data
+            or {}
+        )
+
+        selection = self.selection_from_payload(
+            data.get(
+                "selection",
+                {},
+            )
+        )
+
+        audio_profile = self.audio_profile_from_payload(
+            data.get(
+                "audio_profile",
+                {},
+            )
+        )
+
+        return GenerateRequest(
+            text=data.get(
+                "text",
+                "",
+            ),
+            text_file=data.get(
+                "text_file",
+                "",
+            ),
+            output_file=data.get(
+                "output_file",
+                "",
+            ),
+            selection=selection,
+            project_id=data.get(
+                "project_id",
+                "",
+            ),
+            job_id=data.get(
+                "job_id",
+                "",
+            )
+            or "",
+            overwrite=bool(
+                data.get(
+                    "overwrite",
+                    False,
+                )
+            ),
+            audio_profile=audio_profile,
+        )
+
+    def selection_from_payload(
+        self,
+        data,
+    ):
+
+        data = dict(
+            data
+            or {}
+        )
+
+        speed = data.get(
+            "speed",
+            {},
+        )
+
+        if isinstance(
+            speed,
+            dict,
+        ):
+
+            speed = SpeedProfile(
+                **{
+                    key: value
+                    for key, value in speed.items()
+                    if key in SpeedProfile.__dataclass_fields__
+                }
+            )
+
+        elif not isinstance(
+            speed,
+            SpeedProfile,
+        ):
+
+            speed = SpeedProfile()
+
+        values = {
+            key: value
+            for key, value in data.items()
+            if key in GenerateSelectionConfig.__dataclass_fields__
+            and key != "speed"
+        }
+
+        values["speed"] = speed
+
+        return GenerateSelectionConfig(
+            **values
+        )
+
+    def audio_profile_from_payload(
+        self,
+        data,
+    ):
+
+        data = dict(
+            data
+            or {}
+        )
+
+        return GenerateAudioProfile(
+            **{
+                key: value
+                for key, value in data.items()
+                if key in GenerateAudioProfile.__dataclass_fields__
+            }
+        )
+
+    def voice_from_payload(
+        self,
+        data,
+    ):
+
+        data = dict(
+            data
+            or {}
+        )
+
+        config = VoiceConfig.from_dict(
+            data.get(
+                "config",
+                data,
+            )
+        )
+
+        return SimpleNamespace(
+            id=data.get(
+                "id",
+                config.voice_id,
+            )
+            or config.voice_id,
+            name=data.get(
+                "name",
+                "",
+            ),
+            config=config,
+            variants=data.get(
+                "variants",
+                config.variants,
+            ),
+        )

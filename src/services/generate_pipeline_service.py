@@ -304,24 +304,26 @@ class GeneratePipelineService:
                     "vieneu_tts_unavailable"
                 )
 
-        if (
-            not str(
-                config.gpt_model
-            ).strip()
-            or not str(
-                config.sovits_model
-            ).strip()
-            or not Path(
-                str(config.gpt_model)
-            ).exists()
-            or not Path(
-                str(config.sovits_model)
-            ).exists()
-        ):
+        if routed_engine != "vieneu":
 
-            errors.append(
-                "voice_model_missing"
-            )
+            if (
+                not str(
+                    config.gpt_model
+                ).strip()
+                or not str(
+                    config.sovits_model
+                ).strip()
+                or not Path(
+                    str(config.gpt_model)
+                ).exists()
+                or not Path(
+                    str(config.sovits_model)
+                ).exists()
+            ):
+
+                errors.append(
+                    "voice_model_missing"
+                )
 
         if (
             not str(

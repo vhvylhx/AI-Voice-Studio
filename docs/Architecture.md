@@ -1528,3 +1528,22 @@ Nguyen tac:
 - Generate tieng Viet resolve engine sang `vieneu`; neu VieNeu-TTS chua san sang thi tra `UNAVAILABLE`/`vieneu_tts_unavailable`.
 - Khong fallback tu VieNeu-TTS sang GPT-SoVITS cho tieng Viet.
 - Cac WAV tieng Viet/benchmark cu duoc xem la VieNeu-TTS provenance, khong phai GPT-SoVITS evidence.
+
+## VieNeu Runtime Production Binding
+
+Runtime binding:
+
+- Engine ID production: `vieneu`.
+- Python runtime: `cache/engines/vieneu_tts/75ff82a/runtime/.venv/Scripts/python.exe`.
+- Model root: `cache/engines/vieneu_tts/75ff82a/models/pnnbao-ump__VieNeu-TTS-v3-Turbo__75ff82a72f54d55ed389e1eeb12041d3c4bac7d4`.
+- Codec root: `cache/engines/vieneu_tts/75ff82a/codecs/OpenMOSS-Team__MOSS-Audio-Tokenizer-Nano-ONNX__ceff0d0749bfb3fa2d61149794ec6feef0d1e1ae`.
+- Backend: CPU/ONNX, 48 kHz mono PCM WAV.
+
+Contract:
+
+- `VieNeuTTSEngine.info()` chi bao available khi `VieNeuTTSAdapter.availability_probe()` pass.
+- Subprocess dung scoped environment copy: `CUDA_VISIBLE_DEVICES=""`, thread vars = 2, `HF_HUB_OFFLINE=1`; khong mutate `os.environ` toan cuc.
+- `vieneu_runtime_cli.py` load local `OnnxV3LiteEngine`, dung reference audio cua Voice, synthesize target text va validate output WAV.
+- Non-zero exit, missing output, empty/invalid WAV, missing runtime/model/codec/reference deu fail ro rang.
+- GPT-SoVITS khong la fallback cho `vi` trong bat ky truong hop nao.
+- JobRunner handler `generate_execute` deserialize request/voice tu payload va goi `GeneratePipelineService.run()`.

@@ -64,7 +64,7 @@ class AudioMergeService:
 
         concat_file.write_text(
             "\n".join(
-                f"file '{file.as_posix()}'"
+                f"file '{file.resolve().as_posix()}'"
                 for file in files
             ),
             encoding="utf-8",

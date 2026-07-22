@@ -4,7 +4,7 @@ Ngay cap nhat: 2026-07-22
 
 ## Trang thai hien tai
 
-- Sprint vua thuc hien: Resource Safety Hardening Phase 9 - Production Engine Adapter Registration va Controlled Rollout.
+- Sprint vua thuc hien: VieNeu Runtime Production Binding & Real Generate Smoke.
 - Nen Generate Pipeline AVS-014.16 da co o muc request/session/source snapshot/plan/manifest/recovery/API/job prepare.
 - Resource Policy schema v2 da co foundation resolve/migration/fallback/fingerprint o muc monitor-only/disabled.
 - Resource Safety Phase 2 da co snapshot validation/freshness va shadow Resource Decision v2 monitor-only, khong doi scheduling/runtime behavior.
@@ -16,9 +16,9 @@ Ngay cap nhat: 2026-07-22
 - Resource Safety Phase 8 da co production-safe Thread Budget integration contract voi scoped environment copy, runtime adapter registry, apply-before-workload/restore-after-workload hook trong JobRunner khi duoc inject, rollback audit va primary-error preservation; mac dinh `thread_budget_mode` van monitor_only.
 - Resource Safety Phase 9 da dang ky Thread Budget capability theo source evidence: `gpt_sovits` chi production-ready cho scoped subprocess environment, `mock`/`xtts`/`vieneu` khong production-ready; rollout enforce can allowlist/opt-in va deterministic gate.
 - Engine routing da duoc sua: ngon ngu `vi` chi route sang `vieneu`; GPT-SoVITS runtime hien tai khong duoc quang ba ho tro `vi` va khong duoc fallback cho tieng Viet.
+- VieNeu-TTS da co production binding qua subprocess CPU/ONNX neu runtime/cache local day du; generate tieng Viet tao WAV that va validate output, khong mock audio.
 - Chua tich hop GPT-SoVITS runtime cho Generate production trong phase nay.
 - Chua Train GPT-SoVITS that trong phase nay.
-- Chua Generate Audio that trong phase nay.
 
 ## Capability Table
 
@@ -34,8 +34,8 @@ Ngay cap nhat: 2026-07-22
 | Real GPT-SoVITS Train | UNAVAILABLE | Chua chay s1/s2 train production trong sprint nay. |
 | Generate planning foundation | READY | Request, snapshot, normalized text, plan, manifest va registry da co. |
 | Generate resume/retry inspection | READY | Inspect duoc state; execution production van bi chan. |
-| Generate production execution | UNAVAILABLE | Chua co real handler/provider trong production AppContext. |
-| WAV/MP3 production output qua Generate foundation | UNAVAILABLE | Foundation khong tao audio gia. |
+| Generate production execution | DEGRADED | VieNeu-TTS tieng Viet co real subprocess binding khi runtime/cache/reference hop le; GPT-SoVITS generate production va cac engine khac van chua san sang. |
+| WAV/MP3 production output qua Generate foundation | DEGRADED | WAV production da co cho VieNeu-TTS tieng Viet; MP3 production va GPT-SoVITS output van ngoai scope. |
 | Full audio validation policy | DEGRADED | Da co basic WAV validation; ffprobe/codec policy day du thuoc sprint sau. |
 | Local API foundation | READY | API localhost stdlib co readiness/catalog/job/generate foundation endpoints. |
 | API real Generate | UNAVAILABLE | API khong generate that neu chua co Voice/runtime/model ready va handler production. |
@@ -55,8 +55,8 @@ Ngay cap nhat: 2026-07-22
 | Thread Budget foundation | READY | Phase 7 co ThreadBudgetObservation, workload allocation deterministic, oversubscription/nested detection, environment/runtime/restore plan va simulated executor. |
 | Thread Budget production enforcement integration | DEGRADED | Phase 9 co registry/rollout va GPT-SoVITS scoped subprocess environment adapter; default van monitor_only, khong runtime setter/model load/GPU. |
 | Style Profile / Voice DNA foundation | DEGRADED | Quan ly/import/export foundation co; prosody analyzer that chua co. |
-| Runtime GPT-SoVITS integration cho Generate | UNAVAILABLE | La pham vi sprint sau, khong lam trong AVS-014.16A. |
-| VieNeu-TTS Vietnamese routing | UNAVAILABLE | `vieneu` la engine bat buoc cho `vi`, nhung runtime/app integration hien chua san sang; khong fallback sang GPT-SoVITS. |
+| Runtime GPT-SoVITS integration cho Generate | UNAVAILABLE | GPT-SoVITS khong duoc dung cho `vi`; generate GPT-SoVITS production van la pham vi rieng. |
+| VieNeu-TTS Vietnamese routing va generate WAV | READY | `vieneu` la engine bat buoc cho `vi`; runtime binding dung Python rieng trong `cache/engines/vieneu_tts/75ff82a`, model/codec local va scoped env; neu probe fail thi tra UNAVAILABLE, khong fallback sang GPT-SoVITS. |
 | GPT-SoVITS Vietnamese support | NOT_APPLICABLE | Runtime GPT-SoVITS hien tai khong co frontend/ngon ngu `vi` hop le. |
 
 ## Data safety
@@ -68,7 +68,7 @@ Ngay cap nhat: 2026-07-22
 ## Blocker / chua trien khai
 
 - Chua co real Generate worker/provider noi GPT-SoVITS production.
-- Chua co WAV/MP3 output production trong Generate foundation.
+- MP3 production output va full artifact codec policy cho VieNeu/GPT-SoVITS chua hoan thien.
 - Chua co full audio validation policy bang ffprobe/codec cho artifact production.
 - Chua chay Train GPT-SoVITS production.
 - Chua co prosody analyzer that cho Voice DNA.

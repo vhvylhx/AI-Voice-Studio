@@ -23,6 +23,15 @@ from services.generate_pipeline_service import GeneratePipelineService
 from services.voice_service import VoiceService
 
 
+class UnavailableVieNeuEngine:
+
+    def is_available(
+        self,
+    ):
+
+        return False
+
+
 class FakeEngineManager:
 
     def __init__(
@@ -31,7 +40,7 @@ class FakeEngineManager:
 
         self.engines = {
             "gpt_sovits": GPTSoVITSEngine(),
-            "vieneu": VieNeuTTSEngine(),
+            "vieneu": UnavailableVieNeuEngine(),
         }
         self.selected = ""
 

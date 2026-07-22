@@ -1,10 +1,18 @@
 # Current Sprint
 
+## Cap nhat VieNeu Runtime Production Binding
+
+- `vieneu` da bind runtime that bang subprocess CPU/ONNX va Python rieng trong `cache/engines/vieneu_tts/75ff82a/runtime/.venv/Scripts/python.exe`.
+- Runtime probe kiem tra local model/codec/cache truoc khi bao READY; neu thieu thi tra UNAVAILABLE, khong fallback sang GPT-SoVITS.
+- Generate tieng Viet bo dependency vao GPT/SoVITS model path va tao WAV that khi Voice co reference hop le.
+- JobRunner co handler `generate_execute` de goi GeneratePipelineService cho execution that.
+- Thread Budget capability cua `vieneu` van khong production-ready trong Phase 9; thay doi nay chi la engine generate binding.
+
 ## Cap nhat Restore Vietnamese Engine Routing
 
 - `language=vi` chi route sang `vieneu`.
 - GPT-SoVITS khong duoc chon/fallback/quang ba cho tieng Viet.
-- VieNeu-TTS hien co engine ID ro rang nhung runtime/app integration chua san sang thi bao UNAVAILABLE.
+- VieNeu-TTS co runtime/app integration qua subprocess; neu runtime/cache/reference chua san sang thi bao UNAVAILABLE.
 
 ## Cap nhat Resource Safety Hardening Phase 9
 

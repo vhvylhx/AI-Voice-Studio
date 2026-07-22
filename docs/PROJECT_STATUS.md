@@ -1,14 +1,15 @@
 # AI Voice Studio - Project Status
 
-Ngay cap nhat: 2026-07-18
+Ngay cap nhat: 2026-07-22
 
 ## Trang thai hien tai
 
-- Sprint dang on dinh hoa: AVS-014.16A Foundation Cleanup & Consistency.
+- Sprint vua thuc hien: Resource Safety Hardening Phase 1 - Policy v2, Feature Flags va Safe Resolution.
 - Nen Generate Pipeline AVS-014.16 da co o muc request/session/source snapshot/plan/manifest/recovery/API/job prepare.
-- Chua tich hop GPT-SoVITS runtime cho Generate production trong AVS-014.16A.
-- Chua Train GPT-SoVITS that trong AVS-014.16A.
-- Chua Generate Audio that trong AVS-014.16A.
+- Resource Policy schema v2 da co foundation resolve/migration/fallback/fingerprint o muc monitor-only/disabled.
+- Chua tich hop GPT-SoVITS runtime cho Generate production trong phase nay.
+- Chua Train GPT-SoVITS that trong phase nay.
+- Chua Generate Audio that trong phase nay.
 
 ## Capability Table
 
@@ -31,6 +32,8 @@ Ngay cap nhat: 2026-07-18
 | API real Generate | UNAVAILABLE | API khong generate that neu chua co Voice/runtime/model ready va handler production. |
 | Job Queue foundation | READY | Persistent job/queue/worker foundation da co. |
 | Resource Manager foundation | READY | Hardware snapshot/resource decision/lease foundation da co. |
+| Resource Policy v2 foundation | READY | Schema v2, feature modes doc lap, migration v1, safe resolve, backup/fallback va fingerprint deterministic da co. Runtime enforcement moi chua bat. |
+| Resource Policy v2 enforcement | UNAVAILABLE | Phase 1 chi monitor-only/disabled; khong block job moi, khong doi scheduling/thread/batch/runtime action. |
 | Style Profile / Voice DNA foundation | DEGRADED | Quan ly/import/export foundation co; prosody analyzer that chua co. |
 | Runtime GPT-SoVITS integration cho Generate | UNAVAILABLE | La pham vi sprint sau, khong lam trong AVS-014.16A. |
 
@@ -47,7 +50,8 @@ Ngay cap nhat: 2026-07-18
 - Chua co full audio validation policy bang ffprobe/codec cho artifact production.
 - Chua chay Train GPT-SoVITS production.
 - Chua co prosody analyzer that cho Voice DNA.
+- Chua co Process Supervisor enforcement/kill-tree, runtime pressure guard action, thread budget enforcement hoac per-job CPU fallback confirmation workflow.
 
 ## Sprint tiep theo du kien
 
-- AVS-014.17 GPT-SoVITS Runtime Integration chi bat dau sau khi AVS-014.16A cleanup/source/docs/tests dat.
+- AVS-014.17 GPT-SoVITS Runtime Integration chi bat dau sau khi source/docs/tests hien tai dat va Resource Safety Hardening Phase 2 neu co duoc phe duyet rieng.

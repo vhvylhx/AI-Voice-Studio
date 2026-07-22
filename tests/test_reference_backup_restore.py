@@ -1,5 +1,7 @@
 import sys
 import zipfile
+from datetime import datetime
+from datetime import timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -8,7 +10,34 @@ SRC = ROOT / "src"
 sys.path.insert(0, str(SRC))
 
 from services.project_service import ProjectService  # noqa: E402
+import services.project_backup_service as project_backup_service  # noqa: E402
 from services.reference_vault_service import ReferenceVaultService  # noqa: E402
+
+
+class DeterministicDateTime:
+
+    current = datetime(
+        2026,
+        7,
+        22,
+        10,
+        0,
+        0,
+        1000,
+    )
+
+    @classmethod
+    def now(
+        cls,
+    ):
+
+        value = cls.current
+
+        cls.current = value + timedelta(
+            microseconds=1,
+        )
+
+        return value
 
 
 def make_project_and_vault(tmp_path):
@@ -42,7 +71,26 @@ def make_project_and_vault(tmp_path):
     return service, project, vault, asset
 
 
-def test_metadata_backup_is_distinct_from_complete_backup(tmp_path):
+def test_metadata_backup_is_distinct_from_complete_backup(
+    tmp_path,
+    monkeypatch,
+):
+
+    DeterministicDateTime.current = datetime(
+        2026,
+        7,
+        22,
+        10,
+        0,
+        0,
+        1000,
+    )
+
+    monkeypatch.setattr(
+        project_backup_service,
+        "datetime",
+        DeterministicDateTime,
+    )
 
     service, project, vault, asset = make_project_and_vault(
         tmp_path

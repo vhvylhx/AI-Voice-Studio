@@ -1196,3 +1196,51 @@ Thanh phan:
 Resource Manager khong train, generate, stress test, kill process, cai driver, tai model hoac sua GPT-SoVITS runtime.
 
 ---
+
+## Resource Safety Hardening Phase 1
+
+Phase 1 chi them foundation policy/config cho Resource Safety Hardening.
+
+Thanh phan:
+
+- `ResourcePolicy` schema v2 theo huong additive, van giu field cu.
+- `ResourcePolicyService` la facade chung cho load, save, migration, validation, fallback va resolve.
+- `ResolvedResourcePolicy` la effective policy cho v2, co fingerprint deterministic.
+
+Luon resolve theo chuoi:
+
+Persisted Policy
+
+-> Schema Defaults
+
+-> Migration Result
+
+-> Validated Runtime Override duoc phep
+
+-> ResolvedResourcePolicy
+
+Nguyen tac Phase 1:
+
+- Global Application Policy la scope duy nhat.
+- Khong co Project/Voice override.
+- Feature mode hop le: disabled, monitor_only, enforced.
+- Initial modes la monitor_only, rieng job runner safety integration disabled.
+- Khong mode nao tu dong enforced.
+- Backup duoc tao truoc migration save dau tien.
+- Corrupt primary khong bi ghi de khi fallback.
+- Neu fallback tu backup hoac built-in policy, enforcement modes phai disabled va observability chi monitor_only.
+- Runtime override khong duoc persist ngam.
+- Existing runtime/scheduling consumers van dung projection tuong thich qua `load()` trong Phase 1.
+- Effective v2 policy cho quan sat/Phase sau duoc lay qua `resolve()`.
+
+Ranh gioi:
+
+- Khong doi Job Queue scheduling.
+- Khong doi ResourceDecisionService runtime behavior.
+- Khong doi ResourceLeaseManager lifecycle.
+- Khong doi thread count, batch runtime hoac CPU fallback runtime.
+- Khong cancel/terminate process.
+- Khong kich hoat runtime pressure guard moi.
+- Khong train/generate/goi GPT-SoVITS runtime.
+
+---

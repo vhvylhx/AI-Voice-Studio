@@ -592,3 +592,19 @@
 ## Task tiep theo sau AVS-014.16A
 
 - Chi bat dau AVS-014.17 GPT-SoVITS Runtime Integration sau khi compileall, targeted pytest, full pytest, bootstrap, UI smoke, API smoke va git diff --check dat.
+
+---
+
+## Cap nhat Resource Safety Hardening Phase 1
+
+- Da them Resource Policy schema v2 theo huong additive, khong xoa field cu.
+- `ResourcePolicyService` la facade chung de load/migrate/validate/resolve policy thanh `ResolvedResourcePolicy`.
+- Feature modes doc lap da co: `resource_policy_v2_mode`, `resource_decision_v2_mode`, `resource_lease_v2_mode`, `thread_budget_mode`, `process_supervisor_mode`, `runtime_pressure_guard_mode`, `job_runner_safety_integration_mode`, `resource_observability_mode`.
+- Initial modes la monitor_only, rieng `job_runner_safety_integration_mode` disabled; khong mode nao tu dong enforced.
+- Safe resolved defaults: reserve RAM 8192 MiB, reserve VRAM 512 MiB, RAM pressure 10240/8192/6144/4096 MiB, batch_size 1, max jobs 1, thread limits 2/2/4 va timeout 20/5 giay.
+- Migration v1 -> v2 tao backup truoc khi save, idempotent va khong persist runtime override.
+- Fallback khi primary policy corrupt: backup hop le hoac built-in safe policy; enforcement bi disabled va corrupt primary khong bi ghi de.
+- Fingerprint deterministic khong phu thuoc thu tu key va thay doi khi effective policy thay doi.
+- Phase 1 khong doi scheduling/runtime behavior: consumer cu van dung `load()` projection tuong thich; policy v2 duoc lay qua `resolve()`.
+- Chua co Process Supervisor enforcement, runtime pressure action, CPU fallback confirmation workflow, thread budget enforcement hoac kill-tree.
+- Chua Train that, chua Generate that, chua tich hop GPT-SoVITS runtime moi.

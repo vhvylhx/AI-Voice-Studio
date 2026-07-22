@@ -577,3 +577,17 @@
 - Ngay cap nhat: 2026-07-18.
 
 ---
+
+# DEC-062: Resource Policy v2 resolve rieng voi runtime projection Phase 1
+
+- Trang thai: Chap nhan.
+- Boi canh: Resource Safety Hardening Phase 1 can luu schema v2, feature flags, safe defaults va fallback, nhung yeu cau tuyet doi khong doi scheduling/runtime behavior hien tai.
+- Quyet dinh: `ResourcePolicyService.resolve()` la entrypoint cho effective Resource Policy v2 va tra `ResolvedResourcePolicy` co fingerprint deterministic.
+- Quyet dinh: `ResourcePolicyService.load()` trong Phase 1 tiep tuc tra projection tuong thich cho consumer runtime cu de khong bat enforcement, reserve, CPU fallback, batch hoac thread behavior moi.
+- Quyet dinh: Feature modes ban dau chi monitor_only hoac disabled; khong capability nao tu dong enforced sau migration.
+- Quyet dinh: Global Application Policy la scope duy nhat; khong ho tro Project/Voice override.
+- Ly do: Cho phep dong bang config/policy foundation truoc khi tung consumer runtime duoc migrate va test o Phase sau.
+- He qua: Module scheduling/runtime khong duoc coi policy v2 la enforced cho den khi co Phase 2 duoc phe duyet rieng.
+- Ngay cap nhat: 2026-07-22.
+
+---

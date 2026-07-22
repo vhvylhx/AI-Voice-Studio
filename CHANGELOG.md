@@ -1,5 +1,43 @@
 # Changelog
 
+## Resource Safety Hardening Phase 1: Policy v2, Feature Flags va Safe Resolution
+
+### Added
+
+- Resource Policy schema v2 theo huong additive tren model hien co.
+- `ResolvedResourcePolicy` voi feature modes, safe reserves, RAM pressure thresholds, thread/batch/concurrency limits, CPU fallback policy, timeout values, provenance va fingerprint deterministic.
+- Resource Policy migration v1 -> v2 co backup truoc migration save va idempotent.
+- Validation cho invalid feature mode, unknown feature flag, negative reserve, invalid threshold order, invalid thread limit, invalid batch/concurrency, invalid timeout, invalid schema va global-only scope.
+- Safe fallback khi primary policy loi: thu backup hop le, neu khong co thi dung built-in safe policy; enforcement modes bi disabled va observability chi monitor_only.
+- Runtime override hop le chi tac dong resolved object, khong persist ngam.
+- Tests Resource Policy v2 cho migration, fallback, fingerprint, validation, runtime override va khong doi runtime behavior legacy.
+
+### Changed
+
+- `ResourcePolicyService` tro thanh single facade cho policy load/save/resolve.
+- Existing runtime consumers tiep tuc dung `load()` projection tuong thich trong Phase 1; policy v2 effective duoc lay qua `resolve()`.
+- Khong bat enforcement moi, khong doi scheduling, thread count, batch runtime, CPU fallback runtime, lease lifecycle, Generate hoac Training runtime.
+
+### Validation
+
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m pytest tests\test_resource_policy_v2.py tests\test_resource_manager.py -q`: 26 passed, co PytestCacheWarning do khong ghi duoc `.pytest_cache`.
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m compileall src\models\resource_model.py src\services\resource_policy_service.py tests\test_resource_policy_v2.py`: dat.
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m compileall src tests`: exit code 0; co dong `Can't list` cho pytest tmp cu bi khoa trong `tests`.
+- Them `pytest.ini` de canonical pytest chi collect `tests/` chinh thuc va bo qua artifact `audit_bundle/`, `cache/`, thu muc an/pytest tmp.
+- Xu ly dung artifact `.pytest_tmp` bi khoa quyen de canonical `--basetemp=.pytest_tmp` co the tao lai.
+- On dinh `tests/test_reference_backup_restore.py` bang monkeypatch clock deterministic, khong dung sleep/delay.
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m pytest --basetemp=.pytest_tmp -q`: 186 passed, co PytestCacheWarning do khong ghi duoc `.pytest_cache`.
+- `F:\AI-Voice-Studio\.venv\Scripts\python.exe -m pytest --collect-only -q`: 186 tests collected.
+- `git diff --check -- <Phase 1 files>`: exit code 0, chi co warning LF/CRLF Windows.
+
+### Notes
+
+- Chua Train that.
+- Chua Generate that.
+- Chua Process Supervisor enforcement/kill-tree.
+- Chua runtime pressure guard action.
+- Chua nang production capability Generate/Training len READY.
+
 ## AVS-014.16A: Foundation Cleanup & Consistency
 
 ### Changed

@@ -533,3 +533,18 @@ Có thể clone một giọng và tạo Audio bằng GPT-SoVITS.
 - [ ] AVS-014.17 GPT-SoVITS Runtime Integration chi bat dau sau khi AVS-014.16A nghiem thu xong.
 
 ---
+
+# Cap nhat Resource Safety Hardening Phase 1
+
+- [x] Resource Policy schema v2 foundation.
+- [x] Feature modes doc lap: disabled, monitor_only, enforced.
+- [x] Safe defaults theo design freeze cho resolved policy: RAM/VRAM reserve, RAM pressure thresholds, thread/batch/concurrency, CPU fallback va timeout.
+- [x] Migration additive v1 -> v2, idempotent va tao backup truoc migration save.
+- [x] Safe resolution thanh `ResolvedResourcePolicy` voi fingerprint deterministic.
+- [x] Fallback khi primary policy loi: thu backup hop le, neu khong co thi dung built-in safe policy; corrupt primary khong bi ghi de.
+- [x] Runtime override hop le chi tac dong resolved object, khong persist ngam.
+- [x] Existing runtime/scheduling consumers van dung projection tuong thich Phase 1; chua bat enforcement moi.
+- [ ] Resource Decision v2 enforcement thuoc Phase 2 neu duoc phe duyet rieng.
+- [ ] Process Supervisor enforcement/kill-tree thuoc Phase sau neu duoc phe duyet rieng.
+
+---

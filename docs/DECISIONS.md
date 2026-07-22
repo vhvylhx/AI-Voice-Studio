@@ -617,3 +617,17 @@
 - Ngay cap nhat: 2026-07-22.
 
 ---
+
+# DEC-065: Lease Lifecycle v2 enforcement chi kich hoat bang policy enforce
+
+- Trang thai: Chap nhan.
+- Boi canh: Phase 3 da co observation monitor-only; Phase 4 can enforcement co the rollback ma khong doi default production.
+- Quyet dinh: `resource_lease_v2_mode=enforce` moi kich hoat acquire/renew/release/reconcile v2. `disabled` va `monitor_only` giu legacy/Phase 3 behavior.
+- Quyet dinh: `enforce` la literal chinh cho Phase 4; `enforced` cu duoc ho tro nhu legacy alias de load policy/data cu.
+- Quyet dinh: Enforce phai fail-safe voi corrupt/unavailable lease store, khong ghi de corrupt store, va phai dung stable reason codes.
+- Quyet dinh: Phase 4 khong bao gom Process Supervisor, kill-tree, Runtime Guard action hay Thread Budget enforcement.
+- Ly do: Cho phep validate lifecycle enforcement deterministic truoc khi noi process/runtime action nguy hiem hon.
+- He qua: Rollback ve monitor_only khong mat lease data; production default khong thay doi sau migration.
+- Ngay cap nhat: 2026-07-22.
+
+---

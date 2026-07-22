@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from models.resource_model import (
+    FEATURE_MODE_ENFORCE,
     FEATURE_MODE_ENFORCED,
     LEASE_REASON_DUPLICATE,
     LEASE_REASON_EXPIRED,
@@ -393,7 +394,10 @@ class ResourceLeaseShadowEvaluator:
             monitor_only=feature_modes.get(
                 "resource_lease_v2_mode"
             )
-            != FEATURE_MODE_ENFORCED,
+            not in (
+                FEATURE_MODE_ENFORCE,
+                FEATURE_MODE_ENFORCED,
+            ),
         )
 
     def renew_due(

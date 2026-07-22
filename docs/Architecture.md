@@ -1302,3 +1302,31 @@ Ranh gioi:
 - Khong renew/release/cleanup actual lease trong monitor-only observation.
 - Khong kich hoat Process Supervisor, Runtime Guard, Thread Budget, kill-tree, pause/cancel/retry behavior moi.
 - Khong train/generate/goi GPT-SoVITS runtime.
+
+---
+
+## Resource Safety Hardening Phase 4
+
+Phase 4 them Lease Lifecycle v2 enforcement nhung chi sau activation flag.
+
+Thanh phan:
+
+- `resource_lease_v2_mode` co mode chinh: disabled, monitor_only, enforce; literal `enforced` cu duoc xem la legacy alias.
+- `ResourceLeaseManager` resolve policy qua `ResourcePolicyService.resolve()` va chi dung v2 enforcement khi policy effective la `enforce`.
+- Acquire v2 atomic/idempotent cho cung job/owner/resource, deny owner mismatch, duplicate/conflict va concurrency theo policy.
+- Renew/release v2 yeu cau lease_id/job_id/owner khop; release idempotent voi lease da released.
+- Reconcile v2 xu ly expired, stale, duplicate va unknown store theo huong fail-safe, non-destructive voi corrupt/unavailable store.
+- Lease store ghi schema_version 2 bang temp file + replace, cleanup temp va khong ghi de corrupt store trong enforce path.
+
+Nguyen tac Phase 4:
+
+- disabled va monitor_only giu legacy/Phase 3 behavior.
+- Default production van monitor_only; khong tu bat enforcement khi migration/load policy.
+- Stable reason codes gom acquire, renew, release, expired, stale, duplicate, owner/process/policy mismatch, store corrupt/unavailable va reconciliation.
+- JobRunner chi truyen them job_id/owner khi release de enforce co du thong tin xac thuc; legacy release van tuong thich.
+
+Ranh gioi:
+
+- Khong them Process Supervisor, kill-tree, Runtime Guard action hoac Thread Budget enforcement.
+- Khong dung process identity provider production de kill/restart process.
+- Khong train/generate/goi GPT-SoVITS runtime.

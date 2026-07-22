@@ -376,7 +376,9 @@ class JobRunner:
             return False
 
         released = manager.release(
-            job.resource_lease_id
+            job.resource_lease_id,
+            job_id=job.job_id,
+            owner=self.lease_owner,
         )
 
         if released:

@@ -636,3 +636,16 @@
 - Corrupt legacy lease store duoc report bang shadow observation, khong bi ghi de trong monitor-only.
 - resource_lease_v2_mode van monitor_only; khong enforcement trong Phase 3.
 - Chua Train that, chua Generate that, chua tich hop GPT-SoVITS runtime moi.
+
+---
+
+## Cap nhat Resource Safety Hardening Phase 4
+
+- Da them Lease Lifecycle v2 enforcement path trong `ResourceLeaseManager`, chi kich hoat khi `ResourcePolicyService.resolve()` tra `resource_lease_v2_mode=enforce`.
+- Default policy van `monitor_only`; `disabled` va `monitor_only` tiep tuc di qua legacy/Phase 3 behavior, khong bat v2 mutate/block/reconcile.
+- Enforce acquire idempotent cho cung job/owner/resource, deny owner mismatch, deny duplicate/conflict, khong tinh lease het han la active va fail-safe khi store corrupt/unavailable.
+- Enforce renew/release yeu cau lease/job/owner khop; release idempotent voi lease da released; expired renew chuyen sang reconciliation required.
+- Reconcile enforce deterministic, non-destructive unknown, danh dau expired/stale/duplicate theo policy boundary va ghi reason codes on dinh.
+- Persistence lease store ghi atomic schema_version 2, cleanup temp write va khong ghi de corrupt store trong enforce path.
+- `enforce` la mode Phase 4 chinh; `enforced` cu duoc giu nhu legacy alias de load du lieu Phase 1-3.
+- Chua Phase 5: khong Process Supervisor, khong kill-tree, khong Runtime Guard action, khong Thread Budget enforcement, khong Generate/Training production.

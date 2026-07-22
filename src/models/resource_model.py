@@ -13,6 +13,7 @@ RESOURCE_POLICY_SCHEMA_VERSION = 2
 
 FEATURE_MODE_DISABLED = "disabled"
 FEATURE_MODE_MONITOR_ONLY = "monitor_only"
+FEATURE_MODE_ENFORCE = "enforce"
 FEATURE_MODE_ENFORCED = "enforced"
 
 RESOURCE_FEATURE_MODE_KEYS = (
@@ -29,6 +30,7 @@ RESOURCE_FEATURE_MODE_KEYS = (
 RESOURCE_FEATURE_MODES = (
     FEATURE_MODE_DISABLED,
     FEATURE_MODE_MONITOR_ONLY,
+    FEATURE_MODE_ENFORCE,
     FEATURE_MODE_ENFORCED,
 )
 
@@ -156,6 +158,13 @@ LEASE_SHADOW_ACTIONS = (
 )
 
 LEASE_REASON_MISSING = "lease_missing"
+LEASE_REASON_ACQUIRED = "lease_acquired"
+LEASE_REASON_ACQUIRE_CONFLICT = "lease_acquire_conflict"
+LEASE_REASON_ACQUIRE_DENIED = "lease_acquire_denied"
+LEASE_REASON_RENEWED = "lease_renewed"
+LEASE_REASON_RENEW_DENIED = "lease_renew_denied"
+LEASE_REASON_RELEASED = "lease_released"
+LEASE_REASON_RELEASE_DENIED = "lease_release_denied"
 LEASE_REASON_EXPIRED = "lease_expired"
 LEASE_REASON_STALE = "lease_stale"
 LEASE_REASON_DUPLICATE = "lease_duplicate"
@@ -171,9 +180,22 @@ LEASE_REASON_STORE_UNAVAILABLE = "lease_store_unavailable"
 LEASE_REASON_SCHEMA_LEGACY = "lease_schema_legacy"
 LEASE_REASON_POLICY_MISMATCH = "lease_policy_mismatch"
 LEASE_REASON_RECONCILIATION_REQUIRED = "lease_reconciliation_required"
+LEASE_REASON_RECONCILIATION_COMPLETED = (
+    "lease_reconciliation_completed"
+)
+LEASE_REASON_RECONCILIATION_DEFERRED = "lease_reconciliation_deferred"
+LEASE_REASON_MODE_MONITOR_ONLY = "lease_mode_monitor_only"
+LEASE_REASON_MODE_ENFORCE = "lease_mode_enforce"
 
 LEASE_REASON_CODES = (
     LEASE_REASON_MISSING,
+    LEASE_REASON_ACQUIRED,
+    LEASE_REASON_ACQUIRE_CONFLICT,
+    LEASE_REASON_ACQUIRE_DENIED,
+    LEASE_REASON_RENEWED,
+    LEASE_REASON_RENEW_DENIED,
+    LEASE_REASON_RELEASED,
+    LEASE_REASON_RELEASE_DENIED,
     LEASE_REASON_EXPIRED,
     LEASE_REASON_STALE,
     LEASE_REASON_DUPLICATE,
@@ -189,6 +211,10 @@ LEASE_REASON_CODES = (
     LEASE_REASON_SCHEMA_LEGACY,
     LEASE_REASON_POLICY_MISMATCH,
     LEASE_REASON_RECONCILIATION_REQUIRED,
+    LEASE_REASON_RECONCILIATION_COMPLETED,
+    LEASE_REASON_RECONCILIATION_DEFERRED,
+    LEASE_REASON_MODE_MONITOR_ONLY,
+    LEASE_REASON_MODE_ENFORCE,
 )
 
 
@@ -1336,6 +1362,18 @@ class ResourceLease:
     expires_at: str = ""
 
     status: str = "active"
+
+    policy_fingerprint: str = ""
+
+    process_identity: dict = field(
+        default_factory=dict
+    )
+
+    metadata: dict = field(
+        default_factory=dict
+    )
+
+    schema_version: int = 1
 
     def to_dict(self):
 

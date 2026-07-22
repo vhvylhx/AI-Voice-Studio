@@ -8,6 +8,7 @@ from models.resource_model import (
     DEFAULT_RESOURCE_FEATURE_MODES,
     DEFAULT_THREAD_LIMITS,
     FALLBACK_RESOURCE_FEATURE_MODES,
+    FEATURE_MODE_ENFORCE,
     FEATURE_MODE_ENFORCED,
     RESOURCE_FEATURE_MODE_KEYS,
     RESOURCE_FEATURE_MODES,
@@ -760,7 +761,10 @@ class ResourcePolicyService:
             policy.feature_modes.items()
         ):
 
-            if mode == FEATURE_MODE_ENFORCED:
+            if mode in (
+                FEATURE_MODE_ENFORCE,
+                FEATURE_MODE_ENFORCED,
+            ):
 
                 policy.feature_modes[key] = "disabled"
 

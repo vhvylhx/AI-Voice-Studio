@@ -1,5 +1,29 @@
 # Changelog
 
+## Resource Safety Hardening Phase 4: Lease Lifecycle v2 Enforcement
+
+### Added
+
+- Lease Lifecycle v2 enforcement path trong `ResourceLeaseManager`, gated boi `resource_lease_v2_mode=enforce`.
+- Stable reason codes cho acquire, renew, release, expired, stale, duplicate, owner/process identity mismatch, store corrupt/unavailable va reconciliation.
+- Enforce acquire idempotent cho cung job/owner/resource, deny duplicate/conflict/concurrency va fail-safe khi lease store corrupt/unavailable.
+- Enforce renew/release voi job_id/owner validation, deterministic clock trong tests va expired lease reconciliation boundary.
+- Reconcile enforce cho expired/stale/duplicate theo huong non-destructive unknown.
+- Atomic lease store write schema_version 2 voi temp cleanup.
+- Tests Phase 4 cho activation modes, acquire/renew/release, expiry/stale/reconcile, corrupt store va rollback invariants.
+
+### Changed
+
+- `enforce` la mode Phase 4 chinh; `enforced` cu duoc giu nhu legacy alias.
+- `disabled` va `monitor_only` tiep tuc dung legacy/Phase 3 behavior, khong v2 mutate/block/reconcile.
+- JobRunner truyen them job_id/owner khi release lease de enforce co the validate; legacy release van tuong thich.
+
+### Notes
+
+- Default production van `monitor_only`.
+- Khong Process Supervisor, khong kill-tree, khong Runtime Guard action, khong Thread Budget enforcement.
+- Chua Train that, chua Generate that, khong tich hop GPT-SoVITS runtime moi.
+
 ## Resource Safety Hardening Phase 3: Lease Lifecycle v2 Monitor
 
 ### Added
